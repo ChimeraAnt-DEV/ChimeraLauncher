@@ -116,65 +116,77 @@ class GamePackageManager private constructor(
     }
 
     /**
-     * Verifies the version's declared ABI can actually load in this process.
+     * Verifies the version's declared ABI can actually load in this launcher's process.
      *
-     * Android fixes a process's bitness at install time from the ABI of the app's own
-     * native libraries, and the platform offers no way to start a differently-sized process
-     * from inside an app. So a 32-bit library set can never dlopen inside a 64-bit process,
-     * and {@code android:use32bitAbi} cannot help: it only tells the installer to prefer the
-     * 32-bit native libs an app already ships, so it is a build/packaging choice, not a
-     * runtime one. This check surfaces the mismatch clearly before the first native library
-     * is attempted, instead of a confusing "dlopen failed: is 32-bit instead of 64-bit".
+     * This is about which build of the launcher is installed, not about what the device can
+     * do. The APK's {@code ndk.abiFilters} decide whether it ships an {@code arm64-v8a} or an
+     * {@code armeabi-v7a} set of native libraries; Android then fixes the process to a single
+     * bitness at install time. Game libraries must match that bitness, so both directions of
+     * mismatch are fatal: 32-bit game libs cannot load in a 64-bit process, and 64-bit game
+     * libs cannot load in a 32-bit process.
+     *
+     * {@code android:use32bitAbi} is an installer preference for an APK that ships both ABIs.
+     * It cannot make a running process change bitness, so it is not a lever here.
      */
     fun requireLauncherSupportsVersion(version: GameVersion?): Boolean {
         return abiCompatibility(version) != AbiCompatibility.INCOMPATIBLE
     }
 
-    /** How a version's declared ABI relates to the ABI this launcher process can load. */
+    /** How a version's declared ABI relates to the bitness of this launcher process. */
     enum class AbiCompatibility {
-        /** No ABI declared, or it matches the process. */
+        /** No ABI declared, or the declared ABI matches this process. */
         OK,
-        /** Declared 32-bit, process is 64-bit: cannot load, no runtime workaround. */
+        /** Declared ABI and process bitness disagree, so the game libraries cannot load. */
         INCOMPATIBLE,
     }
 
     fun abiCompatibility(version: GameVersion?): AbiCompatibility {
-        if (version == null || version.abiList.isNullOrBlank()) return AbiCompatibility.OK
-        if (!is32BitAbi(version.abiList!!)) return AbiCompatibility.OK
-        return if (processIs64Bit()) AbiCompatibility.INCOMPATIBLE else AbiCompatibility.OK
+        return if (AbiBitness.compatibleWith(version?.abiList, processIs64Bit())) {
+            AbiCompatibility.OK
+        } else {
+            AbiCompatibility.INCOMPATIBLE
+        }
     }
 
     fun abiMismatchMessage(version: GameVersion?): String? {
         val declared = version?.abiList
         if (declared.isNullOrBlank()) return null
         if (abiCompatibility(version) != AbiCompatibility.INCOMPATIBLE) return null
-        val deviceSupports32Bit = Build.SUPPORTED_32_BIT_ABIS.isNotEmpty()
-        return buildString {
-            append("This Minecraft version ships only $declared (32-bit), but the Chimera Launcher process ")
-            append("on this device is 64-bit, and 32-bit libraries cannot load inside a 64-bit process.")
-            if (deviceSupports32Bit) {
-                append(" Your device does support 32-bit code, so this version would run under a 32-bit build ")
-                append("of the launcher. Android fixes an app's bitness at install time, so the launcher cannot ")
-                append("switch to 32-bit for a single version at runtime.")
-            } else {
-                append(" This device is also 64-bit only, so it cannot run 32-bit code at all.")
+        return if (AbiBitness.is32BitAbi(declared)) {
+            buildString {
+                append("This Minecraft version ships only $declared (32-bit), but Chimera Launcher is ")
+                append("running as a 64-bit process, and 32-bit game libraries cannot load in a 64-bit process. ")
+                if (deviceSupports32Bit()) {
+                    append("This device can run 32-bit code, so installing the 32-bit build of Chimera Launcher ")
+                    append("will run this version. Android fixes an app's bitness when it is installed, so the ")
+                    append("launcher cannot become 32-bit just for this version.")
+                } else {
+                    append("This device has no 32-bit support at all, so this version cannot run here on any ")
+                    append("launcher build. Use a 64-bit build of this Minecraft version.")
+                }
             }
-            append(" Install a 64-bit build of this version, or a launcher build that ships 32-bit native libraries.")
+        } else {
+            buildString {
+                append("This Minecraft version ships only $declared (64-bit), but Chimera Launcher is ")
+                append("running as a 32-bit process, and 64-bit game libraries cannot load in a 32-bit ")
+                append("process. Install the 64-bit build of Chimera Launcher to run this version.")
+            }
         }
     }
 
-    private fun is32BitAbi(abi: String): Boolean = abi == "armeabi-v7a" || abi == "armeabi" || abi == "x86"
-
+    /**
+     * Whether the running process can load 64-bit libraries. Read from the process so it
+     * reflects the build that was actually installed, not what the device could theoretically run.
+     */
     private fun processIs64Bit(): Boolean = try {
         android.os.Process.is64Bit()
     } catch (_: Throwable) {
-        // is64Bit is API 23+. Falling back to the primary ABI is accurate enough for a
-        // preflight message and never throws.
-        Build.SUPPORTED_64_BIT_ABIS.isNotEmpty() && Build.SUPPORTED_32_BIT_ABIS.isEmpty()
+        // is64Bit() is API 23+; minSdk here is 28, so this branch is defensive only.
+        Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
     }
 
-    /** True when this device can execute 32-bit native code at all. */
-    fun deviceSupports32Bit(): Boolean = Build.SUPPORTED_32_BIT_ABIS.isNotEmpty()
+    /** True when this device can execute 32-bit ARM code at all (has armeabi-v7a). */
+    fun deviceSupports32Bit(): Boolean = Build.SUPPORTED_32_BIT_ABIS.contains("armeabi-v7a")
 
     private fun getDeviceAbi(apkFiles: List<File> = emptyList()): String {
         resolveAbiFromApks(apkFiles)?.let { return it }
@@ -595,14 +607,8 @@ class GamePackageManager private constructor(
      */
     private fun processBitnessMismatchDetail(e: UnsatisfiedLinkError): String? {
         val abi = getLaunchAbi()
-        val is32BitAbi = abi == "armeabi-v7a" || abi == "x86"
-        if (!is32BitAbi) return null
-        val processIs64Bit = try {
-            android.os.Process.is64Bit()
-        } catch (_: Throwable) {
-            false
-        }
-        if (!processIs64Bit) return null
+        if (!AbiBitness.is32BitAbi(abi)) return null
+        if (!processIs64Bit()) return null
         return "${e.message ?: e.javaClass.simpleName} - 32-bit version ($abi) requires a 32-bit process, " +
             "but the current process is 64-bit"
     }
@@ -695,12 +701,14 @@ class GamePackageManager private constructor(
         progressEnd: Int = 74,
         excludeReasons: Map<String, String> = emptyMap()
     ): List<LibraryLoadResult> {
-        val deviceSupports64Bit = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+        val processSupports64Bit = processIs64Bit()
         val allLibs = (requiredLibs + systemLoadedLibs).filterNot { lib ->
-            // PlayFab/maesdk/gxcore are arm64-only closed-source prebuilts; on a 32-bit
-            // device they aren't bundled, so exclude them up front instead of letting
-            // System.loadLibrary fail mid-launch.
-            systemLoadedLibs.contains(lib) && !deviceSupports64Bit
+            // PlayFab/maesdk/gxcore are arm64-only closed-source prebuilts with no 32-bit
+            // counterpart. On a 32-bit process they cannot be loaded, so exclude them up
+            // front instead of letting System.loadLibrary fail mid-launch. Keyed off the
+            // process bitness, not the device's capability: an arm64 device running the
+            // 32-bit launcher build is still a 32-bit process.
+            systemLoadedLibs.contains(lib) && !processSupports64Bit
         }
         val loadableLibs = allLibs.filterNot { lib ->
             val libName = normalizeLibraryName(lib)

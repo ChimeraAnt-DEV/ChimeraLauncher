@@ -138,41 +138,52 @@ jobs:
           CF_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
         run: echo "curseforge.api_key=${CF_API_KEY}" >> local.properties
 
+      - name: Run unit tests
+        if: env.HAS_GOOGLE_SERVICES == 'true'
+        run: ./gradlew :app:testAbi64DebugUnitTest
+
       - name: Build Debug, Beta and Unsigned Release APKs
         if: env.HAS_GOOGLE_SERVICES == 'true'
         run: ./gradlew assembleDebug assembleBeta assembleRelease
 
       - name: Compile Debug Without Firebase Secrets
         if: env.HAS_GOOGLE_SERVICES == 'false'
-        run: ./gradlew :app:compileDebugKotlin :app:compileDebugJavaWithJavac
+        run: ./gradlew :app:compileAbi64DebugKotlin :app:compileAbi64DebugJavaWithJavac
 
-      - name: Upload Debug APK
+      - name: Upload 64-bit Debug APK
         if: env.HAS_GOOGLE_SERVICES == 'true'
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: ChimeraLauncher-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: ChimeraLauncher-debug-apk-abi64
+          path: app/build/outputs/apk/abi64/debug/*.apk
+
+      - name: Upload 32-bit Debug APK
+        if: env.HAS_GOOGLE_SERVICES == 'true'
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ChimeraLauncher-debug-apk-abi32
+          path: app/build/outputs/apk/abi32/debug/*.apk
 
       - name: Upload Unsigned Release APK
         if: env.HAS_GOOGLE_SERVICES == 'true'
         uses: actions/upload-artifact@v4.6.2
         with:
           name: ChimeraLauncher-release-unsigned-apk
-          path: app/build/outputs/apk/release/*-unsigned.apk
+          path: app/build/outputs/apk/abi64/release/*-unsigned.apk
 
       - name: Upload Beta APK
         if: env.HAS_GOOGLE_SERVICES == 'true'
         uses: actions/upload-artifact@v4.6.2
         with:
           name: ChimeraLauncher-beta-apk
-          path: app/build/outputs/apk/beta/*.apk
+          path: app/build/outputs/apk/abi64/beta/*.apk
 
       - name: Sign Release APK
         if: env.HAS_GOOGLE_SERVICES == 'true' && startsWith(github.ref, 'refs/tags/')
         uses: kevin-david/zipalign-sign-android-release@v2
         id: sign_app
         with:
-          releaseDirectory: app/build/outputs/apk/release
+          releaseDirectory: app/build/outputs/apk/abi64/release
           signingKeyBase64: ${{ secrets.SIGNING_KEY_STORE }}
           alias: ${{ secrets.SIGNING_KEY_ALIAS }}
           keyStorePassword: ${{ secrets.SIGNING_STORE_PASSWORD }}

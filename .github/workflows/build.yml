@@ -50,12 +50,22 @@ jobs:
       - name: Grant execute permission to Gradle wrapper
         run: chmod +x ./gradlew
 
-      - name: Build debug APK
+      - name: Run unit tests
+        run: ./gradlew :app:testAbi64DebugUnitTest
+
+      - name: Build debug APKs (64-bit and 32-bit)
         run: ./gradlew assembleDebug
 
-      - name: Upload debug APK
+      - name: Upload 64-bit debug APK
         uses: actions/upload-artifact@v4.6.2
         with:
-          name: app-debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          name: app-debug-apk-abi64
+          path: app/build/outputs/apk/abi64/debug/*.apk
+          if-no-files-found: error
+
+      - name: Upload 32-bit debug APK
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: app-debug-apk-abi32
+          path: app/build/outputs/apk/abi32/debug/*.apk
           if-no-files-found: error

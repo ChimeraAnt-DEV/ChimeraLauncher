@@ -32,6 +32,17 @@ Open the project directory in Android Studio and allow Gradle sync to finish. Th
 ./gradlew assembleDebug
 ```
 
+This builds both ABI flavors. To build one at a time:
+
+```bash
+./gradlew :app:assembleAbi64Debug   # arm64-v8a, runs 64-bit Minecraft versions
+./gradlew :app:assembleAbi32Debug   # armeabi-v7a, runs 32-bit Minecraft versions
+```
+
+Android fixes an app's bitness at install time, so a 32-bit Minecraft version only runs under the
+`abi32` build and a 64-bit version only under `abi64`. The two share an application ID, so installing
+one replaces the other. Run the unit tests with `./gradlew :app:testAbi64DebugUnitTest`.
+
 On Windows:
 
 ```powershell

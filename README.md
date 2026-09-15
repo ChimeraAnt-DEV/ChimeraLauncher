@@ -116,16 +116,35 @@ If you want to build Chimera Launcher from source or contribute to development, 
 Every push to `main` and every pull request automatically triggers a CI workflow (`.github/workflows/build.yml`) that:
 
 - Checks out the repository **with submodules** (the native Preloader/LibHttpClient code is fetched,so the full native build can run)
-- Builds a debug APK with JDK 21 and Gradle 8.13 (via the existing wrapper,`./gradlew assembleDebug`)
+- Builds debug APKs for **both ABIs** with JDK 21 and Gradle 8.13 (via the existing wrapper,`./gradlew assembleDebug`)
+- Runs the unit test suite (`./gradlew :app:testAbi64DebugUnitTest`)
 - **Fails the run (and blocks/red-flags the PR)** if the build breaks — it never silently swallows errors
-- Uploads the resulting APK as a workflow artifact, downloadable straight from the **Actions** tab
+- Uploads both APKs as workflow artifacts, downloadable straight from the **Actions** tab
 
-To grab the APK from a green run:
+To grab the APKs from a green run:
 
 1. Open the **Actions** tab on the repository
 2. Click the latest green **Build Debug APK** run
-3. Scroll to the bottom and download the **app-debug-apk** artifact
+3. Scroll to the bottom and download **app-debug-apk-abi64** (for 64-bit Minecraft versions) and/or **app-debug-apk-abi32** (for 32-bit versions — see below)
 4. Install it on your device (Android 9.0+/API 28+,
+
+### Which APK do I need?
+
+Android locks an app to 64-bit or 32-bit when it is installed, and a Minecraft version's native
+libraries only load in a process of the matching bitness. So there are two builds:
+
+| Build | ABI shipped | Runs |
+| --- | --- | --- |
+| `abi64` | `arm64-v8a` | 64-bit Minecraft versions (the usual case) |
+| `abi32` | `armeabi-v7a` | 32-bit-only Minecraft versions |
+
+Install only one at a time — they share the same application ID, so the second install replaces the
+first. Install `abi64` unless you specifically need a 32-bit version; `abi32` also omits the
+closed-source `gxcore` verification, the inbuilt mod menu and materialbin autofix, which have no
+32-bit builds available.
+
+If you launch a version whose bitness does not match the installed build, the launcher tells you
+before starting rather than failing part-way through with a `dlopen` error.
 
 ---
 

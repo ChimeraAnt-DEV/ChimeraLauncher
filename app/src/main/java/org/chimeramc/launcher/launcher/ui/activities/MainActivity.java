@@ -1438,7 +1438,10 @@ import okhttp3.OkHttpClient;
         androidx.recyclerview.widget.RecyclerView newsRecycler = findViewById(R.id.news_recycler);
         if (newsRecycler != null) {
             newsRecycler.setLayoutManager(new LinearLayoutManager(this));
-            newsRecycler.setHasFixedSize(true);
+            // The RecyclerView is wrap_content (it sits inside a NestedScrollView and is
+            // not itself scrollable), so it must not claim a fixed size: that would let
+            // the adapter changes skip a re-measure and clip the rows.
+            newsRecycler.setHasFixedSize(false);
             // TODO: Set up news adapter
         }
     }

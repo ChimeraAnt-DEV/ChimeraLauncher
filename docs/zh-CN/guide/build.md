@@ -32,6 +32,18 @@ cd ChimeraLauncher
 ./gradlew assembleDebug
 ```
 
+以上命令会同时构建两个 ABI 版本。如需单独构建：
+
+```bash
+./gradlew :app:assembleAbi64Debug   # arm64-v8a，运行 64 位 Minecraft 版本
+./gradlew :app:assembleAbi32Debug   # armeabi-v7a，运行 32 位 Minecraft 版本
+```
+
+Android 会在安装时固定应用的位数，因此 32 位 Minecraft 版本只能在 `abi32` 版本下运行，
+64 位版本只能在 `abi64` 版本下运行。两个版本共用同一个 application ID，安装其中一个会替换另一个。
+
+运行单元测试：`./gradlew :app:testAbi64DebugUnitTest`
+
 Windows：
 
 ```powershell

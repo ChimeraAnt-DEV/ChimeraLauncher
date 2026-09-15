@@ -44,12 +44,6 @@ android {
         versionName getGitTag()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "CURSEFORGE_API_KEY", "\"${localProperties.getProperty('curseforge.api_key', '')}\""
-        ndk {
-            // 64-bit only: 32-bit (armeabi-v7a) instances cannot run in this app
-            // (Android processes lock in one bitness), so only ship arm64-v8a.
-            // A separate 32-bit-focused launcher is planned for the future.
-            abiFilters 'arm64-v8a'
-        }
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"
@@ -71,6 +65,52 @@ android {
             assets.srcDirs += rootProject.file('resources')
         }
     }
+    /**
+     * Two launcher builds, because Android fixes a process to one bitness at install time
+     * (see GamePackageManager.abiCompatibility). A 32-bit Minecraft version needs a 32-bit
+     * process, and a 64-bit version needs a 64-bit process, so one APK cannot serve both.
+     *
+     *   ./gradlew :app:assembleAbi64Debug   -> arm64-v8a, runs 64-bit game versions
+     *   ./gradlew :app:assembleAbi32Debug   -> armeabi-v7a, runs 32-bit game versions
+     *
+     * Install only one at a time: both share applicationId (which Microsoft OAuth binds the
+     * redirect URI to, so it cannot be changed), meaning the second install replaces the
+     * first, bitness and all.
+     *
+     * These live here rather than in defaultConfig because a build.gradle `ndk` block in
+     * defaultConfig is *merged* with the flavor's, not overridden by it: listing arm64-v8a
+     * as a default and armeabi-v7a in the flavor yields both ABIs in the "32-bit" APK. That
+     * is not a harmless extra: an APK containing any 64-bit library is installed as a 64-bit
+     * process even on a 64-bit device, which would then refuse to load 32-bit game libraries.
+     * Each flavor therefore declares its ABI set in full and nothing is listed globally.
+     *
+     * The 32-bit build necessarily omits the arm64-only closed-source prebuilts
+     * (libgxcore, libinbuiltmods, libmaesdk, libPlayFabMultiplayer, libmtbinloader2).
+     * Every load site for those already degrades gracefully: gxcore/bootstrap returns
+     * false and is skipped, InbuiltModsNative.loadLibrary returns false, LibBindings'
+     * static init swallows UnsatisfiedLinkError, and loadAllLibraries filters them out.
+     * So the 32-bit build loses gxcore verification, the inbuilt mod menu, and materialbin
+     * autofix, but launches 32-bit versions.
+     */
+    flavorDimensions += "abi"
+    productFlavors {
+        abi64 {
+            dimension "abi"
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+        }
+        abi32 {
+            dimension "abi"
+            ndk {
+                // armeabi-v7a only. This must NOT also list arm64-v8a: an APK containing
+                // any 64-bit library gets installed as a 64-bit process even on a 64-bit
+                // device, which would then refuse to load the 32-bit game libraries.
+                abiFilters 'armeabi-v7a'
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
