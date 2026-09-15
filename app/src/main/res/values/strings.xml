@@ -1211,13 +1211,24 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="resource_packs">Resource Packs</string>
     <string name="shader_packs">Shader Packs</string>
 
-    <!-- Hit Registration -->
-    <string name="inbuilt_mod_hit_registration">Hit Registration</string>
-    <string name="inbuilt_mod_hit_registration_desc">Client-side hit assist: smooths aim while swiping for reliable hits on Bedrock servers</string>
-    <string name="mod_config_hitreg_smoothing" formatted="false">Aim Smoothing (%)</string>
-    <string name="mod_config_hitreg_crosshair">Show Crosshair</string>
-    <string name="mod_config_hitreg_flash">Hit Flash Feedback</string>
-    <string name="hitreg_crosshair_desc">Center reticle to keep your aim on target</string>
+    <!-- Aim Settings -->
+    <string name="inbuilt_mod_aim_settings">Aim Settings</string>
+    <string name="inbuilt_mod_aim_settings_desc">Tune how your look input is applied: smoothing, sensitivity, crosshair and haptic feedback</string>
+    <string name="mod_config_aim_smoothing" formatted="false">Aim Smoothing (%)</string>
+    <string name="mod_config_aim_crosshair">Show Crosshair</string>
+    <string name="mod_config_aim_flash">Hit Flash Feedback</string>
+    <string name="mod_config_aim_sensitivity" formatted="false">Look Sensitivity (%)</string>
+    <string name="aim_crosshair_desc">Center reticle to keep your aim on target</string>
+    <string name="aim_smoothing_desc">Dampens fast swipes so camera movement stays readable</string>
+    <string name="aim_sensitivity_desc">Scales look input before it is sent to the game</string>
+    <string name="aim_flash_desc">Brief haptic + crosshair pulse when a swipe burst ends</string>
+    <string name="aim_crosshair_style">Crosshair Style</string>
+    <string name="aim_crosshair_style_dot">Dot</string>
+    <string name="aim_crosshair_style_cross">Cross</string>
+    <string name="aim_crosshair_style_circle">Circle</string>
+    <string name="aim_crosshair_style_desc">Choose the reticle shape drawn at screen center</string>
+    <string name="aim_crosshair_color">Crosshair Color</string>
+    <string name="aim_crosshair_color_desc">Tint of the reticle and burst pulse</string>
 
     <!-- ABI / bitness -->
     <string name="abi_64_bit">64-bit</string>

@@ -38,7 +38,7 @@ public class InbuiltOverlayManager {
     private GyroOverlay gyroOverlay;
     private FpsDisplayOverlay fpsDisplayOverlay;
     private CpsDisplayOverlay cpsDisplayOverlay;
-    private HitRegistrationOverlay hitRegistrationOverlay;
+    private AimSettingsOverlay aimSettingsOverlay;
     private ModMenuButton modMenuButton;
     private HudOverlay hudOverlay;
     private BaseOverlayButton selectedHudEditorOverlay;
@@ -84,7 +84,7 @@ public class InbuiltOverlayManager {
         modActiveStates.put(ModIds.POJAV_CONTROLS, false);
         modActiveStates.put(ModIds.MORE_BUTTONS, false);
         modActiveStates.put(ModIds.HOTBAR_SLOT, false);
-        modActiveStates.put(ModIds.HIT_REGISTRATION, false);
+        modActiveStates.put(ModIds.AIM_SETTINGS, false);
 
         modPositionMap.put(ModIds.QUICK_DROP, nextY + SPACING);
         modPositionMap.put(ModIds.CAMERA_PERSPECTIVE, nextY + SPACING * 2);
@@ -121,7 +121,7 @@ public class InbuiltOverlayManager {
         restorePersistedInbuiltModState(manager, ModIds.POJAV_CONTROLS);
         restorePersistedInbuiltModState(manager, ModIds.MORE_BUTTONS);
         restorePersistedInbuiltModState(manager, ModIds.HOTBAR_SLOT);
-        restorePersistedInbuiltModState(manager, ModIds.HIT_REGISTRATION);
+        restorePersistedInbuiltModState(manager, ModIds.AIM_SETTINGS);
 
         modMenuButton = new ModMenuButton(activity);
         modMenuButton.show(START_X, nextY);
@@ -135,9 +135,9 @@ public class InbuiltOverlayManager {
         }
     }
 
-    public void flashHitRegistration() {
-        if (hitRegistrationOverlay != null && HitRegistrationMod.isFlashEnabled()) {
-            hitRegistrationOverlay.flash();
+    public void flashAimFeedback() {
+        if (aimSettingsOverlay != null && AimSettingsMod.isFlashEnabled()) {
+            aimSettingsOverlay.flash();
         }
     }
 
@@ -252,20 +252,20 @@ public class InbuiltOverlayManager {
                 PojavControls.setLowLatencyMode(
                         org.chimeramc.launcher.settings.FeatureSettings.getInstance().isLowInputDelayEnabled());
                 break;
-            case ModIds.HIT_REGISTRATION:
-                if (hitRegistrationOverlay == null) {
-                    hitRegistrationOverlay = new HitRegistrationOverlay(activity);
+            case ModIds.AIM_SETTINGS:
+                if (aimSettingsOverlay == null) {
+                    aimSettingsOverlay = new AimSettingsOverlay(activity);
                 }
-                hitRegistrationOverlay.show();
-                HitRegistrationMod.setEnabled(true, InbuiltModManager.getInstance(activity));
+                aimSettingsOverlay.show();
+                AimSettingsMod.setEnabled(true, InbuiltModManager.getInstance(activity));
                 break;
         }
     }
 
     private void hideModOverlay(String modId) {
-        if (modId.equals(ModIds.HIT_REGISTRATION)) {
-            if (hitRegistrationOverlay != null) hitRegistrationOverlay.hide();
-            HitRegistrationMod.setEnabled(false, null);
+        if (modId.equals(ModIds.AIM_SETTINGS)) {
+            if (aimSettingsOverlay != null) aimSettingsOverlay.hide();
+            AimSettingsMod.setEnabled(false, null);
             return;
         }
         if (modId.equals(ModIds.HOTBAR_SLOT)) {

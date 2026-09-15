@@ -2,6 +2,7 @@ package org.chimeramc.launcher.core.mods.inbuilt;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -40,9 +41,12 @@ public final class InbuiltModuleProvider {
     private static final String CFG_HOTBAR_SLOT_ENABLED = "enabled";
     private static final String CFG_HOTBAR_SLOT_SIZE = "size";
     private static final String CFG_HOTBAR_SLOT_OPACITY = "opacity";
-    private static final String CFG_HITREG_SMOOTHING = "hitreg_smoothing";
-    private static final String CFG_HITREG_CROSSHAIR = "hitreg_crosshair";
-    private static final String CFG_HITREG_FLASH = "hitreg_flash";
+    private static final String CFG_AIM_SMOOTHING = "aim_smoothing";
+    private static final String CFG_AIM_CROSSHAIR = "aim_crosshair";
+    private static final String CFG_AIM_FLASH = "aim_flash";
+    private static final String CFG_AIM_SENSITIVITY = "aim_sensitivity";
+    private static final String CFG_AIM_CROSSHAIR_STYLE = "aim_crosshair_style";
+    private static final String CFG_AIM_CROSSHAIR_COLOR = "aim_crosshair_color";
 
     private InbuiltModuleProvider() {
     }
@@ -95,8 +99,8 @@ public final class InbuiltModuleProvider {
         mods.add(create(activity, manager, overlayManager, ModIds.HOTBAR_SLOT,
                 R.string.inbuilt_mod_hotbar_slot, R.string.inbuilt_mod_hotbar_slot_desc,
                 groupName));
-        mods.add(create(activity, manager, overlayManager, ModIds.HIT_REGISTRATION,
-                R.string.inbuilt_mod_hit_registration, R.string.inbuilt_mod_hit_registration_desc,
+        mods.add(create(activity, manager, overlayManager, ModIds.AIM_SETTINGS,
+                R.string.inbuilt_mod_aim_settings, R.string.inbuilt_mod_aim_settings_desc,
                 groupName));
 
         return mods;
@@ -310,22 +314,41 @@ public final class InbuiltModuleProvider {
                     UnifiedMod.ConfigType.SLIDER_INT,
                     "5", "0", "50",
                     String.valueOf(manager.getGyroDeadzone())));
-        } else if (ModIds.HIT_REGISTRATION.equals(modId)) {
-            configs.add(config(CFG_HITREG_SMOOTHING,
-                    context.getString(R.string.mod_config_hitreg_smoothing),
+        } else if (ModIds.AIM_SETTINGS.equals(modId)) {
+            configs.add(config(CFG_AIM_SENSITIVITY,
+                    context.getString(R.string.mod_config_aim_sensitivity),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "100", "10", "300",
+                    String.valueOf(manager.getAimSensitivity())));
+            configs.add(config(CFG_AIM_SMOOTHING,
+                    context.getString(R.string.mod_config_aim_smoothing),
                     UnifiedMod.ConfigType.SLIDER_INT,
                     "40", "0", "95",
-                    String.valueOf(manager.getHitregSmoothing())));
-            configs.add(config(CFG_HITREG_CROSSHAIR,
-                    context.getString(R.string.mod_config_hitreg_crosshair),
+                    String.valueOf(manager.getAimSmoothing())));
+            configs.add(config(CFG_AIM_CROSSHAIR,
+                    context.getString(R.string.mod_config_aim_crosshair),
                     UnifiedMod.ConfigType.TOGGLE,
                     "true", "", "",
-                    String.valueOf(manager.isHitregCrosshairEnabled())));
-            configs.add(config(CFG_HITREG_FLASH,
-                    context.getString(R.string.mod_config_hitreg_flash),
+                    String.valueOf(manager.isAimCrosshairEnabled())));
+            configs.add(config(CFG_AIM_CROSSHAIR_STYLE,
+                    context.getString(R.string.aim_crosshair_style),
+                    UnifiedMod.ConfigType.RADIO,
+                    "1",
+                    context.getString(R.string.aim_crosshair_style_dot) + ","
+                            + context.getString(R.string.aim_crosshair_style_cross) + ","
+                            + context.getString(R.string.aim_crosshair_style_circle),
+                    "",
+                    String.valueOf(manager.getAimCrosshairStyle())));
+            configs.add(config(CFG_AIM_CROSSHAIR_COLOR,
+                    context.getString(R.string.aim_crosshair_color),
+                    UnifiedMod.ConfigType.COLOR,
+                    "#FF3DDC84", "", "",
+                    colorToHex(manager.getAimCrosshairColor())));
+            configs.add(config(CFG_AIM_FLASH,
+                    context.getString(R.string.mod_config_aim_flash),
                     UnifiedMod.ConfigType.TOGGLE,
                     "true", "", "",
-                    String.valueOf(manager.isHitregFlashEnabled())));
+                    String.valueOf(manager.isAimFlashEnabled())));
         }
         return configs;
     }
@@ -409,20 +432,33 @@ public final class InbuiltModuleProvider {
             case CFG_HOTBAR_ITEM_ICONS:
                 manager.setHotbarItemIconsEnabled(parseBoolean(value));
                 break;
-            case CFG_HITREG_SMOOTHING:
-                manager.setHitregSmoothing(parseInt(value, manager.getHitregSmoothing()));
+            case CFG_AIM_SMOOTHING:
+                manager.setAimSmoothing(parseInt(value, manager.getAimSmoothing()));
                 break;
-            case CFG_HITREG_CROSSHAIR:
-                manager.setHitregCrosshairEnabled(parseBoolean(value));
+            case CFG_AIM_SENSITIVITY:
+                manager.setAimSensitivity(parseInt(value, manager.getAimSensitivity()));
                 break;
-            case CFG_HITREG_FLASH:
-                manager.setHitregFlashEnabled(parseBoolean(value));
+            case CFG_AIM_CROSSHAIR:
+                manager.setAimCrosshairEnabled(parseBoolean(value));
+                break;
+            case CFG_AIM_CROSSHAIR_STYLE:
+                manager.setAimCrosshairStyle(parseInt(value, manager.getAimCrosshairStyle()));
+                break;
+            case CFG_AIM_CROSSHAIR_COLOR: {
+                try {
+                    manager.setAimCrosshairColor(Color.parseColor(value));
+                } catch (Exception ignored) {
+                }
+                break;
+            }
+            case CFG_AIM_FLASH:
+                manager.setAimFlashEnabled(parseBoolean(value));
                 break;
             default:
                 break;
         }
-        if (ModIds.HIT_REGISTRATION.equals(mod.getId())) {
-            org.chimeramc.launcher.core.mods.inbuilt.overlay.HitRegistrationMod.onConfigChanged(manager);
+        if (ModIds.AIM_SETTINGS.equals(mod.getId())) {
+            org.chimeramc.launcher.core.mods.inbuilt.overlay.AimSettingsMod.onConfigChanged(manager);
         }
     }
 
@@ -455,5 +491,9 @@ public final class InbuiltModuleProvider {
 
     private static boolean parseBoolean(String value) {
         return "true".equalsIgnoreCase(value) || "1".equals(value);
+    }
+
+    private static String colorToHex(int color) {
+        return String.format(java.util.Locale.US, "#%08X", color);
     }
 }

@@ -20,7 +20,7 @@ import org.chimeramc.launcher.util.PersonalizationManager;
  * Drawn as a lightweight full-window overlay (non-touchable) so it can animate on the
  * same UI thread as the rest of the game overlay without stealing input.
  */
-public class HitRegistrationOverlay {
+public class AimSettingsOverlay {
     private final Activity activity;
     private final WindowManager windowManager;
     private final Handler handler = new Handler(Looper.getMainLooper());
@@ -30,7 +30,7 @@ public class HitRegistrationOverlay {
     private boolean showing;
     private volatile long lastFlashAt;
 
-    public HitRegistrationOverlay(Activity activity) {
+    public AimSettingsOverlay(Activity activity) {
         this.activity = activity;
         this.windowManager = (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
     }
@@ -119,24 +119,41 @@ public class HitRegistrationOverlay {
         @Override
         protected void onDraw(Canvas canvas) {
             super.onDraw(canvas);
-            if (!HitRegistrationMod.isCrosshairEnabled() && flashStrength <= 0f) return;
+            boolean showReticle = AimSettingsMod.isCrosshairEnabled();
+            if (!showReticle && flashStrength <= 0f) return;
             float cx = getWidth() / 2f;
             float cy = getHeight() / 2f;
-            float gap = 9f * density;
-            float arm = 7f * density;
+            int color = AimSettingsMod.getCrosshairColor();
 
-            if (HitRegistrationMod.isCrosshairEnabled()) {
-                reticle.setColor(Color.WHITE);
+            if (showReticle) {
+                reticle.setColor(color);
                 reticle.setAlpha(230);
-                canvas.drawRect(cx - arm, cy - 1.2f * density, cx - gap + 2f * density, cy + 1.2f * density, reticle);
-                canvas.drawRect(cx + gap - 2f * density, cy - 1.2f * density, cx + arm, cy + 1.2f * density, reticle);
-                canvas.drawRect(cx - 1.2f * density, cy - arm, cx + 1.2f * density, cy - gap + 2f * density, reticle);
-                canvas.drawRect(cx - 1.2f * density, cy + gap - 2f * density, cx + 1.2f * density, cy + arm, reticle);
-                canvas.drawCircle(cx, cy, 2.4f * density, reticle);
-
-                ring.setColor(Color.WHITE);
-                ring.setAlpha(120);
-                canvas.drawCircle(cx, cy, 22f * density, ring);
+                switch (AimSettingsMod.getCrosshairStyle()) {
+                    case AimSettingsMod.STYLE_DOT:
+                        canvas.drawCircle(cx, cy, 3.2f * density, reticle);
+                        break;
+                    case AimSettingsMod.STYLE_CIRCLE:
+                        ring.setColor(color);
+                        ring.setAlpha(230);
+                        ring.setStyle(Paint.Style.STROKE);
+                        canvas.drawCircle(cx, cy, 14f * density, ring);
+                        canvas.drawCircle(cx, cy, 2f * density, reticle);
+                        break;
+                    case AimSettingsMod.STYLE_CROSS:
+                    default:
+                        float gap = 9f * density;
+                        float arm = 7f * density;
+                        canvas.drawRect(cx - arm, cy - 1.2f * density, cx - gap + 2f * density, cy + 1.2f * density, reticle);
+                        canvas.drawRect(cx + gap - 2f * density, cy - 1.2f * density, cx + arm, cy + 1.2f * density, reticle);
+                        canvas.drawRect(cx - 1.2f * density, cy - arm, cx + 1.2f * density, cy - gap + 2f * density, reticle);
+                        canvas.drawRect(cx - 1.2f * density, cy + gap - 2f * density, cx + 1.2f * density, cy + arm, reticle);
+                        canvas.drawCircle(cx, cy, 2.4f * density, reticle);
+                        ring.setColor(color);
+                        ring.setAlpha(120);
+                        ring.setStyle(Paint.Style.STROKE);
+                        canvas.drawCircle(cx, cy, 22f * density, ring);
+                        break;
+                }
             }
 
             if (flashStrength > 0f) {
@@ -152,9 +169,11 @@ public class HitRegistrationOverlay {
         }
 
         private int flashAccent() {
+            int accent = AimSettingsMod.getCrosshairColor();
+            if (accent != 0) return accent;
             try {
-                int accent = new PersonalizationManager(activity).getAccentColor();
-                if (accent != 0) return accent;
+                int themed = new PersonalizationManager(activity).getAccentColor();
+                if (themed != 0) return themed;
             } catch (Throwable ignored) {
             }
             return 0xFF4AE0A0;
