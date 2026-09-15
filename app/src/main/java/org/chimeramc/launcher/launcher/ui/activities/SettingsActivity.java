@@ -331,6 +331,38 @@ public class SettingsActivity extends BaseActivity {
                 LowLatencyNetworkManager.prefetchDnsOnBackground();
             }
         });
+
+        setupCurseForgeKeyRow();
+    }
+
+    private void setupCurseForgeKeyRow() {
+        TextView status = findViewById(R.id.curseforge_api_key_status);
+        com.google.android.material.button.MaterialButton button = findViewById(R.id.btn_curseforge_api_key);
+        if (status == null || button == null) return;
+        refreshCurseForgeKeyRow(status, button);
+
+        View.OnClickListener open = v -> org.chimeramc.launcher.core.curseforge.CurseForgeKeyDialog.show(
+                this, () -> refreshCurseForgeKeyRow(status, button));
+        button.setOnClickListener(open);
+        status.setOnClickListener(open);
+    }
+
+    private void refreshCurseForgeKeyRow(TextView status,
+                                         com.google.android.material.button.MaterialButton button) {
+        String key = org.chimeramc.launcher.core.curseforge.CurseForgeKeyStore.getApiKey(this);
+        if (key.isEmpty()) {
+            status.setText(R.string.curseforge_api_key_not_set);
+            button.setText(R.string.curseforge_api_key_set);
+        } else {
+            status.setText(getString(R.string.curseforge_api_key_configured, maskKey(key)));
+            button.setText(R.string.curseforge_api_key_change);
+        }
+    }
+
+    /** Shows enough of the key to tell two of them apart without exposing it. */
+    private static String maskKey(String key) {
+        if (key.length() <= 8) return "\u2026";
+        return key.substring(0, 4) + "\u2026" + key.substring(key.length() - 4);
     }
 
     private void setupPersonalizeSection() {

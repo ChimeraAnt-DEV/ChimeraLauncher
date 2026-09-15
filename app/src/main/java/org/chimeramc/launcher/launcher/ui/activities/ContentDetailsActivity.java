@@ -81,7 +81,7 @@ public class ContentDetailsActivity extends BaseActivity {
 
         contentImporter = new ContentImporter(this);
         versionManager = VersionManager.get(this);
-        client = CurseForgeClient.getInstance();
+        client = CurseForgeClient.getInstance(this);
         
     initViews();
         initWebView();
@@ -265,6 +265,11 @@ public class ContentDetailsActivity extends BaseActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     btnInstall.setEnabled(true);
+                    if (t instanceof CurseForgeClient.MissingApiKeyException) {
+                        org.chimeramc.launcher.core.curseforge.CurseForgeKeyDialog.show(
+                                ContentDetailsActivity.this, ContentDetailsActivity.this::loadAllFiles);
+                        return;
+                    }
                     Toast.makeText(ContentDetailsActivity.this, getString(R.string.failed_to_load_files, t.getMessage()), Toast.LENGTH_SHORT).show();
                 });
             }

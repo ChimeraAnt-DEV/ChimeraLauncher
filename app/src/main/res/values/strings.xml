@@ -895,6 +895,17 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="curseforge_downloading">Downloading…</string>
     <string name="curseforge_importing">Importing…</string>
     <string name="curseforge_download_failed">Download failed</string>
+    <string name="curseforge_api_key_title">CurseForge API key</string>
+    <string name="curseforge_api_key_required_title">CurseForge needs an API key</string>
+    <string name="curseforge_api_key_required_message">CurseForge does not allow anonymous requests. Get a free key from console.curseforge.com and paste it here. The key is stored on this device only.</string>
+    <string name="curseforge_api_key_hint">Paste your API key</string>
+    <string name="curseforge_api_key_saved">API key saved</string>
+    <string name="curseforge_api_key_invalid">That did not look like a key</string>
+    <string name="curseforge_open_console">Get a key</string>
+    <string name="curseforge_api_key_set">Set key</string>
+    <string name="curseforge_api_key_change">Change</string>
+    <string name="curseforge_api_key_not_set">No key configured - CurseForge browsing is disabled</string>
+    <string name="curseforge_api_key_configured">Configured (%1$s)</string>
     <string name="curseforge_available_files">Available Files</string>
 
     <!-- Navigation Bar -->
