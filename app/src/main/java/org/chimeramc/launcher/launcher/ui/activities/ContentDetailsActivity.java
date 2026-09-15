@@ -34,6 +34,7 @@ import org.chimeramc.launcher.core.versions.GameVersion;
 import org.chimeramc.launcher.core.versions.VersionManager;
 import org.chimeramc.launcher.settings.FeatureSettings;
 import org.chimeramc.launcher.util.LauncherStorage;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 
 
@@ -72,6 +73,7 @@ public class ContentDetailsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_content_details);
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
 
         content = (Content) getIntent().getSerializableExtra(EXTRA_CONTENT);
         if (content == null) {

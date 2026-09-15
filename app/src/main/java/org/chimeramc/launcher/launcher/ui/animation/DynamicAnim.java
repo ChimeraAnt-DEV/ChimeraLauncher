@@ -5,6 +5,7 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.Context;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewConfiguration;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateInterpolator;
 import android.view.animation.PathInterpolator;
@@ -14,6 +15,8 @@ import androidx.annotation.Nullable;
 import androidx.dynamicanimation.animation.DynamicAnimation;
 import androidx.dynamicanimation.animation.SpringAnimation;
 import androidx.dynamicanimation.animation.SpringForce;
+
+import org.chimeramc.launcher.R;
 
 public final class DynamicAnim {
     private DynamicAnim() {}
@@ -82,39 +85,130 @@ public final class DynamicAnim {
         return anim;
     }
 
+    /** View tag marking a view that already carries the press listener. */
+    private static final int KEY_PRESS_STATE = R.id.dynamic_anim_press_state;
+
+    private static final float PRESS_SCALE = 0.955f;
+    private static final float PRESS_Z_DP = 6f;
+
     /**
-     * Apply press-scale + elevation + haptic feedback to a view. Does not consume
-     * touch, keeping click works. Skipped entirely when animations are disabled.
-     * Press-down uses a velocity-following spring (velocity set to 1/down) so
-     * touch feels immediate instead of waiting for the spring to pick up speed.
+     * Per-view press state. The two springs are built once and re-targeted on every
+     * touch, so scrolling a long list does not allocate a SpringAnimation per event.
      */
-    public static void applyPressScale(View view) {
+    private static final class PressState {
+        final SpringAnimation scaleX;
+        final SpringAnimation scaleY;
+        final View.OnTouchListener delegate;
+        final int touchSlop;
+        float downX;
+        float downY;
+        boolean dragging;
+        boolean pressed;
+
+        PressState(View view, View.OnTouchListener delegate) {
+            this.delegate = delegate;
+            this.touchSlop = ViewConfiguration.get(view.getContext()).getScaledTouchSlop();
+            scaleX = new SpringAnimation(view, DynamicAnimation.SCALE_X, 1f);
+            scaleY = new SpringAnimation(view, DynamicAnimation.SCALE_Y, 1f);
+            SpringForce force = new SpringForce(1f)
+                    .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY)
+                    .setStiffness(SpringForce.STIFFNESS_HIGH);
+            scaleX.setSpring(force);
+            // Separate SpringForce instances: a SpringForce cannot be shared between
+            // two animations, it holds the animation's own state.
+            scaleY.setSpring(new SpringForce(1f)
+                    .setDampingRatio(SpringForce.DAMPING_RATIO_NO_BOUNCY)
+                    .setStiffness(SpringForce.STIFFNESS_HIGH));
+        }
+
+        void press() {
+            pressed = true;
+            dragging = false;
+            // Velocity must be set before re-targeting: animateToFinalPosition starts
+            // the animation immediately, so a velocity applied afterwards is dropped.
+            scaleX.setStartVelocity(-1.5f);
+            scaleY.setStartVelocity(-1.5f);
+            scaleX.animateToFinalPosition(PRESS_SCALE);
+            scaleY.animateToFinalPosition(PRESS_SCALE);
+        }
+
+        void release() {
+            if (!pressed) return;
+            pressed = false;
+            scaleX.setStartVelocity(1.5f);
+            scaleY.setStartVelocity(1.5f);
+            scaleX.animateToFinalPosition(1f);
+            scaleY.animateToFinalPosition(1f);
+        }
+
+        /** Drop the pressed look immediately, e.g. once the gesture became a scroll. */
+        void snapBack(View view) {
+            if (!pressed) return;
+            pressed = false;
+            scaleX.cancel();
+            scaleY.cancel();
+            view.setScaleX(1f);
+            view.setScaleY(1f);
+        }
+    }
+
+    /**
+     * Apply press-scale + elevation + haptic feedback to a view.
+     *
+     * The listener never consumes the event, so click handling still runs. Pass
+     * {@code delegate} when the view needs its own touch listener; it is invoked after
+     * the press effect and its return value is honoured. Installing press feedback with
+     * {@code setOnTouchListener} would otherwise silently replace that listener — for a
+     * RecyclerView drag handle that means drag-to-reorder stops working with no error.
+     */
+    public static void applyPressScale(View view, @Nullable View.OnTouchListener delegate) {
         if (view == null) return;
+        if (view.getTag(KEY_PRESS_STATE) != null) return;
+
         view.setClickable(true);
+        final PressState state = new PressState(view, delegate);
+        view.setTag(KEY_PRESS_STATE, state);
+
         view.setOnTouchListener((v, event) -> {
-            if (!animationsEnabled) return false;
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN: {
-                    SpringAnimation sx = springScaleXTo(v, 0.955f);
-                    SpringAnimation sy = springScaleYTo(v, 0.955f);
-                    sx.setStartVelocity(1.2f);
-                    sy.setStartVelocity(1.2f);
-                    sx.start();
-                    sy.start();
-                    animateElevation(v, 6f, 8f);
-                    UiTouchFeedback.pressView(v);
-                    break;
-                }
-                case MotionEvent.ACTION_UP:
-                case MotionEvent.ACTION_CANCEL: {
-                    springScaleXTo(v, 1f).start();
-                    springScaleYTo(v, 1f).start();
-                    animateElevation(v, 0f, 8f);
-                    break;
+            if (animationsEnabled) {
+                switch (event.getActionMasked()) {
+                    case MotionEvent.ACTION_DOWN:
+                        state.downX = event.getX();
+                        state.downY = event.getY();
+                        state.press();
+                        animateElevation(v, PRESS_Z_DP, 8f);
+                        UiTouchFeedback.pressView(v);
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        // Once the finger travels past touch slop the gesture belongs to
+                        // an enclosing scroll view; un-shrink so rows do not stay dimmed.
+                        if (!state.dragging
+                                && Math.hypot(event.getX() - state.downX,
+                                event.getY() - state.downY) > state.touchSlop) {
+                            state.dragging = true;
+                            state.snapBack(v);
+                            animateElevation(v, 0f, 8f);
+                        }
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        state.release();
+                        animateElevation(v, 0f, 8f);
+                        break;
+                    default:
+                        break;
                 }
             }
-            return false;
+            return state.delegate != null && state.delegate.onTouch(v, event);
         });
+    }
+
+    /**
+     * Apply press feedback to a view that manages its own click, not its own touch.
+     * Callers that need a touch listener must use the two-argument overload.
+     */
+    public static void applyPressScale(View view) {
+        applyPressScale(view, null);
     }
 
     private static void animateElevation(View view, float target, float durationMs) {

@@ -34,6 +34,7 @@ import org.chimeramc.launcher.core.curseforge.models.Content;
 import org.chimeramc.launcher.core.curseforge.models.ContentSearchResponse;
 import org.chimeramc.launcher.ui.adapter.CurseForgeContentAdapter;
 import org.chimeramc.launcher.util.UIHelper;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -82,6 +83,7 @@ public class CurseForgeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_curseforge);
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
 
         client = CurseForgeClient.getInstance(this);
 

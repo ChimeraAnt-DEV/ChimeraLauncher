@@ -18,6 +18,7 @@ import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.core.content.FlatWorldGenerator;
 import org.chimeramc.launcher.core.content.FlatWorldGenerator.BlockLayer;
 import org.chimeramc.launcher.databinding.ActivityCustomFlatWorldBinding;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ public class CustomFlatWorldActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         binding = ActivityCustomFlatWorldBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
 
         executor = Executors.newSingleThreadExecutor();
 

@@ -17,6 +17,7 @@ import org.chimeramc.launcher.launcher.controller.ControllerProfileManager;
 import org.chimeramc.launcher.launcher.controller.ControllerType;
 import org.chimeramc.launcher.ui.dialogs.CustomAlertDialog;
 import org.chimeramc.launcher.ui.views.ControllerIllustrationView;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +54,7 @@ public class ControllerActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controller);
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
         setupNavBar();
 
         org.chimeramc.launcher.util.PersonalizationManager pm = new org.chimeramc.launcher.util.PersonalizationManager(this);

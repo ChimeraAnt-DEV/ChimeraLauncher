@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Stable view-tag keys. Used with View.setTag(int, Object) so that state cached on a
+    view (press-animation springs, attached-listener markers) survives RecyclerView
+    recycling without colliding with any resource id.
+-->
+<resources>
+    <item name="dynamic_anim_press_state" type="id" />
+</resources>

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.ui.adapter.QuickLaunchAdapter;
 import org.chimeramc.launcher.util.MinecraftUriHandler;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +31,7 @@ public class QuickLaunchActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_quick_launch);
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
 
         setupViews();
         loadQuickActions();
