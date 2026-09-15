@@ -341,7 +341,9 @@ public class ContentDetailsActivity extends BaseActivity {
                 File cacheDir = getCacheDir();
                 File outputFile = new File(cacheDir, file.fileName);
                 
-                OkHttpClient client = new OkHttpClient();
+                OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+                org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(clientBuilder);
+                OkHttpClient client = clientBuilder.build();
                 Request request = new Request.Builder().url(file.downloadUrl).build();
                 
                 try (Response response = client.newCall(request).execute()) {

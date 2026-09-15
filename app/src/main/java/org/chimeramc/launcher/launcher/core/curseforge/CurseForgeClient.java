@@ -35,11 +35,12 @@ public class CurseForgeClient {
     private static CurseForgeClient instance;
 
     private CurseForgeClient() {
-        this.client = new OkHttpClient.Builder()
+        OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(30, TimeUnit.SECONDS)
                 .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
-                .build();
+                .writeTimeout(30, TimeUnit.SECONDS);
+        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(builder);
+        this.client = builder.build();
         this.gson = new Gson();
     }
 

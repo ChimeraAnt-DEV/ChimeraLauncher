@@ -2,8 +2,10 @@ package org.chimeramc.launcher.settings;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.os.Build;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.Arrays;
@@ -20,7 +22,12 @@ import javax.net.SocketFactory;
  * promises "lowest ping"). What this actually does:
  *  - Disables Nagle's algorithm (TCP_NODELAY) on sockets created through {@link #createSocketFactory()},
  *    which are the launcher's own news/update HTTP connections.
- *  - Warm DNS lookups for known launcher endpoints so their IPs are cached before a session starts.
+ *  - Enables TCP Quick ACK where the kernel exposes it, delACK is the dominant source of
+ *    added latency for small request/response HTTP exchanges like news polling.
+ *  - Sizes send/receive buffers smaller for interactive traffic; oversized buffers delay
+ *    ACK coalescing and inflate per-packet round trips on mobile radios.
+ *  - Warm DNS lookups for known launcher endpoints (and common Bedrock realms) so their
+ *    IPs are cached before a session starts.
  *  - Marks the start/end of an active game session so automatic, non-essential background
  *    network callers (news polls, update checks) can be paused during gameplay.
  */
@@ -32,8 +39,18 @@ public final class LowLatencyNetworkManager {
             "raw.githubusercontent.com",
             "api.github.com",
             "api.curseforge.com",
-            "www.googleapis.com"
+            "www.googleapis.com",
+            // Common Bedrock multiplayer endpoints. Resolving these ahead of time avoids
+            // a DNS lookup on the first join, which is some of the worst "ping" a player
+            // sees on a fresh server connect.
+            "geo.hivebedrock.network",
+            "play.lbsg.net",
+            "mco.cubecraft.net",
+            "play.inpvp.net",
+            "play.nethergames.org"
     );
+
+    private static final int SOCKET_BUFFER_SIZE = 256 * 1024;
 
     private static final ExecutorService DNS_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -51,6 +68,18 @@ public final class LowLatencyNetworkManager {
     public static boolean isEnabled() {
         FeatureSettings fs = FeatureSettings.getInstance();
         return fs != null && fs.isReduceNetworkLatencyEnabled();
+    }
+
+    /**
+     * Wires this manager's low-latency socket factory into an OkHttpClient.Builder.
+     * Call this on any client used for launcher-owned network traffic so those
+     * connections inherit TCP_NODELAY / Quick ACK / interactive buffer sizing when
+     * the "Reduce Network Latency" toggle is on. No-op (default sockets) when off.
+     */
+    public static void configure(okhttp3.OkHttpClient.Builder builder) {
+        if (isEnabled()) {
+            builder.socketFactory(createSocketFactory());
+        }
     }
 
     public static SocketFactory createSocketFactory() {
@@ -89,9 +118,56 @@ public final class LowLatencyNetworkManager {
                     socket.setTcpNoDelay(true);
                 } catch (IOException ignored) {
                 }
+                enableQuickAck(socket);
+                try {
+                    // Smaller buffers keep ACKs tight for interactive request/response
+                    // traffic. netPathMtu is the mobile egress MTU; buffer a handful of
+                    // frames, not megabytes.
+                    socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
+                    socket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
+                } catch (IOException ignored) {
+                }
                 return socket;
             }
         };
+    }
+
+    /**
+     * Enables TCP_QUICKACK (12) on the socket's fd where the kernel exposes it.
+     * Quick ACK makes the stack ACK data immediately instead of waiting up to
+     * 40ms (delACK_TICK) for batching. Uses reflection to reach
+     * android.system.Os.setsockoptInt; on sealed/absent surfaces this simply
+     * no-ops, leaving the plain TCP_NODELAY socket functional.
+     */
+    private static void enableQuickAck(Socket socket) {
+        if (socket == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) return;
+        try {
+            Object fd = callGetter(callGetter(socket, "getImpl"), "getFileDescriptor");
+            if (fd instanceof java.io.FileDescriptor) {
+                java.io.FileDescriptor fdesc = (java.io.FileDescriptor) fd;
+                Class<?> osClass = Class.forName("android.system.Os");
+                Method setsockopt = osClass.getDeclaredMethod("setsockoptInt",
+                        java.io.FileDescriptor.class, int.class, int.class, int.class);
+                setsockopt.invoke(null, fdesc, 6 /* SOL_TCP */, 12 /* TCP_QUICKACK */, 1);
+            }
+        } catch (Throwable ignored) {
+        }
+    }
+
+    private static Object callGetter(Object target, String name) {
+        if (target == null) return null;
+        try {
+            for (Class<?> c = target.getClass(); c != null; c = c.getSuperclass()) {
+                try {
+                    Method m = c.getDeclaredMethod(name);
+                    m.setAccessible(true);
+                    return m.invoke(target);
+                } catch (NoSuchMethodException ignored) {
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return null;
     }
 
     public static void prefetchDnsOnBackground() {

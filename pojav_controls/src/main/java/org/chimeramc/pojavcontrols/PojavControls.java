@@ -43,6 +43,9 @@ public final class PojavControls {
 
     public static void setLowLatencyMode(boolean enabled) {
         lowLatencyMode = enabled;
+        if (overlay != null) {
+            overlay.onLowLatencyModeChanged();
+        }
     }
 
     public static boolean isLowLatencyMode() {

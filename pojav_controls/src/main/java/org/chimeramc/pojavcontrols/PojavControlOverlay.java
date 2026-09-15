@@ -41,6 +41,10 @@ final class PojavControlOverlay extends ViewGroup {
     private boolean virtualTouchDown;
     private long virtualTouchDownAt;
     private boolean receiverRegistered;
+    private boolean menuStateScheduled;
+    private boolean lastMenuOpen;
+
+    private static final long MENU_STATE_CHECK_INTERVAL_MS = 500L;
 
     private final BroadcastReceiver profileReceiver = new BroadcastReceiver() {
         @Override
@@ -63,6 +67,63 @@ final class PojavControlOverlay extends ViewGroup {
         setFocusable(false);
         registerProfileReceiver();
         reloadProfile();
+        lastMenuOpen = host.pojavIsMenuOpen();
+    }
+
+    /**
+     * Native menu-state transitions (PauseMenuOpen/Close, HudScreenOpen/Close) are
+     * driven from the game thread and arrive with no Java callback. The default overlay
+     * compensates with a 4fps wall-clock redraw; in low-latency mode that GPU poll is
+     * replaced by a near-free flag check (one JNI read, no draw) that only repaints
+     * when the real menu state actually flips.
+     */
+    private final Runnable menuStateChecker = new Runnable() {
+        @Override
+        public void run() {
+            menuStateScheduled = false;
+            if (getParent() == null) return;
+            boolean current = host.pojavIsMenuOpen();
+            if (current != lastMenuOpen) {
+                lastMenuOpen = current;
+                updateVisibility();
+                invalidate();
+            }
+            if (PojavControls.isLowLatencyMode() && getParent() != null) {
+                scheduleMenuStateCheck();
+            }
+        }
+    };
+
+    private void scheduleMenuStateCheck() {
+        if (menuStateScheduled || getParent() == null) return;
+        menuStateScheduled = true;
+        postDelayed(menuStateChecker, MENU_STATE_CHECK_INTERVAL_MS);
+    }
+
+    private void unscheduleMenuStateCheck() {
+        menuStateScheduled = false;
+        removeCallbacks(menuStateChecker);
+    }
+
+    /** Cheapest possible per-touch check; updates visibility instantly on menu flips. */
+    private void checkMenuStateOnTouch() {
+        boolean current = host.pojavIsMenuOpen();
+        if (current != lastMenuOpen) {
+            lastMenuOpen = current;
+            updateVisibility();
+            invalidate();
+        }
+    }
+
+    /** Called by {@link PojavControls#setLowLatencyMode(boolean)} when the toggle flips. */
+    void onLowLatencyModeChanged() {
+        lastMenuOpen = host.pojavIsMenuOpen();
+        if (PojavControls.isLowLatencyMode()) {
+            scheduleMenuStateCheck();
+        } else {
+            unscheduleMenuStateCheck();
+            invalidate();
+        }
     }
 
     void reloadProfile() {
@@ -76,7 +137,7 @@ final class PojavControlOverlay extends ViewGroup {
         addView(runtimeSurface);
         for (ControlData data : profile.mControlDataList) addRuntimeButton(data);
         for (ControlJoystickData data : profile.mJoystickDataList) {
-            RuntimeJoystick joystick = new RuntimeJoystick(getContext(), data, host);
+            RuntimeJoystick joystick = new RuntimeJoystick(this, getContext(), data, host);
             joysticks.add(joystick);
             addView(joystick);
         }
@@ -97,6 +158,7 @@ final class PojavControlOverlay extends ViewGroup {
 
     void dispose() {
         releaseAll();
+        unscheduleMenuStateCheck();
         if (receiverRegistered) {
             try {
                 activity.unregisterReceiver(profileReceiver);
@@ -171,7 +233,12 @@ final class PojavControlOverlay extends ViewGroup {
     protected void dispatchDraw(Canvas canvas) {
         updateVisibility();
         super.dispatchDraw(canvas);
-        if (!PojavControls.isLowLatencyMode()) {
+        if (PojavControls.isLowLatencyMode()) {
+            // One lightweight state flag per poll instead of a full GPU redraw every
+            // 250ms. Redraws only happen on real menu transitions; input-to-game stays
+            // synchronous and untouched.
+            scheduleMenuStateCheck();
+        } else {
             postInvalidateDelayed(250);
         }
     }
@@ -239,6 +306,7 @@ final class PojavControlOverlay extends ViewGroup {
         public boolean onTouchEvent(MotionEvent event) {
             int action = event.getActionMasked();
             int actionIndex = event.getActionIndex();
+            checkMenuStateOnTouch();
             if (!virtualMouse) {
                 host.pojavSendTouch(event);
                 if (action == MotionEvent.ACTION_UP || action == MotionEvent.ACTION_CANCEL) release();
@@ -325,13 +393,13 @@ final class PojavControlOverlay extends ViewGroup {
     }
 
     private void addRuntimeButton(ControlData data) {
-        RuntimeButton button = new RuntimeButton(getContext(), data, host, this::handleSpecialAction);
+        RuntimeButton button = new RuntimeButton(this, getContext(), data, host, this::handleSpecialAction);
         buttons.add(button);
         addView(button);
     }
 
     private void addDrawer(ControlDrawerData data) {
-        RuntimeButton pull = new RuntimeButton(getContext(), data.properties, host, this::handleSpecialAction);
+        RuntimeButton pull = new RuntimeButton(this, getContext(), data.properties, host, this::handleSpecialAction);
         DrawerRuntime runtime = new DrawerRuntime(data, pull);
         pull.setOnClickListener(view -> {
             runtime.open = !runtime.open;
@@ -340,7 +408,7 @@ final class PojavControlOverlay extends ViewGroup {
         buttons.add(pull);
         addView(pull);
         for (int i = 0; i < data.buttonProperties.size(); i++) {
-            RuntimeButton button = new RuntimeButton(getContext(), data.buttonProperties.get(i), host,
+            RuntimeButton button = new RuntimeButton(this, getContext(), data.buttonProperties.get(i), host,
                     this::handleSpecialAction);
             runtime.children.add(button);
             buttons.add(button);
@@ -505,6 +573,7 @@ final class PojavControlOverlay extends ViewGroup {
 
     private static final class RuntimeButton extends TextView {
         final ControlData data;
+        private final PojavControlOverlay overlay;
         private final PojavControlsHost host;
         private final SpecialActionHandler specialHandler;
         private boolean pressed;
@@ -516,9 +585,10 @@ final class PojavControlOverlay extends ViewGroup {
         private float passThroughX;
         private float passThroughY;
 
-        RuntimeButton(Context context, ControlData data, PojavControlsHost host,
+        RuntimeButton(PojavControlOverlay overlay, Context context, ControlData data, PojavControlsHost host,
                       SpecialActionHandler specialHandler) {
             super(context);
+            this.overlay = overlay;
             this.data = data;
             this.host = host;
             this.specialHandler = specialHandler;
@@ -539,6 +609,7 @@ final class PojavControlOverlay extends ViewGroup {
         @Override
         public boolean onTouchEvent(MotionEvent event) {
             int action = event.getActionMasked();
+            overlay.checkMenuStateOnTouch();
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 outside = false;
                 passThroughX = event.getX();
@@ -664,6 +735,7 @@ final class PojavControlOverlay extends ViewGroup {
 
     private static final class RuntimeJoystick extends View {
         final ControlJoystickData data;
+        private final PojavControlOverlay overlay;
         private final PojavControlsHost host;
         private final Paint basePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Paint knobPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -675,8 +747,9 @@ final class PojavControlOverlay extends ViewGroup {
         private int direction;
         private boolean forwardLocked;
 
-        RuntimeJoystick(Context context, ControlJoystickData data, PojavControlsHost host) {
+        RuntimeJoystick(PojavControlOverlay overlay, Context context, ControlJoystickData data, PojavControlsHost host) {
             super(context);
+            this.overlay = overlay;
             this.data = data;
             this.host = host;
             basePaint.setColor(data.bgColor);
@@ -707,6 +780,7 @@ final class PojavControlOverlay extends ViewGroup {
         public boolean onTouchEvent(MotionEvent event) {
             int action = event.getActionMasked();
             int actionIndex = event.getActionIndex();
+            overlay.checkMenuStateOnTouch();
             if (action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_POINTER_DOWN) {
                 if (pointer == -1) {
                     pointer = event.getPointerId(actionIndex);

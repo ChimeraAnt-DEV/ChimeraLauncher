@@ -51,7 +51,13 @@ public class AccountsActivity extends BaseActivity {
     private ProgressBar avatarProgress;
     private View rightCardContainer;
     private String lastAvatarXuid;
-    private final OkHttpClient avatarClient = new OkHttpClient();
+    private final OkHttpClient avatarClient = AccountsActivity.buildLatencyTunedClient();
+
+    private static OkHttpClient buildLatencyTunedClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(builder);
+        return builder.build();
+    }
 
     private final AccountsAdapter adapter = new AccountsAdapter();
     private ActivityResultLauncher<Intent> loginLauncher;

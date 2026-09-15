@@ -134,7 +134,13 @@ import okhttp3.OkHttpClient;
     private TextView headerAccountName;
     private Button headerSignInButton;
     private String lastAvatarXuid;
-    private final OkHttpClient avatarClient = new OkHttpClient();
+    private final OkHttpClient avatarClient = MainActivity.buildLatencyTunedClient();
+
+    private static OkHttpClient buildLatencyTunedClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(builder);
+        return builder.build();
+    }
     private ExecutorService accountExecutor = Executors.newSingleThreadExecutor();
     private LoadingDialog accountLoadingDialog;
     private ActivityResultLauncher<Intent> accountLoginLauncher;
@@ -394,7 +400,9 @@ import okhttp3.OkHttpClient;
             if (url != null) {
                 accountExecutor.execute(() -> {
                     try {
-                        okhttp3.OkHttpClient client = new okhttp3.OkHttpClient();
+                        okhttp3.OkHttpClient.Builder clientBuilder = new okhttp3.OkHttpClient.Builder();
+                        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(clientBuilder);
+                        okhttp3.OkHttpClient client = clientBuilder.build();
                         okhttp3.Response imgResp = client.newCall(new okhttp3.Request.Builder().url(url).build()).execute();
                         final android.graphics.Bitmap bmp = (imgResp.isSuccessful() && imgResp.body() != null) ? android.graphics.BitmapFactory.decodeStream(imgResp.body().byteStream()) : null;
                         runOnUiThread(() -> { if (bmp != null) headerAvatar.setImageBitmap(bmp); });
@@ -1741,6 +1749,16 @@ import okhttp3.OkHttpClient;
             String versionText = getInstanceVersionText(v);
             holder.version.setText(versionText);
             holder.version.setVisibility(TextUtils.isEmpty(versionText) ? View.GONE : View.VISIBLE);
+            String abi = v.abiList;
+            if (abi != null && !abi.isEmpty()) {
+                boolean is32Bit = "armeabi-v7a".equals(abi) || "x86".equals(abi);
+                holder.abiBadge.setText(holder.itemView.getContext().getString(
+                        is32Bit ? R.string.abi_32_bit : R.string.abi_64_bit));
+                holder.abiBadge.setTextColor(is32Bit ? 0xFFF6A821 : 0xFF4AE0A0);
+                holder.abiBadge.setVisibility(View.VISIBLE);
+            } else {
+                holder.abiBadge.setVisibility(View.GONE);
+            }
             holder.itemView.setActivated(isSelected);
             holder.check.setVisibility(isSelected ? View.VISIBLE : View.GONE);
             holder.tag.setVisibility(View.GONE);
@@ -1778,12 +1796,14 @@ import okhttp3.OkHttpClient;
 
         static class VH extends RecyclerView.ViewHolder {
             TextView name, version, tag;
+            TextView abiBadge;
             ImageView check;
             VH(View v) {
                 super(v);
                 name = v.findViewById(R.id.instance_name);
                 version = v.findViewById(R.id.instance_version);
                 tag = v.findViewById(R.id.instance_tag);
+                abiBadge = v.findViewById(R.id.instance_abi_badge);
                 check = v.findViewById(R.id.instance_check);
             }
         }
@@ -1902,6 +1922,18 @@ import okhttp3.OkHttpClient;
         if (heroVersion != null) {
             heroVersion.setText(selectedVersion != null ? getInstanceVersionText(selectedVersion) : "");
         }
+        TextView abiBadge = findViewById(R.id.last_played_abi_badge);
+        if (abiBadge != null) {
+            String abi = selectedVersion != null ? selectedVersion.abiList : null;
+            if (TextUtils.isEmpty(abi)) {
+                abiBadge.setVisibility(View.GONE);
+            } else {
+                boolean is32Bit = "armeabi-v7a".equals(abi) || "x86".equals(abi);
+                abiBadge.setText(is32Bit ? getString(R.string.abi_32_bit) : getString(R.string.abi_64_bit));
+                abiBadge.setTextColor(is32Bit ? 0xFFF6A821 : 0xFF4AE0A0);
+                abiBadge.setVisibility(View.VISIBLE);
+            }
+        }
     }
 
     private boolean isVersionManagerReady() {
@@ -1921,8 +1953,13 @@ import okhttp3.OkHttpClient;
 
     private static String getInstanceVersionText(GameVersion version) {
         if (version == null) return "";
-        if (!TextUtils.isEmpty(version.versionCode)) return version.versionCode;
-        return !TextUtils.isEmpty(version.directoryName) ? version.directoryName : "";
+        String base = !TextUtils.isEmpty(version.versionCode) ? version.versionCode
+                : !TextUtils.isEmpty(version.directoryName) ? version.directoryName : "";
+        String abi = version.abiList;
+        if (!TextUtils.isEmpty(abi) && ("armeabi-v7a".equals(abi) || "x86".equals(abi))) {
+            return base + " (" + abi + ")";
+        }
+        return base;
     }
 
     private static String stripVersionSuffix(String displayName, String versionCode) {

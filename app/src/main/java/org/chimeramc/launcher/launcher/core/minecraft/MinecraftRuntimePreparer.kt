@@ -72,6 +72,14 @@ object MinecraftRuntimePreparer {
         val gameManager = GamePackageManager.getInstance(context.applicationContext, version, trace, null)
         trace.mark("GamePackageManager ready")
 
+        if (!gameManager.requireLauncherSupportsVersion(version)) {
+            val message = gameManager.abiMismatchMessage(version)
+                ?: "This Minecraft version requires a 32-bit process, which this launcher install cannot provide."
+            fileListener.onLog("ABI preflight failed: $message")
+            trace.error("ABI mismatch", message)
+            throw IllegalStateException(message)
+        }
+
         fileListener.onProgress(26,"Preparing launch")
         prepareMinecraftIntent(context, launchIntent, gameManager, version)
 
@@ -272,7 +280,11 @@ val modsDir = modManager.currentVersion?.modsDir?.absolutePath
             loadLibrary(gameManager, "fmod", 56, true, listener, trace)
             loadLibrary(gameManager, "MediaDecoders_Android", 62, true, listener, trace)
             loadLibrary(gameManager, "minecraftpe", 70, true, listener, trace)
-            loadLibrary(gameManager, "gxcore", 74, true, listener, trace)
+            // gxcore is a closed-source arm64-only prebuilt; on a 32-bit launcher
+            // build it is not bundled, so treat it as optional there instead of aborting.
+            val gxcoreRequired =
+                Build.SUPPORTED_64_BIT_ABIS.any { it.contains("arm64-v8a") || it.contains("x86_64") }
+            loadLibrary(gameManager, "gxcore", 74, gxcoreRequired, listener, trace)
         }
         trace.mark("Minecraft library loading finished")
     }

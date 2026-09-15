@@ -83,18 +83,26 @@ public final class DynamicAnim {
     }
 
     /**
-     * Apply press-scale + elevation feedback to a view. Does not consume touch,
-     * keeping click works. Skipped entirely when animations are disabled.
+     * Apply press-scale + elevation + haptic feedback to a view. Does not consume
+     * touch, keeping click works. Skipped entirely when animations are disabled.
+     * Press-down uses a velocity-following spring (velocity set to 1/down) so
+     * touch feels immediate instead of waiting for the spring to pick up speed.
      */
     public static void applyPressScale(View view) {
         if (view == null) return;
+        view.setClickable(true);
         view.setOnTouchListener((v, event) -> {
             if (!animationsEnabled) return false;
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN: {
-                    springScaleXTo(v, 0.96f).start();
-                    springScaleYTo(v, 0.96f).start();
+                    SpringAnimation sx = springScaleXTo(v, 0.955f);
+                    SpringAnimation sy = springScaleYTo(v, 0.955f);
+                    sx.setStartVelocity(1.2f);
+                    sy.setStartVelocity(1.2f);
+                    sx.start();
+                    sy.start();
                     animateElevation(v, 6f, 8f);
+                    UiTouchFeedback.pressView(v);
                     break;
                 }
                 case MotionEvent.ACTION_UP:
