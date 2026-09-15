@@ -39,10 +39,15 @@ public class InbuiltModManager {
     private static final String KEY_OVERLAY_SHOW_EVERYWHERE_PREFIX = "overlay_show_everywhere_";
     private static final String KEY_HOTBAR_ITEM_ICONS = "hotbar_item_icons";
     private static final String KEY_HOTBAR_SLOT_ENABLED_PREFIX = "hotbar_slot_enabled_";
-    private static final String KEY_HITREG_SMOOTHING = "hitreg_smoothing";
-    private static final String KEY_HITREG_CROSSHAIR = "hitreg_crosshair";
-    private static final String KEY_HITREG_FLASH = "hitreg_flash";
-    private static final int DEFAULT_HITREG_SMOOTHING = 40;
+    private static final String KEY_AIM_SMOOTHING = "aim_smoothing";
+    private static final String KEY_AIM_CROSSHAIR = "aim_crosshair";
+    private static final String KEY_AIM_FLASH = "aim_flash";
+    private static final String KEY_AIM_SENSITIVITY = "aim_sensitivity";
+    private static final String KEY_AIM_CROSSHAIR_STYLE = "aim_crosshair_style";
+    private static final String KEY_AIM_CROSSHAIR_COLOR = "aim_crosshair_color";
+    private static final int DEFAULT_AIM_SMOOTHING = 40;
+    private static final int DEFAULT_AIM_SENSITIVITY = 100;
+    private static final int DEFAULT_AIM_CROSSHAIR_COLOR = 0xFF3DDC84;
     private static final int DEFAULT_OVERLAY_BUTTON_SIZE = 56;
     private static final int DEFAULT_OVERLAY_OPACITY = 100;
     private static final int MIN_MOD_MENU_OPACITY = 70;
@@ -350,28 +355,52 @@ public class InbuiltModManager {
         prefs.edit().putBoolean(KEY_HOTBAR_SLOT_ENABLED_PREFIX + slot, enabled).apply();
     }
 
-    public int getHitregSmoothing() {
-        return prefs.getInt(KEY_HITREG_SMOOTHING, DEFAULT_HITREG_SMOOTHING);
+    public int getAimSmoothing() {
+        return prefs.getInt(KEY_AIM_SMOOTHING, DEFAULT_AIM_SMOOTHING);
     }
 
-    public void setHitregSmoothing(int percent) {
-        prefs.edit().putInt(KEY_HITREG_SMOOTHING, Math.max(0, Math.min(95, percent))).apply();
+    public void setAimSmoothing(int percent) {
+        prefs.edit().putInt(KEY_AIM_SMOOTHING, Math.max(0, Math.min(95, percent))).apply();
     }
 
-    public boolean isHitregCrosshairEnabled() {
-        return prefs.getBoolean(KEY_HITREG_CROSSHAIR, true);
+    public boolean isAimCrosshairEnabled() {
+        return prefs.getBoolean(KEY_AIM_CROSSHAIR, true);
     }
 
-    public void setHitregCrosshairEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_HITREG_CROSSHAIR, enabled).apply();
+    public void setAimCrosshairEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_AIM_CROSSHAIR, enabled).apply();
     }
 
-    public boolean isHitregFlashEnabled() {
-        return prefs.getBoolean(KEY_HITREG_FLASH, true);
+    public boolean isAimFlashEnabled() {
+        return prefs.getBoolean(KEY_AIM_FLASH, true);
     }
 
-    public void setHitregFlashEnabled(boolean enabled) {
-        prefs.edit().putBoolean(KEY_HITREG_FLASH, enabled).apply();
+    public void setAimFlashEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_AIM_FLASH, enabled).apply();
+    }
+
+    public int getAimSensitivity() {
+        return prefs.getInt(KEY_AIM_SENSITIVITY, DEFAULT_AIM_SENSITIVITY);
+    }
+
+    public void setAimSensitivity(int percent) {
+        prefs.edit().putInt(KEY_AIM_SENSITIVITY, Math.max(10, Math.min(300, percent))).apply();
+    }
+
+    public int getAimCrosshairStyle() {
+        return prefs.getInt(KEY_AIM_CROSSHAIR_STYLE, 1);
+    }
+
+    public void setAimCrosshairStyle(int style) {
+        prefs.edit().putInt(KEY_AIM_CROSSHAIR_STYLE, Math.max(0, Math.min(2, style))).apply();
+    }
+
+    public int getAimCrosshairColor() {
+        return prefs.getInt(KEY_AIM_CROSSHAIR_COLOR, DEFAULT_AIM_CROSSHAIR_COLOR);
+    }
+
+    public void setAimCrosshairColor(int color) {
+        prefs.edit().putInt(KEY_AIM_CROSSHAIR_COLOR, color).apply();
     }
 
 }

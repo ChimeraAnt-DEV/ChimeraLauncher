@@ -1493,6 +1493,9 @@ import okhttp3.OkHttpClient;
         binding.contentWorldsRow.setOnClickListener(v -> openContentList(ContentListActivity.TYPE_WORLDS));
         binding.contentResourcePacksRow.setOnClickListener(v -> openContentList(ContentListActivity.TYPE_RESOURCE_PACKS));
         binding.contentBehaviorPacksRow.setOnClickListener(v -> openContentList(ContentListActivity.TYPE_BEHAVIOR_PACKS));
+        DynamicAnim.applyPressScale(binding.contentWorldsRow);
+        DynamicAnim.applyPressScale(binding.contentResourcePacksRow);
+        DynamicAnim.applyPressScale(binding.contentBehaviorPacksRow);
 
         refreshContentCounts();
     }
@@ -1545,6 +1548,9 @@ import okhttp3.OkHttpClient;
         binding.miscCurseforgeRow.setOnClickListener(v -> startActivity(new Intent(this, CurseForgeActivity.class)));
         binding.miscAccountsRow.setOnClickListener(v -> startActivity(new Intent(this, AccountsActivity.class)));
         binding.miscQuickLaunchRow.setOnClickListener(v -> startActivity(new Intent(this, QuickLaunchActivity.class)));
+        DynamicAnim.applyPressScale(binding.miscCurseforgeRow);
+        DynamicAnim.applyPressScale(binding.miscAccountsRow);
+        DynamicAnim.applyPressScale(binding.miscQuickLaunchRow);
     }
 
     private void openModsFullscreen() {

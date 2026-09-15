@@ -26,6 +26,23 @@
     <string name="font_license">This app uses the Misans font.</string>
     <string name="about_footer_github">GitHub: https://github.com/LiteLDev/ChimeraLauncher</string>
     <string name="quick_actions_title">Quick Actions</string>
+
+    <!-- Home screen -->
+    <string name="home_app_title">Chimera Launcher</string>
+    <string name="home_subtitle">Hybrid Minecraft Engine</string>
+    <string name="home_versions">Versions</string>
+    <string name="home_mods">Mods</string>
+    <string name="home_content">Content</string>
+    <string name="home_edition">Minecraft Bedrock Edition</string>
+    <string name="home_edition_version_placeholder">Version 1.20.0</string>
+    <string name="home_change">Change</string>
+    <string name="home_play">Play Minecraft</string>
+    <string name="home_active_mods">Active Mods</string>
+    <string name="home_manage">Manage</string>
+    <string name="home_no_mods">No mods installed yet</string>
+    <string name="home_content_library">Content Library</string>
+    <string name="home_more">More</string>
+
     <string name="content_mgmt_section_title">Content Management</string>
     <string name="misc_section_title">Miscellaneous</string>
     <string name="view_all">View All →</string>
@@ -628,9 +645,9 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="dialog_positive_exit">Exit</string>
     <string name="show_logcat_overlay">Logcat overlay</string>
     <string name="low_input_delay_title">Low Input Delay</string>
-    <string name="low_input_delay_desc">Hyper-responsive input: skips idle overlay redraws, dispatches controller/touch actions on the frame they arrive, and keeps the touch stack free of cosmetic GPU work</string>
+    <string name="low_input_delay_desc">Reduces input lag the launcher controls: controller profiles use a tightened dead zone and a faster response curve so the same stick travel turns further, controller event handling does no locking, and idle overlay redraws are skipped</string>
     <string name="reduce_network_latency_title">Reduce Network Latency</string>
-    <string name="reduce_network_latency_desc">Removes Nagle + delayed-ACK on launcher connections, prefetches DNS (incl. popular Bedrock servers), and pauses background polls while playing</string>
+    <string name="reduce_network_latency_desc">Removes Nagle and delayed-ACK delays on launcher connections, keeps connections pooled so handshakes are already done, prefetches DNS for launcher and Bedrock server addresses, and stops background polls while you play. Cannot change the distance to a game server or its own response time.</string>
     <string name="playtime_label">%1$s played</string>
     <string name="recent_playtime_label">%1$s played on this instance</string>
     <string name="gxcore_title">gxcore native bootstrap</string>
@@ -895,6 +912,17 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="curseforge_downloading">Downloading…</string>
     <string name="curseforge_importing">Importing…</string>
     <string name="curseforge_download_failed">Download failed</string>
+    <string name="curseforge_api_key_title">CurseForge API key</string>
+    <string name="curseforge_api_key_required_title">CurseForge needs an API key</string>
+    <string name="curseforge_api_key_required_message">CurseForge does not allow anonymous requests. Get a free key from console.curseforge.com and paste it here. The key is stored on this device only.</string>
+    <string name="curseforge_api_key_hint">Paste your API key</string>
+    <string name="curseforge_api_key_saved">API key saved</string>
+    <string name="curseforge_api_key_invalid">That did not look like a key</string>
+    <string name="curseforge_open_console">Get a key</string>
+    <string name="curseforge_api_key_set">Set key</string>
+    <string name="curseforge_api_key_change">Change</string>
+    <string name="curseforge_api_key_not_set">No key configured - CurseForge browsing is disabled</string>
+    <string name="curseforge_api_key_configured">Configured (%1$s)</string>
     <string name="curseforge_available_files">Available Files</string>
 
     <!-- Navigation Bar -->
@@ -1211,13 +1239,24 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="resource_packs">Resource Packs</string>
     <string name="shader_packs">Shader Packs</string>
 
-    <!-- Hit Registration -->
-    <string name="inbuilt_mod_hit_registration">Hit Registration</string>
-    <string name="inbuilt_mod_hit_registration_desc">Client-side hit assist: smooths aim while swiping for reliable hits on Bedrock servers</string>
-    <string name="mod_config_hitreg_smoothing" formatted="false">Aim Smoothing (%)</string>
-    <string name="mod_config_hitreg_crosshair">Show Crosshair</string>
-    <string name="mod_config_hitreg_flash">Hit Flash Feedback</string>
-    <string name="hitreg_crosshair_desc">Center reticle to keep your aim on target</string>
+    <!-- Aim Settings -->
+    <string name="inbuilt_mod_aim_settings">Aim Settings</string>
+    <string name="inbuilt_mod_aim_settings_desc">Tune how your look input is applied: smoothing, sensitivity, crosshair and haptic feedback</string>
+    <string name="mod_config_aim_smoothing" formatted="false">Aim Smoothing (%)</string>
+    <string name="mod_config_aim_crosshair">Show Crosshair</string>
+    <string name="mod_config_aim_flash">Hit Flash Feedback</string>
+    <string name="mod_config_aim_sensitivity" formatted="false">Look Sensitivity (%)</string>
+    <string name="aim_crosshair_desc">Center reticle to keep your aim on target</string>
+    <string name="aim_smoothing_desc">Dampens fast swipes so camera movement stays readable</string>
+    <string name="aim_sensitivity_desc">Scales look input before it is sent to the game</string>
+    <string name="aim_flash_desc">Brief haptic + crosshair pulse when a swipe burst ends</string>
+    <string name="aim_crosshair_style">Crosshair Style</string>
+    <string name="aim_crosshair_style_dot">Dot</string>
+    <string name="aim_crosshair_style_cross">Cross</string>
+    <string name="aim_crosshair_style_circle">Circle</string>
+    <string name="aim_crosshair_style_desc">Choose the reticle shape drawn at screen center</string>
+    <string name="aim_crosshair_color">Crosshair Color</string>
+    <string name="aim_crosshair_color_desc">Tint of the reticle and burst pulse</string>
 
     <!-- ABI / bitness -->
     <string name="abi_64_bit">64-bit</string>

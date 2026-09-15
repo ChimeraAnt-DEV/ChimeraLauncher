@@ -74,7 +74,8 @@
     <!-- Storage Selection -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="56dp"
+        android:layout_height="wrap_content"
+        android:minHeight="56dp"
         android:layout_marginTop="12dp"
         android:background="@drawable/card_background"
         android:gravity="center_vertical"
@@ -115,7 +116,8 @@
             <LinearLayout
                 android:id="@+id/worlds_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:background="@drawable/card_background_small"
@@ -145,7 +147,8 @@
             <LinearLayout
                 android:id="@+id/skin_packs_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginHorizontal="3dp"
                 android:background="@drawable/card_background_small"
@@ -175,7 +178,8 @@
             <LinearLayout
                 android:id="@+id/screenshots_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/card_background_small"
@@ -213,7 +217,8 @@
             <LinearLayout
                 android:id="@+id/resource_packs_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginEnd="6dp"
                 android:background="@drawable/card_background_small"
@@ -243,7 +248,8 @@
             <LinearLayout
                 android:id="@+id/behavior_packs_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginHorizontal="3dp"
                 android:background="@drawable/card_background_small"
@@ -273,7 +279,8 @@
             <LinearLayout
                 android:id="@+id/servers_button"
                 android:layout_width="0dp"
-                android:layout_height="80dp"
+                android:layout_height="wrap_content"
+                android:minHeight="80dp"
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
                 android:background="@drawable/card_background_small"

@@ -94,7 +94,8 @@
                             <TextView
                                 android:id="@+id/author_badge"
                                 android:layout_width="wrap_content"
-                                android:layout_height="18dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="18dp"
                                 android:layout_marginStart="8dp"
                                 android:paddingHorizontal="8dp"
                                 android:gravity="center"
@@ -126,7 +127,8 @@
                     <TextView
                         android:id="@+id/btn_patreon"
                         android:layout_width="wrap_content"
-                        android:layout_height="28dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="28dp"
                         android:paddingHorizontal="14dp"
                         android:gravity="center"
                         android:text="@string/about_patreon"
@@ -143,7 +145,8 @@
                     <TextView
                         android:id="@+id/btn_afdian"
                         android:layout_width="wrap_content"
-                        android:layout_height="28dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="28dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="14dp"
                         android:gravity="center"
@@ -204,7 +207,8 @@
                             <TextView
                                 android:id="@+id/maintainer_badge"
                                 android:layout_width="wrap_content"
-                                android:layout_height="18dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="18dp"
                                 android:layout_marginStart="8dp"
                                 android:paddingHorizontal="8dp"
                                 android:gravity="center"
@@ -236,7 +240,8 @@
                     <TextView
                         android:id="@+id/btn_youtube_maintainer"
                         android:layout_width="wrap_content"
-                        android:layout_height="28dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="28dp"
                         android:paddingHorizontal="14dp"
                         android:gravity="center"
                         android:text="@string/youtube"
@@ -287,7 +292,8 @@
                         <TextView
                             android:id="@+id/btn_github_repo"
                             android:layout_width="wrap_content"
-                            android:layout_height="28dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="28dp"
                             android:paddingHorizontal="14dp"
                             android:gravity="center"
                             android:text="@string/about_github_repo"
@@ -303,7 +309,8 @@
                         <TextView
                             android:id="@+id/btn_github_org"
                             android:layout_width="wrap_content"
-                            android:layout_height="28dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="28dp"
                             android:layout_marginStart="8dp"
                             android:paddingHorizontal="14dp"
                             android:gravity="center"
@@ -366,7 +373,8 @@
                         <TextView
                             android:id="@+id/btn_issues"
                             android:layout_width="wrap_content"
-                            android:layout_height="28dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="28dp"
                             android:paddingHorizontal="14dp"
                             android:gravity="center"
                             android:text="@string/about_issues"
@@ -382,7 +390,8 @@
                         <TextView
                             android:id="@+id/btn_star_fork"
                             android:layout_width="wrap_content"
-                            android:layout_height="28dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="28dp"
                             android:layout_marginStart="8dp"
                             android:paddingHorizontal="14dp"
                             android:gravity="center"

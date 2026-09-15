@@ -11,7 +11,8 @@
     <TextView
         android:id="@+id/layer_number"
         android:layout_width="24dp"
-        android:layout_height="24dp"
+        android:layout_height="wrap_content"
+        android:minHeight="24dp"
         android:background="@drawable/bg_circle"
         android:fontFamily="@font/misans"
         android:gravity="center"

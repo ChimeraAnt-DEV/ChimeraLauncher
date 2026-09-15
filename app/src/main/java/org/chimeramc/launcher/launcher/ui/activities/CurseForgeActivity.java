@@ -29,10 +29,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.core.curseforge.CurseForgeClient;
+import org.chimeramc.launcher.core.curseforge.CurseForgeKeyDialog;
 import org.chimeramc.launcher.core.curseforge.models.Content;
 import org.chimeramc.launcher.core.curseforge.models.ContentSearchResponse;
 import org.chimeramc.launcher.ui.adapter.CurseForgeContentAdapter;
 import org.chimeramc.launcher.util.UIHelper;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -81,8 +83,9 @@ public class CurseForgeActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_curseforge);
+        DynamicAnim.applyPressScaleRecursively(findViewById(android.R.id.content));
 
-        client = CurseForgeClient.getInstance();
+        client = CurseForgeClient.getInstance(this);
 
         setupData();
         initViews();
@@ -272,6 +275,10 @@ public class CurseForgeActivity extends BaseActivity {
                 handler.post(() -> {
                     loadingProgress.setVisibility(View.GONE);
                     recyclerView.setVisibility(View.VISIBLE);
+                    if (t instanceof CurseForgeClient.MissingApiKeyException) {
+                        CurseForgeKeyDialog.show(CurseForgeActivity.this, CurseForgeActivity.this::loadContent);
+                        return;
+                    }
                     Toast.makeText(CurseForgeActivity.this, getString(R.string.error_message_format, t.getMessage()), Toast.LENGTH_SHORT).show();
                 });
             }

@@ -195,7 +195,8 @@
                 <Button
                     android:id="@+id/btn_autosprint_keybind"
                     android:layout_width="match_parent"
-                    android:layout_height="42dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="42dp"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_spinner_dark"
                     android:text="CTRL_LEFT"
@@ -315,7 +316,8 @@
                 <Button
                     android:id="@+id/btn_zoom_keybind"
                     android:layout_width="match_parent"
-                    android:layout_height="42dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="42dp"
                     android:layout_marginTop="8dp"
                     android:background="@drawable/bg_spinner_dark"
                     android:text="C"

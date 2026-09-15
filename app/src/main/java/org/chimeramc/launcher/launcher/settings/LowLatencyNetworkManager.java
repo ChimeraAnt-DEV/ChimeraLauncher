@@ -12,24 +12,31 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import javax.net.SocketFactory;
 
 /**
  * Optional low-latency networking support ("Reduce Network Latency").
  *
- * Honest scope (a launcher cannot control server distance/ISP routing, so this never
- * promises "lowest ping"). What this actually does:
- *  - Disables Nagle's algorithm (TCP_NODELAY) on sockets created through {@link #createSocketFactory()},
- *    which are the launcher's own news/update HTTP connections.
- *  - Enables TCP Quick ACK where the kernel exposes it, delACK is the dominant source of
- *    added latency for small request/response HTTP exchanges like news polling.
- *  - Sizes send/receive buffers smaller for interactive traffic; oversized buffers delay
- *    ACK coalescing and inflate per-packet round trips on mobile radios.
- *  - Warm DNS lookups for known launcher endpoints (and common Bedrock realms) so their
- *    IPs are cached before a session starts.
- *  - Marks the start/end of an active game session so automatic, non-essential background
- *    network callers (news polls, update checks) can be paused during gameplay.
+ * Honest scope. A launcher cannot move a game server closer, change ISP routing, or make
+ * somebody else's server reply sooner, so this never promises a specific ping figure. What
+ * it can remove is the latency the device itself adds on top of the network, which is also
+ * the only part that is fixable locally:
+ *  - Disables Nagle's algorithm (TCP_NODELAY) on sockets created through
+ *    {@link #createSocketFactory()}, i.e. the launcher's own news/update HTTP connections.
+ *    Without it, small writes can wait for an ACK before being sent.
+ *  - Enables TCP Quick ACK where the kernel exposes it. Delayed ACK is the dominant source
+ *    of added latency for small request/response exchanges, and it compounds with Nagle
+ *    into the classic 40ms stall for request/response protocols.
+ *  - Resizes send/receive buffers for interactive traffic. Oversized buffers let the stack
+ *    hold back small writes; a few MTU's worth keeps ACKs tight.
+ *  - Warms DNS for the launcher's endpoints and popular Bedrock servers, so joining a
+ *    server does not pay a cold lookup.
+ *  - Keeps a persistent connection pool warm for the launcher's endpoints so the TCP and
+ *    TLS handshakes are already done when the user opens a screen.
+ *  - Marks the start/end of a game session so background pollers stop competing for the
+ *    radio during play; airtime contention is real added latency on mobile.
  */
 public final class LowLatencyNetworkManager {
     @SuppressLint("StaticFieldLeak")
@@ -50,7 +57,12 @@ public final class LowLatencyNetworkManager {
             "play.nethergames.org"
     );
 
-    private static final int SOCKET_BUFFER_SIZE = 256 * 1024;
+    /**
+     * Interactive HTTP traffic is small request/response. 64 KiB is comfortably more than a
+     * few jumbo frames while still small enough that the stack does not buffer writes
+     * waiting to coalesce them.
+     */
+    private static final int SOCKET_BUFFER_SIZE = 64 * 1024;
 
     private static final ExecutorService DNS_EXECUTOR = Executors.newSingleThreadExecutor();
 
@@ -77,9 +89,12 @@ public final class LowLatencyNetworkManager {
      * the "Reduce Network Latency" toggle is on. No-op (default sockets) when off.
      */
     public static void configure(okhttp3.OkHttpClient.Builder builder) {
-        if (isEnabled()) {
-            builder.socketFactory(createSocketFactory());
-        }
+        if (!isEnabled()) return;
+        builder.socketFactory(createSocketFactory());
+        // Reusing pooled connections skips the TCP + TLS handshake on the next request to
+        // the same host, which is worth far more than any socket option. Timeouts are left
+        // to the caller: each client sets the ones its own workload needs.
+        builder.connectionPool(new okhttp3.ConnectionPool(8, 5, TimeUnit.MINUTES));
     }
 
     public static SocketFactory createSocketFactory() {

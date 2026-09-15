@@ -101,12 +101,17 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
         });
 
         if (holder.dragHandle != null) {
-            holder.dragHandle.setOnTouchListener((v, event) -> {
-                if (event.getAction() == android.view.MotionEvent.ACTION_DOWN && itemTouchHelper != null) {
-                    itemTouchHelper.startDrag(holder);
-                }
-                return false;
-            });
+            // applyPressScale is idempotent per view: it attaches once and the delegate
+            // closes over the recycled holder, so re-binding must not reset the listener.
+            org.chimeramc.launcher.ui.animation.DynamicAnim.applyPressScale(
+                    holder.dragHandle,
+                    (v, event) -> {
+                        if (event.getActionMasked() == android.view.MotionEvent.ACTION_DOWN
+                                && itemTouchHelper != null) {
+                            itemTouchHelper.startDrag(holder);
+                        }
+                        return false;
+                    });
         }
 
         ViewCompat.setTransitionName(holder.itemView, "mod_card_" + mod.getId());
@@ -116,6 +121,7 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
                 onModClickListener.onModClick(mod, position, holder.itemView);
             }
         });
+        org.chimeramc.launcher.ui.animation.DynamicAnim.applyPressScale(holder.itemView);
 
         android.content.Context context = holder.itemView.getContext();
         org.chimeramc.launcher.util.PersonalizationManager pm = new org.chimeramc.launcher.util.PersonalizationManager(context);

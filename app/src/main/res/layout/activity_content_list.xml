@@ -99,7 +99,8 @@
                 <TextView
                     android:id="@+id/content_empty_icon"
                     android:layout_width="64dp"
-                    android:layout_height="64dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="64dp"
                     android:gravity="center"
                     android:fontFamily="@font/misans"
                     android:text="📦"

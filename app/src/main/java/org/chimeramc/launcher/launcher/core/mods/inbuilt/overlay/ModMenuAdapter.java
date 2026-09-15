@@ -2,6 +2,7 @@ package org.chimeramc.launcher.core.mods.inbuilt.overlay;
 
 import android.content.res.ColorStateList;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.text.TextUtils;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -17,6 +18,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.core.mods.inbuilt.UnifiedMod;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,8 +38,10 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     private final Map<String, Boolean> favoriteStates = new HashMap<>();
     private OnModActionListener listener;
     private boolean compactMode;
+    private ModMenuTheme theme;
 
-    public ModMenuAdapter() {
+    public ModMenuAdapter(ModMenuTheme theme) {
+        this.theme = theme != null ? theme : new ModMenuTheme(null);
         setHasStableIds(true);
     }
 
@@ -134,25 +138,43 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         return position >= 0 && position < items.size() && items.get(position).isGroup();
     }
 
+    public void setTheme(ModMenuTheme theme) {
+        this.theme = theme != null ? theme : new ModMenuTheme(null);
+        notifyDataSetChanged();
+    }
+
     @NonNull
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         if (viewType == VIEW_TYPE_GROUP) {
-            TextView title = new TextView(parent.getContext());
             float density = parent.getResources().getDisplayMetrics().density;
+            android.widget.LinearLayout row = new android.widget.LinearLayout(parent.getContext());
+            row.setOrientation(android.widget.LinearLayout.HORIZONTAL);
+            row.setGravity(Gravity.CENTER_VERTICAL);
             RecyclerView.LayoutParams params = new RecyclerView.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, (int) (34 * density));
-            params.setMargins((int) (8 * density), (int) (6 * density),
+                ViewGroup.LayoutParams.MATCH_PARENT, (int) (38 * density));
+            params.setMargins((int) (8 * density), (int) (8 * density),
                 (int) (8 * density), 0);
-            title.setLayoutParams(params);
+            row.setLayoutParams(params);
+
+            View bar = new View(parent.getContext());
+            android.widget.LinearLayout.LayoutParams barParams =
+                new android.widget.LinearLayout.LayoutParams((int) (3 * density), (int) (16 * density));
+            barParams.setMarginEnd((int) (8 * density));
+            bar.setLayoutParams(barParams);
+            row.addView(bar);
+
+            TextView title = new TextView(parent.getContext());
+            title.setLayoutParams(new android.widget.LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
             title.setGravity(Gravity.CENTER_VERTICAL);
-            title.setPadding((int) (6 * density), 0, (int) (6 * density), 0);
-            title.setTextColor(0xFF4AE0A0);
             title.setTextSize(11);
             title.setTypeface(null, Typeface.BOLD);
             title.setSingleLine(true);
             title.setEllipsize(TextUtils.TruncateAt.END);
-            return new GroupViewHolder(title);
+            row.addView(title);
+
+            return new GroupViewHolder(row, bar, title);
         }
 
         int layout = viewType == VIEW_TYPE_MOD_COMPACT
@@ -166,7 +188,15 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
         MenuItem item = items.get(position);
         if (item.isGroup()) {
-            ((GroupViewHolder) holder).title.setText(item.groupName);
+            GroupViewHolder group = (GroupViewHolder) holder;
+            group.title.setText(item.groupName);
+            int color = theme.groupColor(item.groupId);
+            group.title.setTextColor(color);
+            GradientDrawable barBg = new GradientDrawable();
+            barBg.setShape(GradientDrawable.RECTANGLE);
+            barBg.setCornerRadius(2f * group.bar.getResources().getDisplayMetrics().density);
+            barBg.setColor(color);
+            group.bar.setBackground(barBg);
             return;
         }
 
@@ -193,12 +223,14 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
 
         boolean isEnabled = toggleStates.getOrDefault(mod.getStableKey(), false);
         updateStatusView(modHolder, isEnabled);
+        updateAccentBar(modHolder, mod.getGroupId(), isEnabled);
         updateFavoriteView(modHolder, favoriteStates.getOrDefault(mod.getStableKey(), false));
 
         View.OnClickListener toggleClick = v -> {
             boolean newState = !toggleStates.getOrDefault(mod.getStableKey(), false);
             toggleStates.put(mod.getStableKey(), newState);
             updateStatusView(modHolder, newState);
+            updateAccentBar(modHolder, mod.getGroupId(), newState);
             if (listener != null) {
                 listener.onToggle(mod, newState);
             }
@@ -207,6 +239,7 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         modHolder.itemView.setOnClickListener(toggleClick);
         modHolder.statusText.setOnClickListener(toggleClick);
         modHolder.icon.setOnClickListener(toggleClick);
+        DynamicAnim.applyPressScale(modHolder.itemView);
 
         modHolder.favoriteBtn.setOnClickListener(v -> {
             boolean favorite = !favoriteStates.getOrDefault(mod.getStableKey(), false);
@@ -246,23 +279,32 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     private void updateStatusView(ModViewHolder holder, boolean enabled) {
-        int accent = 0xFF4AE0A0;
-
+        float density = holder.statusText.getResources().getDisplayMetrics().density;
         if (enabled) {
             holder.statusText.setText(R.string.mod_status_enabled);
-            holder.statusText.setTextColor(accent);
-            holder.statusText.setBackgroundResource(R.drawable.bg_mod_status_enabled);
-            holder.statusText.getBackground().setTint(android.graphics.Color.argb(40, 
-                android.graphics.Color.red(accent), 
-                android.graphics.Color.green(accent), 
-                android.graphics.Color.blue(accent)));
+            holder.statusText.setTextColor(theme.accent());
+            GradientDrawable pill = new GradientDrawable();
+            pill.setShape(GradientDrawable.RECTANGLE);
+            pill.setCornerRadius(12f * density);
+            pill.setColor(theme.accentFill(46));
+            pill.setStroke((int) density, theme.accent());
+            holder.statusText.setBackground(pill);
         } else {
             holder.statusText.setText(R.string.mod_status_disabled);
             holder.statusText.setTextColor(0xFFB4BBC3);
             holder.statusText.setBackgroundResource(R.drawable.bg_mod_status_disabled);
-            holder.statusText.getBackground().setTintList(null);
         }
         updateCardState(holder, enabled);
+    }
+
+    /** Paints the top edge strip so each card carries its section colour. */
+    private void updateAccentBar(ModViewHolder holder, String groupId, boolean enabled) {
+        if (holder.accentBar == null) return;
+        int color = theme.groupColor(groupId);
+        GradientDrawable bar = new GradientDrawable();
+        bar.setShape(GradientDrawable.RECTANGLE);
+        bar.setColor(enabled ? color : (color & 0x00FFFFFF) | 0x40000000);
+        holder.accentBar.setBackground(bar);
     }
 
     private void updateCardState(ModViewHolder holder, boolean enabled) {
@@ -274,11 +316,11 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             androidx.cardview.widget.CardView cv = (androidx.cardview.widget.CardView) holder.itemView;
             
             if (enabled) {
-                cv.setCardBackgroundColor(0xFF28302D);
-                cv.setCardElevation(6f);
+                cv.setCardBackgroundColor(theme.enabledCardColor());
+                cv.setCardElevation(theme.enabledElevation());
             } else {
-                cv.setCardBackgroundColor(0xFF24282C);
-                cv.setCardElevation(2f);
+                cv.setCardBackgroundColor(theme.disabledCardColor());
+                cv.setCardElevation(theme.disabledElevation());
             }
         }
     }
@@ -331,11 +373,13 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
     }
 
     static class GroupViewHolder extends RecyclerView.ViewHolder {
-        TextView title;
+        final View bar;
+        final TextView title;
 
-        GroupViewHolder(View itemView) {
+        GroupViewHolder(View itemView, View bar, TextView title) {
             super(itemView);
-            title = (TextView) itemView;
+            this.bar = bar;
+            this.title = title;
         }
     }
 
@@ -346,6 +390,7 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
         TextView groupText;
         ImageButton favoriteBtn;
         ImageButton configBtn;
+        View accentBar;
 
         ModViewHolder(View itemView) {
             super(itemView);
@@ -355,6 +400,7 @@ public class ModMenuAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder
             groupText = itemView.findViewById(R.id.mod_card_group);
             favoriteBtn = itemView.findViewById(R.id.mod_card_favorite);
             configBtn = itemView.findViewById(R.id.mod_card_config);
+            accentBar = itemView.findViewById(R.id.mod_card_accent);
         }
     }
 }
