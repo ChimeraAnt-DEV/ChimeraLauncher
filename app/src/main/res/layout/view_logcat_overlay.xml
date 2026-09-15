@@ -6,7 +6,8 @@
     <LinearLayout
         android:id="@+id/overlay_container"
         android:layout_width="280dp"
-        android:layout_height="200dp"
+        android:layout_height="wrap_content"
+        android:minHeight="200dp"
         android:orientation="vertical">
 
         <LinearLayout
@@ -91,7 +92,8 @@
             <TextView
                 android:id="@+id/level_filter"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="wrap_content"
+                android:minHeight="32dp"
                 android:minWidth="72dp"
                 android:gravity="center_vertical|start"
                 android:paddingStart="8dp"

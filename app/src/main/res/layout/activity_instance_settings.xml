@@ -69,7 +69,8 @@
                     <TextView
                         android:id="@+id/tab_general"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
                         android:text="@string/instance_tab_general"
@@ -84,7 +85,8 @@
                     <TextView
                         android:id="@+id/tab_launch_options"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
@@ -99,7 +101,8 @@
                     <TextView
                         android:id="@+id/tab_management"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"

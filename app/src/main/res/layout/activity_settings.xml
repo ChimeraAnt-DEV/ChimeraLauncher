@@ -56,7 +56,8 @@
                     <TextView
                         android:id="@+id/tab_basic"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
                         android:text="@string/settings_tab_basic"
@@ -71,7 +72,8 @@
                     <TextView
                         android:id="@+id/tab_personalize"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
@@ -86,7 +88,8 @@
                     <TextView
                         android:id="@+id/tab_updates"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
@@ -101,7 +104,8 @@
                     <TextView
                         android:id="@+id/tab_about"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
@@ -116,7 +120,8 @@
                     <TextView
                         android:id="@+id/tab_migration"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="32dp"
                         android:layout_marginStart="8dp"
                         android:paddingHorizontal="16dp"
                         android:gravity="center"
@@ -522,7 +527,8 @@
                             <LinearLayout
                                 android:id="@+id/theme_item_system"
                                 android:layout_width="0dp"
-                                android:layout_height="40dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="40dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="horizontal"
@@ -556,7 +562,8 @@
                             <LinearLayout
                                 android:id="@+id/theme_item_light"
                                 android:layout_width="0dp"
-                                android:layout_height="40dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="40dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="horizontal"
@@ -590,7 +597,8 @@
                             <LinearLayout
                                 android:id="@+id/theme_item_dark"
                                 android:layout_width="0dp"
-                                android:layout_height="40dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="40dp"
                                 android:layout_weight="1"
                                 android:gravity="center"
                                 android:orientation="horizontal"

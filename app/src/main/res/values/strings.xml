@@ -26,6 +26,23 @@
     <string name="font_license">This app uses the Misans font.</string>
     <string name="about_footer_github">GitHub: https://github.com/LiteLDev/ChimeraLauncher</string>
     <string name="quick_actions_title">Quick Actions</string>
+
+    <!-- Home screen -->
+    <string name="home_app_title">Chimera Launcher</string>
+    <string name="home_subtitle">Hybrid Minecraft Engine</string>
+    <string name="home_versions">Versions</string>
+    <string name="home_mods">Mods</string>
+    <string name="home_content">Content</string>
+    <string name="home_edition">Minecraft Bedrock Edition</string>
+    <string name="home_edition_version_placeholder">Version 1.20.0</string>
+    <string name="home_change">Change</string>
+    <string name="home_play">Play Minecraft</string>
+    <string name="home_active_mods">Active Mods</string>
+    <string name="home_manage">Manage</string>
+    <string name="home_no_mods">No mods installed yet</string>
+    <string name="home_content_library">Content Library</string>
+    <string name="home_more">More</string>
+
     <string name="content_mgmt_section_title">Content Management</string>
     <string name="misc_section_title">Miscellaneous</string>
     <string name="view_all">View All →</string>

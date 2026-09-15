@@ -41,7 +41,8 @@
                 <TextView
                     android:id="@+id/news_item_category"
                     android:layout_width="wrap_content"
-                    android:layout_height="20dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="20dp"
                     android:background="@drawable/bg_news_category"
                     android:fontFamily="@font/misans"
                     android:gravity="center"
@@ -53,7 +54,8 @@
                 <TextView
                     android:id="@+id/news_item_important"
                     android:layout_width="wrap_content"
-                    android:layout_height="20dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="20dp"
                     android:layout_marginStart="7dp"
                     android:background="@drawable/bg_news_important"
                     android:fontFamily="@font/misans"
@@ -100,7 +102,8 @@
             <TextView
                 android:id="@+id/news_item_action"
                 android:layout_width="wrap_content"
-                android:layout_height="28dp"
+                android:layout_height="wrap_content"
+                android:minHeight="28dp"
                 android:layout_marginTop="9dp"
                 android:drawableEnd="@drawable/ic_news_open"
                 android:drawablePadding="5dp"

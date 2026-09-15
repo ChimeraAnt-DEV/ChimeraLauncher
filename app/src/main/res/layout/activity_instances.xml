@@ -41,7 +41,8 @@
                 <TextView
                     android:id="@+id/filter_all"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="32dp"
                     android:paddingHorizontal="16dp"
                     android:gravity="center"
                     android:text="@string/filter_all"
@@ -56,7 +57,8 @@
                 <TextView
                     android:id="@+id/filter_custom"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="32dp"
                     android:layout_marginStart="8dp"
                     android:paddingHorizontal="16dp"
                     android:gravity="center"
@@ -105,7 +107,8 @@
             <LinearLayout
                 android:id="@+id/sort_button"
                 android:layout_width="wrap_content"
-                android:layout_height="32dp"
+                android:layout_height="wrap_content"
+                android:minHeight="32dp"
                 android:layout_marginStart="12dp"
                 android:paddingHorizontal="12dp"
                 android:gravity="center_vertical"
@@ -134,7 +137,8 @@
             <TextView
                 android:id="@+id/instance_count_badge"
                 android:layout_width="28dp"
-                android:layout_height="28dp"
+                android:layout_height="wrap_content"
+                android:minHeight="28dp"
                 android:layout_marginStart="8dp"
                 android:gravity="center"
                 android:text="0"
@@ -163,7 +167,8 @@
                 <TextView
                     android:id="@+id/btn_batch_backup"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="32dp"
                     android:paddingHorizontal="14dp"
                     android:gravity="center"
                     android:text="@string/instance_batch_backup_button"
@@ -178,7 +183,8 @@
                 <TextView
                     android:id="@+id/btn_import_backup"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="32dp"
                     android:layout_marginStart="12dp"
                     android:paddingHorizontal="14dp"
                     android:gravity="center"
@@ -194,7 +200,8 @@
                 <TextView
                     android:id="@+id/btn_import_apk"
                     android:layout_width="wrap_content"
-                    android:layout_height="32dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="32dp"
                     android:layout_marginStart="12dp"
                     android:paddingHorizontal="14dp"
                     android:gravity="center"
