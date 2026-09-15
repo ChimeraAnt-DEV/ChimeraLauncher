@@ -29,7 +29,13 @@ public class AboutActivity extends BaseActivity {
     private static final String URL_YOUTUBE = "https://www.youtube.com/c/mrpokeg";
 
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private final OkHttpClient client = new OkHttpClient();
+    private final OkHttpClient client = buildLatencyTunedClient();
+
+    private static OkHttpClient buildLatencyTunedClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(builder);
+        return builder.build();
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

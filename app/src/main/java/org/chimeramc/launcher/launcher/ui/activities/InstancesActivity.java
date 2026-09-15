@@ -999,6 +999,17 @@ public class InstancesActivity extends BaseActivity {
             }
             vh.typeTag.setVisibility(View.VISIBLE);
 
+            String abi = v.abiList;
+            if (abi != null && !abi.isEmpty()) {
+                boolean is32Bit = "armeabi-v7a".equals(abi) || "x86".equals(abi);
+                vh.abiBadge.setText(holder.itemView.getContext().getString(
+                        is32Bit ? R.string.abi_32_bit : R.string.abi_64_bit));
+                vh.abiBadge.setTextColor(is32Bit ? 0xFFF6A821 : 0xFF4AE0A0);
+                vh.abiBadge.setVisibility(View.VISIBLE);
+            } else {
+                vh.abiBadge.setVisibility(View.GONE);
+            }
+
             String displayLabel;
             if (v.displayName != null && !v.displayName.isEmpty()) {
                 displayLabel = v.displayName;
@@ -1044,6 +1055,7 @@ public class InstancesActivity extends BaseActivity {
 
         static class VH extends RecyclerView.ViewHolder {
             TextView versionCode, typeTag, displayName, playtime;
+            TextView abiBadge;
             ImageView settingsIcon;
 
             VH(View v) {
@@ -1052,6 +1064,7 @@ public class InstancesActivity extends BaseActivity {
                 typeTag = v.findViewById(R.id.card_type_tag);
                 displayName = v.findViewById(R.id.card_display_name);
                 playtime = v.findViewById(R.id.card_playtime);
+                abiBadge = v.findViewById(R.id.card_abi_badge);
                 settingsIcon = v.findViewById(R.id.card_settings_icon);
             }
         }

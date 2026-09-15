@@ -1,13 +1,27 @@
 package io.bambosan.mbloader.launcherUtils;
 
+import android.util.Log;
+
 /**
  * JNI bindings for mtbinloader2 (mbl2) - shader/materialbin compatibility fixer.
  * This library fixes resource-pack materialbin compatibility across Bedrock versions.
  * Only for 64-bit (arm64-v8a) instances.
  */
 public class LibBindings {
+    private static final boolean LOADED;
+
     static {
-        System.loadLibrary("mtbinloader2");
+        boolean loaded = false;
+        try {
+            // mtbinloader2 is only bundled for 64-bit installs (arm64-v8a);
+            // on a 32-bit launcher build it simply isn't present, so degrade gracefully
+            // instead of letting a static initializer crash the whole process.
+            System.loadLibrary("mtbinloader2");
+            loaded = true;
+        } catch (UnsatisfiedLinkError e) {
+            Log.w("LibBindings", "mtbinloader2 unavailable—materialbin autofix disabled", e);
+        }
+        LOADED = loaded;
     }
 
     /**

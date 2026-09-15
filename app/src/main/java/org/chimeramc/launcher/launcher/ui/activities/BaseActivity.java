@@ -53,7 +53,13 @@ public class BaseActivity extends AppCompatActivity {
     private int appliedThemeGeneration = -1;
     private int appliedPersonalizationGeneration = -1;
     private boolean navBarInjected = false;
-    private final OkHttpClient navAvatarClient = new OkHttpClient();
+    private final OkHttpClient navAvatarClient = BaseActivity.buildLatencyTunedClient();
+
+    private static OkHttpClient buildLatencyTunedClient() {
+        OkHttpClient.Builder builder = new OkHttpClient.Builder();
+        org.chimeramc.launcher.settings.LowLatencyNetworkManager.configure(builder);
+        return builder.build();
+    }
     private final ExecutorService navAccountExecutor = Executors.newSingleThreadExecutor();
     private ActivityResultLauncher<Intent> navAccountLoginLauncher;
     private boolean newsReceiverRegistered;

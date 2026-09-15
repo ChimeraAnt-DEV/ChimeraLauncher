@@ -115,6 +115,42 @@ class GamePackageManager private constructor(
         return launchAbi ?: getDeviceAbi(collectApkFiles()).also { launchAbi = it }
     }
 
+    /**
+     * Verifies the version's declared ABI can actually load in this process.
+     *
+     * Android locks every process to one bitness at installation time, so a 32-bit
+     * library set can never dlopen inside a 64-bit process (and vice versa). This check
+     * surfaces that clearly before the first native library is attempted, instead of a
+     * confusing "dlopen failed: is 32-bit instead of 64-bit" mid-launch.
+     */
+    fun requireLauncherSupportsVersion(version: GameVersion?): Boolean {
+        if (version == null || version.abiList.isNullOrBlank()) return true
+        val declared = version.abiList!!
+        val is32BitAbi = declared == "armeabi-v7a" || declared == "x86"
+        if (!is32BitAbi) return true
+        val processIs64Bit = try {
+            android.os.Process.is64Bit()
+        } catch (_: Throwable) {
+            false
+        }
+        return !processIs64Bit
+    }
+
+    fun abiMismatchMessage(version: GameVersion?): String? {
+        val declared = version?.abiList
+        if (declared.isNullOrBlank()) return null
+        val is32BitAbi = declared == "armeabi-v7a" || declared == "x86"
+        if (!is32BitAbi) return null
+        val processIs64Bit = try {
+            android.os.Process.is64Bit()
+        } catch (_: Throwable) {
+            false
+        }
+        if (!processIs64Bit) return null
+        return "This Minecraft version ships only ${declared} (32-bit), but the Chimera Launcher process on this device is 64-bit. " +
+            "32-bit game libraries cannot load inside a 64-bit process."
+    }
+
     private fun getDeviceAbi(apkFiles: List<File> = emptyList()): String {
         resolveAbiFromApks(apkFiles)?.let { return it }
         if (version != null && "armeabi-v7a".equals(version.abiList)) {
@@ -634,7 +670,13 @@ class GamePackageManager private constructor(
         progressEnd: Int = 74,
         excludeReasons: Map<String, String> = emptyMap()
     ): List<LibraryLoadResult> {
-        val allLibs = requiredLibs + systemLoadedLibs
+        val deviceSupports64Bit = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+        val allLibs = (requiredLibs + systemLoadedLibs).filterNot { lib ->
+            // PlayFab/maesdk/gxcore are arm64-only closed-source prebuilts; on a 32-bit
+            // device they aren't bundled, so exclude them up front instead of letting
+            // System.loadLibrary fail mid-launch.
+            systemLoadedLibs.contains(lib) && !deviceSupports64Bit
+        }
         val loadableLibs = allLibs.filterNot { lib ->
             val libName = normalizeLibraryName(lib)
             excludeLibs.contains(libName) || excludeLibs.contains(lib)

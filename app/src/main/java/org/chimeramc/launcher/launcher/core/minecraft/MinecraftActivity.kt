@@ -430,6 +430,9 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
     }
 
     override fun pojavSendMouseButton(androidButton: Int, down: Boolean) {
+        if (down && org.chimeramc.launcher.core.mods.inbuilt.overlay.HitRegistrationMod.isActive()) {
+            overlayManager?.let { it.flashHitRegistration() }
+        }
         PojavControlsMod.nativeSendMouseButton(androidButton, down)
     }
 
@@ -438,7 +441,9 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
     }
 
     override fun pojavSendLookDelta(deltaX: Float, deltaY: Float) {
-        PojavControlsMod.nativeSendLookDelta(deltaX, deltaY)
+        val smoothed = org.chimeramc.launcher.core.mods.inbuilt.overlay.HitRegistrationMod
+            .smoothLookDelta(deltaX, deltaY)
+        PojavControlsMod.nativeSendLookDelta(smoothed[0], smoothed[1])
     }
 
     override fun pojavSendPointer(x: Float, y: Float) {

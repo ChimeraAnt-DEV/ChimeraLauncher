@@ -628,9 +628,9 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="dialog_positive_exit">Exit</string>
     <string name="show_logcat_overlay">Logcat overlay</string>
     <string name="low_input_delay_title">Low Input Delay</string>
-    <string name="low_input_delay_desc">Forwards controller/touch input immediately without extra rendering work, for reduced latency</string>
+    <string name="low_input_delay_desc">Hyper-responsive input: skips idle overlay redraws, dispatches controller/touch actions on the frame they arrive, and keeps the touch stack free of cosmetic GPU work</string>
     <string name="reduce_network_latency_title">Reduce Network Latency</string>
-    <string name="reduce_network_latency_desc">Disables Nagle on launcher connections, prefetches DNS, and pauses background polls while playing</string>
+    <string name="reduce_network_latency_desc">Removes Nagle + delayed-ACK on launcher connections, prefetches DNS (incl. popular Bedrock servers), and pauses background polls while playing</string>
     <string name="playtime_label">%1$s played</string>
     <string name="recent_playtime_label">%1$s played on this instance</string>
     <string name="gxcore_title">gxcore native bootstrap</string>
@@ -1210,4 +1210,27 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="behavior_packs">Behavior Packs</string>
     <string name="resource_packs">Resource Packs</string>
     <string name="shader_packs">Shader Packs</string>
+
+    <!-- Hit Registration -->
+    <string name="inbuilt_mod_hit_registration">Hit Registration</string>
+    <string name="inbuilt_mod_hit_registration_desc">Client-side hit assist: smooths aim while swiping for reliable hits on Bedrock servers</string>
+    <string name="mod_config_hitreg_smoothing" formatted="false">Aim Smoothing (%)</string>
+    <string name="mod_config_hitreg_crosshair">Show Crosshair</string>
+    <string name="mod_config_hitreg_flash">Hit Flash Feedback</string>
+    <string name="hitreg_crosshair_desc">Center reticle to keep your aim on target</string>
+
+    <!-- ABI / bitness -->
+    <string name="abi_64_bit">64-bit</string>
+    <string name="abi_32_bit">32-bit</string>
+    <string name="abi_arm64">arm64</string>
+    <string name="abi_arm">arm32</string>
+    <string name="abi_x86_64">x86_64</string>
+    <string name="abi_x86">x86</string>
+    <string name="abi_unknown">ABI ?</string>
+
+    <!-- Latency boost -->
+    <string name="latency_boost_title">Reduce Network Latency</string>
+    <string name="latency_boost_desc">Aggressive low-latency sockets: disables Nagle, enables TCP Quick ACK, sizes buffers for gameplay traffic, prefetches DNS, and pauses non-essential background polls while playing</string>
+    <string name="input_boost_title">Low Input Delay</string>
+    <string name="input_boost_desc">Hyper-responsive input: bypasses intermediate rendering, uses display-aligned frames, and dispatches controller/touch actions on the same frame they arrive</string>
 </resources>

@@ -40,6 +40,9 @@ public final class InbuiltModuleProvider {
     private static final String CFG_HOTBAR_SLOT_ENABLED = "enabled";
     private static final String CFG_HOTBAR_SLOT_SIZE = "size";
     private static final String CFG_HOTBAR_SLOT_OPACITY = "opacity";
+    private static final String CFG_HITREG_SMOOTHING = "hitreg_smoothing";
+    private static final String CFG_HITREG_CROSSHAIR = "hitreg_crosshair";
+    private static final String CFG_HITREG_FLASH = "hitreg_flash";
 
     private InbuiltModuleProvider() {
     }
@@ -91,6 +94,9 @@ public final class InbuiltModuleProvider {
                 groupName));
         mods.add(create(activity, manager, overlayManager, ModIds.HOTBAR_SLOT,
                 R.string.inbuilt_mod_hotbar_slot, R.string.inbuilt_mod_hotbar_slot_desc,
+                groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.HIT_REGISTRATION,
+                R.string.inbuilt_mod_hit_registration, R.string.inbuilt_mod_hit_registration_desc,
                 groupName));
 
         return mods;
@@ -304,6 +310,22 @@ public final class InbuiltModuleProvider {
                     UnifiedMod.ConfigType.SLIDER_INT,
                     "5", "0", "50",
                     String.valueOf(manager.getGyroDeadzone())));
+        } else if (ModIds.HIT_REGISTRATION.equals(modId)) {
+            configs.add(config(CFG_HITREG_SMOOTHING,
+                    context.getString(R.string.mod_config_hitreg_smoothing),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "40", "0", "95",
+                    String.valueOf(manager.getHitregSmoothing())));
+            configs.add(config(CFG_HITREG_CROSSHAIR,
+                    context.getString(R.string.mod_config_hitreg_crosshair),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitregCrosshairEnabled())));
+            configs.add(config(CFG_HITREG_FLASH,
+                    context.getString(R.string.mod_config_hitreg_flash),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitregFlashEnabled())));
         }
         return configs;
     }
@@ -387,8 +409,20 @@ public final class InbuiltModuleProvider {
             case CFG_HOTBAR_ITEM_ICONS:
                 manager.setHotbarItemIconsEnabled(parseBoolean(value));
                 break;
+            case CFG_HITREG_SMOOTHING:
+                manager.setHitregSmoothing(parseInt(value, manager.getHitregSmoothing()));
+                break;
+            case CFG_HITREG_CROSSHAIR:
+                manager.setHitregCrosshairEnabled(parseBoolean(value));
+                break;
+            case CFG_HITREG_FLASH:
+                manager.setHitregFlashEnabled(parseBoolean(value));
+                break;
             default:
                 break;
+        }
+        if (ModIds.HIT_REGISTRATION.equals(mod.getId())) {
+            org.chimeramc.launcher.core.mods.inbuilt.overlay.HitRegistrationMod.onConfigChanged(manager);
         }
     }
 
