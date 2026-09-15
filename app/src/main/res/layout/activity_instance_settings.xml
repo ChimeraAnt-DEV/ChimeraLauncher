@@ -402,7 +402,8 @@
                                 <Button
                                     android:id="@+id/btn_choose_shortcut_icon"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="36dp"
+                                    android:layout_height="wrap_content"
+                                    android:minHeight="36dp"
                                     android:layout_marginStart="12dp"
                                     android:backgroundTint="@color/primary"
                                     android:fontFamily="@font/misans"
@@ -415,7 +416,8 @@
                                 <Button
                                     android:id="@+id/btn_reset_shortcut_icon"
                                     android:layout_width="wrap_content"
-                                    android:layout_height="36dp"
+                                    android:layout_height="wrap_content"
+                                    android:minHeight="36dp"
                                     android:layout_marginStart="8dp"
                                     android:fontFamily="@font/misans"
                                     android:paddingHorizontal="14dp"
@@ -427,7 +429,8 @@
                             <Button
                                 android:id="@+id/btn_add_instance_shortcut"
                                 android:layout_width="wrap_content"
-                                android:layout_height="40dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="40dp"
                                 android:layout_marginTop="14dp"
                                 android:backgroundTint="@color/primary"
                                 android:fontFamily="@font/misans"
@@ -475,7 +478,8 @@
                         <Button
                             android:id="@+id/btn_backup_instance"
                             android:layout_width="wrap_content"
-                            android:layout_height="36dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="36dp"
                             android:layout_marginTop="14dp"
                             android:paddingHorizontal="20dp"
                             android:text="@string/instance_backup_button"
@@ -563,7 +567,8 @@
                             <Button
                                 android:id="@+id/btn_delete_instance"
                                 android:layout_width="wrap_content"
-                                android:layout_height="36dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="36dp"
                                 android:paddingHorizontal="20dp"
                                 android:text="@string/delete"
                                 android:fontFamily="@font/misans"

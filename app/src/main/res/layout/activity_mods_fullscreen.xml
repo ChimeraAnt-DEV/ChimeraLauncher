@@ -93,8 +93,8 @@
             <Button
                 android:id="@+id/mod_menu_button"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:minHeight="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
                 android:minWidth="136dp"
                 android:backgroundTint="@color/secondary"
                 android:text="@string/mod_menu"
@@ -111,8 +111,8 @@
             <Button
                 android:id="@+id/add_mod_fullscreen_button"
                 android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:minHeight="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="40dp"
                 android:minWidth="120dp"
                 android:backgroundTint="@color/primary"
                 android:text="@string/add_mod"

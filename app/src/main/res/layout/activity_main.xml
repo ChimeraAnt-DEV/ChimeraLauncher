@@ -111,9 +111,9 @@
                     <Button
                         android:id="@+id/header_sign_in_button"
                         android:layout_width="wrap_content"
-                        android:layout_height="38dp"
+                        android:layout_height="wrap_content"
                         android:minWidth="0dp"
-                        android:minHeight="0dp"
+                        android:minHeight="38dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:paddingHorizontal="14dp"
@@ -604,7 +604,8 @@
                 <Button
                     android:id="@+id/launch_button"
                     android:layout_width="match_parent"
-                    android:layout_height="52dp"
+                    android:layout_height="wrap_content"
+                    android:minHeight="52dp"
                     android:background="@drawable/button_launch_gradient"
                     android:text="@string/home_play"
                     android:textColor="@color/on_primary"
@@ -703,9 +704,9 @@
                     <Button
                         android:id="@+id/manage_mods_button"
                         android:layout_width="wrap_content"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:minWidth="0dp"
-                        android:minHeight="0dp"
+                        android:minHeight="32dp"
                         android:paddingHorizontal="12dp"
                         android:background="@drawable/button_outline"
                         android:text="@string/home_manage"

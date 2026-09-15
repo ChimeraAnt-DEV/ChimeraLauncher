@@ -727,7 +727,8 @@
                             <Button
                                 android:id="@+id/btn_apply_color"
                                 android:layout_width="wrap_content"
-                                android:layout_height="40dp"
+                                android:layout_height="wrap_content"
+                                android:minHeight="40dp"
                                 android:layout_marginStart="8dp"
                                 android:text="@string/apply"
                                 android:textAllCaps="false"
@@ -875,9 +876,9 @@
                             <Button
                                 android:id="@+id/btn_clear_bg_image"
                                 android:layout_width="wrap_content"
-                                android:layout_height="32dp"
+                                android:layout_height="wrap_content"
                                 android:minWidth="0dp"
-                                android:minHeight="0dp"
+                                android:minHeight="32dp"
                                 android:paddingHorizontal="14dp"
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
@@ -893,9 +894,9 @@
                             <Button
                                 android:id="@+id/btn_select_bg_image"
                                 android:layout_width="wrap_content"
-                                android:layout_height="32dp"
+                                android:layout_height="wrap_content"
                                 android:minWidth="0dp"
-                                android:minHeight="0dp"
+                                android:minHeight="32dp"
                                 android:paddingHorizontal="14dp"
                                 android:insetTop="0dp"
                                 android:insetBottom="0dp"
@@ -1266,7 +1267,8 @@
                         <Button
                             android:id="@+id/btn_reset_customizations"
                             android:layout_width="wrap_content"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="40dp"
                             android:layout_marginTop="16dp"
                             android:text="@string/reset_to_defaults"
                             android:fontFamily="@font/misans"
@@ -1311,7 +1313,8 @@
                         <Button
                             android:id="@+id/btn_check_update"
                             android:layout_width="wrap_content"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="40dp"
                             android:text="@string/check_update"
                             android:fontFamily="@font/misans"
                             android:textSize="13sp"
@@ -1349,7 +1352,8 @@
                         <Button
                             android:id="@+id/btn_update_preloader_sigs"
                             android:layout_width="wrap_content"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="40dp"
                             android:layout_marginTop="12dp"
                             android:text="@string/preloader_sigs_update"
                             android:fontFamily="@font/misans"
@@ -1548,7 +1552,8 @@
                         <Button
                             android:id="@+id/btn_cleanup_legacy_dir"
                             android:layout_width="wrap_content"
-                            android:layout_height="40dp"
+                            android:layout_height="wrap_content"
+                            android:minHeight="40dp"
                             android:layout_marginTop="14dp"
                             android:text="@string/migration_cleanup_button"
                             android:fontFamily="@font/misans"

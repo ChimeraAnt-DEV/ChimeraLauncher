@@ -34,7 +34,8 @@
     <Button
         android:id="@+id/export_button"
         android:layout_width="wrap_content"
-        android:layout_height="36dp"
+        android:layout_height="wrap_content"
+        android:minHeight="36dp"
         android:text="@string/extract"
         android:textSize="12sp"
         android:backgroundTint="#4CAF50"
