@@ -317,6 +317,9 @@ public class SettingsActivity extends BaseActivity {
         switchLowInputDelay.setOnCheckedChangeListener((btn, checked) -> {
             fs.setLowInputDelayEnabled(checked);
             org.chimeramc.pojavcontrols.PojavControls.setLowLatencyMode(checked);
+            // The controller response curve and dead zone are derived from this flag, so the
+            // loaded profile must be rebuilt for the change to apply without a restart.
+            org.chimeramc.launcher.launcher.controller.ControllerInputProcessor.reload(this);
         });
 
         SwitchMaterial switchGxCore = findViewById(R.id.switch_gxcore);

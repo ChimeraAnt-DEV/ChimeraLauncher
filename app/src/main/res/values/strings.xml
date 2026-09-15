@@ -645,9 +645,9 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="dialog_positive_exit">Exit</string>
     <string name="show_logcat_overlay">Logcat overlay</string>
     <string name="low_input_delay_title">Low Input Delay</string>
-    <string name="low_input_delay_desc">Hyper-responsive input: skips idle overlay redraws, dispatches controller/touch actions on the frame they arrive, and keeps the touch stack free of cosmetic GPU work</string>
+    <string name="low_input_delay_desc">Reduces input lag the launcher controls: controller profiles use a tightened dead zone and a faster response curve so the same stick travel turns further, controller event handling does no locking, and idle overlay redraws are skipped</string>
     <string name="reduce_network_latency_title">Reduce Network Latency</string>
-    <string name="reduce_network_latency_desc">Removes Nagle + delayed-ACK on launcher connections, prefetches DNS (incl. popular Bedrock servers), and pauses background polls while playing</string>
+    <string name="reduce_network_latency_desc">Removes Nagle and delayed-ACK delays on launcher connections, keeps connections pooled so handshakes are already done, prefetches DNS for launcher and Bedrock server addresses, and stops background polls while you play. Cannot change the distance to a game server or its own response time.</string>
     <string name="playtime_label">%1$s played</string>
     <string name="recent_playtime_label">%1$s played on this instance</string>
     <string name="gxcore_title">gxcore native bootstrap</string>
