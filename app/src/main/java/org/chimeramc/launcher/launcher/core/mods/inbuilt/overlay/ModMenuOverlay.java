@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.chimeramc.launcher.R;
+import org.chimeramc.launcher.ui.animation.DynamicAnim;
 import org.chimeramc.launcher.core.mods.inbuilt.ExternalModuleProvider;
 import org.chimeramc.launcher.core.mods.inbuilt.InbuiltModuleProvider;
 import org.chimeramc.launcher.core.mods.inbuilt.UnifiedMod;
@@ -60,6 +61,8 @@ public class ModMenuOverlay {
     private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable searchRunnable = this::applyFilters;
     private ModMenuAdapter adapter;
+    private ModMenuTheme theme;
+    private boolean hasStaggeredOnce = false;
     private EditText searchInput;
     private ImageButton clearSearchBtn;
     private TextView navModules, navSettings, navHudEditor;
@@ -152,7 +155,7 @@ public class ModMenuOverlay {
     }
 
     private int getAccentColor() {
-        return 0xFF4AE0A0;
+        return theme != null ? theme.accent() : ModMenuTheme.DEFAULT_ACCENT;
     }
     
     public interface ModMenuCallback {
@@ -162,6 +165,7 @@ public class ModMenuOverlay {
     
     public ModMenuOverlay(Activity activity) {
         this.activity = activity;
+        this.theme = new ModMenuTheme(activity);
         this.windowManager = (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
         this.notificationManager = new ModNotificationManager(activity);
     }
@@ -327,6 +331,15 @@ public class ModMenuOverlay {
         if (compactNavHudEditor != null) {
             compactNavHudEditor.setOnClickListener(v -> enterHudEditorMode(modMenuContainer, hudEditorTools));
         }
+
+        // Touch feedback on the stable chrome (nav + filter chips + close). Recycler rows get
+        // their own feedback in the adapter, since they are recycled and rebound.
+        for (View v : new View[]{navModules, navSettings, navHudEditor,
+                compactNavModules, compactNavSettings, compactNavHudEditor,
+                filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal,
+                closeBtn, clearSearchBtn}) {
+            if (v != null) DynamicAnim.applyPressScale(v);
+        }
         
         if (btnHudSave != null) {
             btnHudSave.setOnClickListener(v -> {
@@ -460,7 +473,7 @@ public class ModMenuOverlay {
         
         applyMenuOpacity();
         
-        adapter = new ModMenuAdapter();
+        adapter = new ModMenuAdapter(new ModMenuTheme(activity));
         adapter.setCompactMode(compactMode);
         modsLayoutManager = new GridLayoutManager(activity, compactMode ? 1 : 4);
         modsLayoutManager.setSpanSizeLookup(new GridLayoutManager.SpanSizeLookup() {
@@ -982,6 +995,10 @@ public class ModMenuOverlay {
 
         if (adapter != null) {
             adapter.updateMods(filteredMods, favoriteKeys);
+            if (!hasStaggeredOnce) {
+                hasStaggeredOnce = true;
+                DynamicAnim.staggerRecyclerChildren(modsRecycler);
+            }
         }
         updateEmptyState();
         updateModuleCount();
@@ -1039,7 +1056,7 @@ public class ModMenuOverlay {
         view.setAlpha(1f);
         Drawable background = view.getBackground();
         if (background != null) {
-            background.mutate().setTint(selected ? 0x334AE0A0 : 0xFF24282C);
+            background.mutate().setTint(selected ? theme.accentFill(51) : 0xFF24282C);
         }
     }
 
@@ -1152,6 +1169,7 @@ public class ModMenuOverlay {
                 } catch (Exception ignored) {}
                 overlayView = null;
                 isShowing = false;
+                hasStaggeredOnce = false;
             });
         };
         
