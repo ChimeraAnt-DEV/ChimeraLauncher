@@ -1826,7 +1826,13 @@ import okhttp3.OkHttpClient;
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         intent.setType("*/*");
-        String[] mimeTypes = {"application/vnd.android.package-archive", "application/octet-stream", "application/zip"};
+        String[] mimeTypes = {
+                "application/vnd.android.package-archive",
+                "application/octet-stream",
+                "application/zip",
+                "application/xapk",
+                "application/x-xapk"
+        };
         intent.putExtra(Intent.EXTRA_MIME_TYPES, mimeTypes);
         apkImportResultLauncher.launch(intent);
     }
