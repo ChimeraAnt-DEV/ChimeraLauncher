@@ -6,12 +6,14 @@ import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 
 import androidx.annotation.NonNull;
 
 import org.chimeramc.launcher.R;
+import org.chimeramc.launcher.core.minecraft.AbiBitness;
 import org.chimeramc.launcher.core.minecraft.MinecraftLauncher;
 import org.chimeramc.launcher.core.mods.ModManager;
 import org.chimeramc.launcher.ui.activities.MainActivity;
@@ -117,6 +119,13 @@ public class VersionManager {
 
     private String inferAbiFromNativeLibDir(String nativeLibDir, GameVersion version) {
         if (version != null && !version.isInstalled) {
+            // Read the version's own APK(s) first. The extraction folder below only ever
+            // holds the one ABI that was extracted last, so using it alone mislabels a
+            // dual-ABI version as 32-bit forever after a single 32-bit extraction, and the
+            // preflight then refuses to launch a version that could have run.
+            String fromApk = inferAbiFromVersionApks(version);
+            if (fromApk != null) return fromApk;
+
             File libDir = getRuntimeLibDir(version.directoryName);
             File flatSo = new File(libDir, "libminecraftpe.so");
             if (flatSo.exists()) {
@@ -145,6 +154,42 @@ public class VersionManager {
         if (nativeLibDir.contains("x86_64")) return "x86_64";
         if (nativeLibDir.contains("x86")) return "x86";
         return "unknown";
+    }
+
+    /**
+     * The ABI to label this version with, read from the native libraries its APK(s) ship.
+     *
+     * Where a version ships more than one ABI, the one matching the running process is
+     * reported, because that is the one a launch would actually extract and load.
+     *
+     * Returns null when no APK could be read, so callers can fall back to the extraction
+     * folder rather than treating an unreadable archive as "no ABI".
+     */
+    private String inferAbiFromVersionApks(GameVersion version) {
+        if (version == null || version.versionDir == null) return null;
+        List<File> apks = new ArrayList<>();
+        File base = new File(version.versionDir, "base.apk.chimera");
+        if (base.isFile()) apks.add(base);
+        File splits = new File(version.versionDir, "splits");
+        File[] splitFiles = splits.listFiles();
+        if (splitFiles != null) {
+            for (File f : splitFiles) {
+                if (f.isFile() && f.getName().endsWith(".apk.chimera")) apks.add(f);
+            }
+        }
+        if (apks.isEmpty()) return null;
+
+        List<String> shipped = AbiBitness.INSTANCE.abisInApks(apks);
+        if (shipped.isEmpty()) return null;
+
+        boolean processIs64Bit;
+        try {
+            processIs64Bit = android.os.Process.is64Bit();
+        } catch (Throwable t) {
+            processIs64Bit = Build.SUPPORTED_64_BIT_ABIS.length > 0;
+        }
+        String chosen = AbiBitness.INSTANCE.selectLaunchAbi(shipped, processIs64Bit);
+        return chosen != null ? chosen : shipped.get(0);
     }
 
     private static String detectElfAbi(File soFile) {
