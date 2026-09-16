@@ -30,6 +30,9 @@ class GamePackageManager private constructor(
     private val applicationInfo: ApplicationInfo
     private var launchAbi: String? = null
 
+    /** ABI scan of this version's APK(s); the archives are immutable for a given version. */
+    private var cachedShippedAbis: List<String>? = null
+
     private val knownPackages = arrayOf(MinecraftLauncher.MC_PACKAGE_NAME)
 
     private val requiredLibs = arrayOf(
@@ -139,31 +142,53 @@ class GamePackageManager private constructor(
     }
 
     fun abiCompatibility(version: GameVersion?): AbiCompatibility {
-        if (version == null || version.abiList.isNullOrBlank()) return AbiCompatibility.OK
-        if (!is32BitAbi(version.abiList!!)) return AbiCompatibility.OK
-        return if (processIs64Bit()) AbiCompatibility.INCOMPATIBLE else AbiCompatibility.OK
-    }
-
-    fun abiMismatchMessage(version: GameVersion?): String? {
-        val declared = version?.abiList
-        if (declared.isNullOrBlank()) return null
-        if (abiCompatibility(version) != AbiCompatibility.INCOMPATIBLE) return null
-        val deviceSupports32Bit = Build.SUPPORTED_32_BIT_ABIS.isNotEmpty()
-        return buildString {
-            append("This Minecraft version ships only $declared (32-bit), but the Chimera Launcher process ")
-            append("on this device is 64-bit, and 32-bit libraries cannot load inside a 64-bit process.")
-            if (deviceSupports32Bit) {
-                append(" Your device does support 32-bit code, so this version would run under a 32-bit build ")
-                append("of the launcher. Android fixes an app's bitness at install time, so the launcher cannot ")
-                append("switch to 32-bit for a single version at runtime.")
-            } else {
-                append(" This device is also 64-bit only, so it cannot run 32-bit code at all.")
-            }
-            append(" Install a 64-bit build of this version, or a launcher build that ships 32-bit native libraries.")
+        val shipped = shippedAbisOf(version)
+        return if (shipped.isEmpty()) {
+            // No ABI information at all: let the load attempt speak rather than blocking.
+            AbiCompatibility.OK
+        } else if (AbiBitness.hasLoadableAbi(shipped, processIs64Bit())) {
+            AbiCompatibility.OK
+        } else {
+            AbiCompatibility.INCOMPATIBLE
         }
     }
 
-    private fun is32BitAbi(abi: String): Boolean = abi == "armeabi-v7a" || abi == "armeabi" || abi == "x86"
+    /**
+     * Every ABI the version's APK(s) actually ship, read from the archives.
+     *
+     * This deliberately inspects the APK rather than trusting {@code version.abiList}. That
+     * field is a *label* inferred from whichever libraries happen to sit in the extraction
+     * folder (see VersionManager.inferAbiFromNativeLibDir), so it records what was last
+     * extracted, not what the version offers. Once a version had been extracted as arm
+     * libraries the label said armeabi-v7a forever, and the preflight then refused to launch
+     * it in a 64-bit process even when the same APK also shipped arm64-v8a and could have run.
+     *
+     * Falls back to the label only when no APK can be read, so an unreadable or absent
+     * archive still gets a sensible answer instead of being waved through.
+     */
+    private fun shippedAbisOf(version: GameVersion?): List<String> {
+        cachedShippedAbis?.let { return it }
+        val fromApks = AbiBitness.abisInApks(collectApkFiles())
+        val result = if (fromApks.isNotEmpty()) {
+            fromApks
+        } else {
+            listOfNotNull(version?.abiList?.takeIf { it.isNotBlank() && it != "unknown" })
+        }
+        cachedShippedAbis = result
+        return result
+    }
+
+    fun abiMismatchMessage(version: GameVersion?): String? {
+        val shipped = shippedAbisOf(version)
+        val declared = shipped.firstOrNull() ?: version?.abiList
+        if (declared.isNullOrBlank()) return null
+        if (abiCompatibility(version) != AbiCompatibility.INCOMPATIBLE) return null
+        return buildString {
+            append("This Minecraft version ships only $declared libraries, but Chimera Launcher ")
+            append("runs as a 64-bit process, and a 64-bit process cannot load 32-bit native code.")
+            append(" Use a 64-bit build of this version.")
+        }
+    }
 
     private fun processIs64Bit(): Boolean = try {
         android.os.Process.is64Bit()
@@ -173,13 +198,12 @@ class GamePackageManager private constructor(
         Build.SUPPORTED_64_BIT_ABIS.isNotEmpty() && Build.SUPPORTED_32_BIT_ABIS.isEmpty()
     }
 
-    /** True when this device can execute 32-bit native code at all. */
-    fun deviceSupports32Bit(): Boolean = Build.SUPPORTED_32_BIT_ABIS.isNotEmpty()
-
     private fun getDeviceAbi(apkFiles: List<File> = emptyList()): String {
+        // The APK is the authority: it is what actually decides which libraries exist to
+        // load. The version's label is a record of a previous extraction, so it is consulted
+        // only when no APK could be inspected.
         resolveAbiFromApks(apkFiles)?.let { return it }
         if (version != null && "armeabi-v7a".equals(version.abiList)) {
-
             return if (Build.SUPPORTED_32_BIT_ABIS.contains("armeabi-v7a")) {
                 "armeabi-v7a"
             } else {
@@ -198,31 +222,12 @@ class GamePackageManager private constructor(
     }
 
     private fun resolveAbiFromApks(apkFiles: List<File>): String? {
-
-        val candidates = listOf("arm64-v8a", "armeabi-v7a", "x86_64", "x86")
-        val present = mutableMapOf<String, Boolean>()
-        candidates.forEach { present[it] = false }
-        for (file in apkFiles) {
-            if (!file.isFile) continue
-            try {
-                ZipFile(file).use { zip ->
-                    for (abi in candidates) {
-                        if (!present[abi]!! && zip.getEntry("lib/$abi/libminecraftpe.so") != null) {
-                            present[abi] = true
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                mirrorLogcat('W', "Failed to inspect ABI of ${file.name}: ${e.message}")
-            }
-        }
-        if (present.none { it.value }) return null
-        val explicit = version?.abiList?.takeIf { present[it] == true }
-        if (explicit != null) return explicit
-        for (pref in candidates) {
-            if (present[pref] == true) return pref
-        }
-        return null
+        val shipped = AbiBitness.abisInApks(apkFiles)
+        if (shipped.isEmpty()) return null
+        // Prefer an ABI this process can actually load. The version's label is only a hint
+        // about what was extracted last, so a dual-ABI APK must be allowed to serve a
+        // 64-bit process even if the label previously settled on the 32-bit half.
+        return AbiBitness.selectLaunchAbi(shipped, processIs64Bit())
     }
 
     private fun extractLibraries() {
@@ -269,12 +274,14 @@ class GamePackageManager private constructor(
         report("Minecraft library cache miss: extracting libraries")
 
         if (version != null && !version.isInstalled) {
-            val apkPaths = apkFiles.map { it.absolutePath }
-            apkPaths.forEach { extractFromApk(it, outputDir, getDeviceAbi(apkFiles)) }
+            // Resolve once: getDeviceAbi scans every APK, so calling it per file would
+            // re-open all of them for each one.
+            val abi = getDeviceAbi(apkFiles)
+            apkFiles.forEach { extractFromApk(it.absolutePath, outputDir, abi) }
             val missingLibs = cacheRequiredLibs.filter { lib -> !File(outputDir, lib).exists() }
             if (missingLibs.isNotEmpty()) {
                 throw IllegalStateException(
-                    "Required native libraries for ABI ${getDeviceAbi(apkFiles)} are missing from this version's APK/splits."
+                    "Required native libraries for ABI $abi are missing from this version's APK/splits."
                 )
             }
         } else {
@@ -282,8 +289,8 @@ class GamePackageManager private constructor(
             if (File(appInfo.nativeLibraryDir).exists()) {
                 copyFromNativeDir(appInfo.nativeLibraryDir, outputDir)
             }
-            val apkPaths = apkFiles.map { it.absolutePath }
-            apkPaths.forEach { extractFromApk(it, outputDir, getDeviceAbi(apkFiles)) }
+            val abi = getDeviceAbi(apkFiles)
+            apkFiles.forEach { extractFromApk(it.absolutePath, outputDir, abi) }
         }
         verifyLibraries(outputDir)
 
