@@ -93,7 +93,7 @@ public class ApkInstaller {
                 String fileName = getFileName(apkOrApksUri);
                 long sourceSize = getContentSize(apkOrApksUri);
                 List<File> apkFilesToExtract = new ArrayList<>();
-                if (fileName != null && fileName.toLowerCase().endsWith(".apks")) {
+                if (GameBundle.isBundle(fileName)) {
                     boolean foundBaseApk = false;
                     File splitsDir = new File(baseDir, "splits");
 
@@ -113,7 +113,7 @@ public class ApkInstaller {
                                 }
 
                                 String entryName = entry.getName();
-                                if (!entryName.endsWith(".apk")) {
+                                if (!GameBundle.isApkEntry(entryName)) {
                                     zis.closeEntry();
                                     continue;
                                 }
@@ -121,7 +121,7 @@ public class ApkInstaller {
                                 File outFile;
                                 String outputName;
 
-                                if (entryName.equals("base.apk") || entryName.endsWith("/base.apk")) {
+                                if (GameBundle.isBaseEntry(entryName)) {
                                     outFile = new File(baseDir, APK_FILE_NAME);
                                     outputName = APK_FILE_NAME;
                                 } else {

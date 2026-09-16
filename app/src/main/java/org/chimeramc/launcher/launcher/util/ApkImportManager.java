@@ -43,9 +43,9 @@ public class ApkImportManager {
         if (apkUri == null) return;
         
         String fileName = getFileName(apkUri);
-        boolean isApks = fileName != null && fileName.toLowerCase().endsWith(".apks");
+        boolean isBundle = GameBundle.isBundle(fileName);
         
-        if (!isApks && fileName != null && !fileName.toLowerCase().endsWith(".apk")) {
+        if (!isBundle && (fileName == null || !fileName.toLowerCase().endsWith(".apk"))) {
             new CustomAlertDialog(activity)
                     .setTitleText(activity.getString(R.string.illegal_apk_title))
                     .setMessage(activity.getString(R.string.not_apk_or_apks))
@@ -54,17 +54,15 @@ public class ApkImportManager {
             return;
         }
         
-        String initialVersionName = isApks 
+        String initialVersionName = isBundle
                 ? ApkUtils.extractMinecraftVersionNameFromApksUri(activity, apkUri)
                 : ApkUtils.extractMinecraftVersionNameFromUri(activity, apkUri);
                 
+        // Reading the version out of the package manifest fails for some re-signed or
+        // older builds, which are still perfectly installable. Fall back to the file name
+        // rather than refusing them as "not a Minecraft APK".
         if ("Error Apk".equals(initialVersionName)) {
-            new CustomAlertDialog(activity)
-                    .setTitleText(activity.getString(R.string.illegal_apk_title))
-                    .setMessage(activity.getString(R.string.not_mc_apk))
-                    .setPositiveButton(activity.getString(R.string.exit), v -> {})
-                    .show();
-            return;
+            initialVersionName = GameBundle.versionNameFromFileName(fileName);
         }
         ApkVersionConfirmDialog dialog = new ApkVersionConfirmDialog()
                 .setInitialVersionName(initialVersionName)

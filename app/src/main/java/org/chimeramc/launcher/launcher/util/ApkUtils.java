@@ -78,7 +78,7 @@ public class ApkUtils {
             try (ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is))) {
                 ZipEntry entry;
                 while ((entry = zis.getNextEntry()) != null) {
-                    if (!entry.isDirectory() && (entry.getName().equals("base.apk") || entry.getName().endsWith("/base.apk"))) {
+                    if (!entry.isDirectory() && GameBundle.isBaseEntry(entry.getName())) {
                         tempApkFile = new File(context.getCacheDir(), "temp_base_" + System.currentTimeMillis() + ".apk");
                         try (OutputStream os = new FileOutputStream(tempApkFile)) {
                             byte[] buffer = new byte[131072];
