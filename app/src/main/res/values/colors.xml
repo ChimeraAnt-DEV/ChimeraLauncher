@@ -68,6 +68,4 @@
     <color name="divider_dark">#333333</color>
     <color name="on_surface_light">#FFFFFF</color>
 
-    <!-- Global focus ring for controller navigation. -->
-    <color name="focus_ring">#FF00ACC1</color>
 </resources>

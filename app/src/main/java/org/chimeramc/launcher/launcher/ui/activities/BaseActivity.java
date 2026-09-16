@@ -223,6 +223,7 @@ public class BaseActivity extends AppCompatActivity {
             tab.setTextColor(color);
             tab.setTypeface(tab.getTypeface(), android.graphics.Typeface.NORMAL);
             TextViewCompat.setCompoundDrawableTintList(tab, ColorStateList.valueOf(color));
+            DynamicAnim.applyPressScale(tab);
         }
 
         if (pm.hasBackgroundImage()) {
