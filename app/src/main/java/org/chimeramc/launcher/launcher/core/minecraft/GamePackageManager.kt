@@ -190,8 +190,6 @@ class GamePackageManager private constructor(
         }
     }
 
-    private fun is32BitAbi(abi: String): Boolean = abi == "armeabi-v7a" || abi == "armeabi" || abi == "x86"
-
     private fun processIs64Bit(): Boolean = try {
         android.os.Process.is64Bit()
     } catch (_: Throwable) {
@@ -199,9 +197,6 @@ class GamePackageManager private constructor(
         // preflight message and never throws.
         Build.SUPPORTED_64_BIT_ABIS.isNotEmpty() && Build.SUPPORTED_32_BIT_ABIS.isEmpty()
     }
-
-    /** True when this device can execute 32-bit native code at all. */
-    fun deviceSupports32Bit(): Boolean = Build.SUPPORTED_32_BIT_ABIS.isNotEmpty()
 
     private fun getDeviceAbi(apkFiles: List<File> = emptyList()): String {
         // The APK is the authority: it is what actually decides which libraries exist to
