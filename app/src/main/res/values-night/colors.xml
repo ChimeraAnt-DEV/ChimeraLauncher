@@ -49,4 +49,7 @@
     <color name="grad_content_start">#3300ACC1</color>
     <color name="grad_content_end">#1400ACC1</color>
     <color name="grad_pulse_glow">#444AE0A0</color>
+
+    <!-- Global focus ring for controller navigation. Bright cyan reads clearly on AMOLED black. -->
+    <color name="focus_ring">#FF00FFFF</color>
 </resources>

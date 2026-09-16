@@ -49,6 +49,7 @@ public class ModsFullscreenActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_mods_fullscreen);
+        setActiveNavTab(R.id.nav_tab_mods);
 
         View root = findViewById(android.R.id.content);
         if (root != null) {

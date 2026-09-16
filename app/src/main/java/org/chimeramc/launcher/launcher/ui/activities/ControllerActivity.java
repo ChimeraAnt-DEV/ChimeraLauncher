@@ -275,6 +275,13 @@ public class ControllerActivity extends BaseActivity {
         dialog.show();
     }
 
+    // The illustration needs raw presses to highlight the pressed button, so this screen
+    // opts out of bumper-driven tab switching.
+    @Override
+    protected boolean shouldHandleNavKeys() {
+        return false;
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         illustration.handleKeyEvent(keyCode, true);

@@ -37,6 +37,7 @@ import org.chimeramc.launcher.core.news.NewsFeed;
 import org.chimeramc.launcher.core.news.NewsRepository;
 import org.chimeramc.launcher.core.news.NewsState;
 import org.chimeramc.launcher.ui.animation.DynamicAnim;
+import org.chimeramc.launcher.ui.navigation.LauncherTab;
 import org.chimeramc.launcher.util.AccountTextUtils;
 import org.chimeramc.launcher.util.PersonalizationManager;
 import org.chimeramc.launcher.util.ThemeManager;
@@ -164,9 +165,50 @@ public class BaseActivity extends AppCompatActivity {
         return false;
     }
 
+    /**
+     * Whether controller bumper keys should switch tabs.
+     *
+     * Overridden by screens that need the raw button presses themselves: the in-game activity
+     * passes keys straight to the game, and the controller screen uses them to highlight
+     * buttons. Without an override the tab handler would swallow those presses.
+     */
+    protected boolean shouldHandleNavKeys() {
+        return true;
+    }
+
+    /**
+     * Console-style tab switching. Shoulder buttons and D-pad left/right cycle the top-level
+     * destinations, which is how a controller user expects to move between sections.
+     *
+     * Screens that need those raw presses opt out via {@link #shouldHandleNavKeys()}, and
+     * {@link LauncherTab#shouldHandleKey} suppresses the behaviour while a game session is
+     * running so a stray bumper press can never drop out of a game.
+     */
+    @Override
+    public boolean dispatchKeyEvent(android.view.KeyEvent event) {
+        if (event.getAction() == android.view.KeyEvent.ACTION_DOWN
+                && event.getRepeatCount() == 0
+                && navBarInjected
+                && shouldHandleNavKeys()
+                && LauncherTab.shouldHandleKey(
+                        event.getKeyCode(), true,
+                        org.chimeramc.launcher.settings.LowLatencyNetworkManager.isGameSessionActive())) {
+            LauncherTab current = LauncherTab.forActivity(getClass());
+            LauncherTab next = (current != null)
+                    ? current.offset(LauncherTab.directionForKey(event.getKeyCode()))
+                    : LauncherTab.LAUNCH;
+            if (next != current) {
+                startActivity(new Intent(this, next.activity()));
+                overridePendingTransition(R.anim.nav_tab_in, R.anim.nav_tab_out);
+            }
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
     private void setupBaseNavBar() {
         int[] tabIds ={
-            R.id.nav_tab_launch, R.id.nav_tab_instances,
+            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
             R.id.nav_tab_about, R.id.nav_tab_settings, R.id.nav_tab_controller,
             R.id.nav_tab_skins
         };
@@ -240,6 +282,11 @@ public class BaseActivity extends AppCompatActivity {
         findViewById(R.id.nav_tab_instances).setOnClickListener(v -> {
             if (!(this instanceof InstancesActivity)) {
                 switchNavTab(new Intent(this, InstancesActivity.class));
+            }
+        });
+        findViewById(R.id.nav_tab_mods).setOnClickListener(v -> {
+            if (!(this instanceof ModsFullscreenActivity)) {
+                switchNavTab(new Intent(this, ModsFullscreenActivity.class));
             }
         });
         findViewById(R.id.nav_tab_about).setOnClickListener(v -> {
@@ -383,7 +430,7 @@ public class BaseActivity extends AppCompatActivity {
         protected void setActiveNavTab(int activeTabId) {
         if (!navBarInjected) return;
         int[] tabIds ={
-            R.id.nav_tab_launch, R.id.nav_tab_instances,
+            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
             R.id.nav_tab_about, R.id.nav_tab_settings, R.id.nav_tab_controller,
             R.id.nav_tab_skins
         };
