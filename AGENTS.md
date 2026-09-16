@@ -68,6 +68,16 @@
 - Do not add a setting that claims to switch bitness; it cannot work. The honest deliverable is the preflight message, which now names the ABI the version actually ships and fires only when nothing can load.
 - `AbiBitness` holds the decision logic (`selectLaunchAbi`, `hasLoadableAbi`, `abisInApks`) and is covered by `AbiBitnessTest`, including reading a real dual-ABI APK off disk. Reverting `hasLoadableAbi` to judge only the first shipped ABI makes those tests fail.
 
+## Top-level navigation (org.chimeramc.launcher.ui.navigation.LauncherTab + BaseActivity)
+- **There is already a global nav bar.** `BaseActivity.wrapWithNavBar` inflates `layout/nav_bar.xml` into a vertical wrapper *above* every activity's content. Do NOT add a second bar or a fragment-based tab host — a whole-screen tab bar here would have duplicated it.
+- Navigation is **activity-based**: each tab starts an Activity (`switchNavTab` → `startActivity` + `nav_tab_in/out` transition), and `setActiveNavTab(R.id.nav_tab_*)` re-tints the labels with the user's accent. `LauncherTab` is the single source of truth mapping tab → activity, and its declaration order *is* the bar order and the bumper cycle order.
+- `BaseActivity.dispatchKeyEvent` cycles tabs on L1/R1, L2/R2 and D-pad left/right (wrapping). Two guards matter:
+  - **`shouldHandleNavKeys()`** (default true) — override to `false` on any screen that needs raw button presses. `ControllerActivity` does, because its illustration highlights the pressed button. `ModsFullscreenActivity` calls `setActiveNavTab(R.id.nav_tab_mods)`.
+  - **`LauncherTab.shouldHandleKey(code, navBarPresent, gameSessionActive)`** — tab switching is suppressed while `LowLatencyNetworkManager.isGameSessionActive()`. Note `MinecraftActivity` extends the *game's* `com.mojang.minecraftpe.MainActivity`, NOT the launcher's, so gameplay never had the nav bar or this handler — but the session guard is kept as defence in depth.
+- The `nav_tab_*` id list is duplicated in `setupBaseNavBar()` and `setActiveNavTab()`; adding a tab means updating the layout, both arrays, the click handler, and `LauncherTab`. `LauncherTabTest` covers ordering, activity mapping, wraparound, the key map and both guards.
+- `focus_ring` was prototyped and removed — no focus system consumes it; do not re-add a token without a consumer. Nav tabs get touch feedback from `DynamicAnim.applyPressScale(tab)`.
+- **Dead code to ignore:** `VersionManager.importGameFile` only accepts `.apk`/`.xapk` and is unused — `ApkImportManager` is the live import gate. `unsupported_version_msg` ("older than 1.21.80") has no consumer in code or layout; the real preflight is the ABI one.
+
 ## Runtime verification (no KVM/emulator in dev)
 - No Android emulator/KVM here — verify via `./gradlew :app:compileDebugJavaWithJavac` (fast), `:app:compileDebugKotlin`, and a full `nohup ./gradlew :app:assembleDebug > /tmp/build_apk.log 2>&1 &` then grep for `BUILD SUCCESSFUL`/`FAILED`. To test on a device later (adb, ARM64 Android), install `app/build/outputs/apk/debug/app-debug.apk`, and:
   - Playtime: launch a version, wait ~20s, close; repeat — SharedPreferences `playtime_tracker` (total_ms_<profileId>) should accumulate ≈ real elapsed wall time (± a heartbeat interval).
