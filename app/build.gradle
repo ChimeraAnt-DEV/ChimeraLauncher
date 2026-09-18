@@ -44,12 +44,12 @@ android {
         versionName getGitTag()
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField "String", "CURSEFORGE_API_KEY", "\"${localProperties.getProperty('curseforge.api_key', '')}\""
-        ndk {
-            // 64-bit only: 32-bit (armeabi-v7a) instances cannot run in this app
-            // (Android processes lock in one bitness), so only ship arm64-v8a.
-            // A separate 32-bit-focused launcher is planned for the future.
-            abiFilters 'arm64-v8a'
-        }
+        // NOTE: no ndk/abiFilters here on purpose. A defaultConfig ndk block is *merged*
+        // with a flavor's rather than overridden by it, so listing arm64-v8a here and
+        // armeabi-v7a in the 32-bit flavor yields an APK containing BOTH. That is not a
+        // harmless extra: an APK carrying any 64-bit library is installed as a 64-bit
+        // process, which then refuses to load the 32-bit game libraries. Each flavor
+        // therefore declares its ABI set in full and nothing is listed globally.
         externalNativeBuild {
             cmake {
                 arguments "-DANDROID_STL=c++_shared"
@@ -71,6 +71,37 @@ android {
             assets.srcDirs += rootProject.file('resources')
         }
     }
+    /*
+     * One process cannot span both bitnesses, so supporting 32-bit-only Minecraft versions
+     * means shipping two APKs. These flavors are built from the same source; only the native
+     * ABI set differs.
+     *
+     * The 32-bit build necessarily omits the arm64-only closed-source prebuilts
+     * (libgxcore, libinbuiltmods, libmaesdk, libPlayFabMultiplayer, libmtbinloader2). Every
+     * load site already degrades gracefully: the gxcore bootstrap returns false and is
+     * skipped, InbuiltModsNative.loadLibrary returns false, LibBindings' static init
+     * swallows UnsatisfiedLinkError, and loadAllLibraries filters them out. The 32-bit build
+     * therefore loses gxcore verification, the inbuilt mod menu and materialbin autofix, but
+     * it launches 32-bit versions.
+     */
+    flavorDimensions += "abi"
+    productFlavors {
+        abi64 {
+            dimension "abi"
+            ndk {
+                abiFilters 'arm64-v8a'
+            }
+        }
+        abi32 {
+            dimension "abi"
+            ndk {
+                // armeabi-v7a only. This must NOT also list arm64-v8a: see the note in
+                // defaultConfig about ndk blocks being merged rather than overridden.
+                abiFilters 'armeabi-v7a'
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false

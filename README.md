@@ -52,7 +52,7 @@ Chimera Launcher enables you to import your official Minecraft APK and run it di
 Before installing Chimera Launcher, ensure your device meets the following minimum specifications:
 
 - **Operating System:** Android 9.0 (API 28) or higher
-- **Device Architecture:** 64-bit (arm64-v8a) devices. Most Minecraft versions ship both arm64-v8a and armeabi-v7a libraries and run normally; only a version whose APK ships 32-bit libraries exclusively is refused, since a 64-bit process cannot load them.
+- **Device Architecture:** arm64-v8a or armeabi-v7a. Two APKs are published: a 64-bit build (`abi64`) and a 32-bit build (`abi32`). Install the one matching the Minecraft versions you play. Most versions ship both ABIs and run on the 64-bit build; a version whose APK ships *only* 32-bit libraries needs the 32-bit build, because Android fixes an app process to a single bitness at install time and a 64-bit process cannot load 32-bit libraries.
 - **RAM:** Minimum 1 GB available RAM (2 GB or more recommended)
 - **Storage:** At least 2 GB of available storage for Minecraft and game data
 - **License Requirement:** You must have Minecraft installed on you're device for Chimera Launcher to work

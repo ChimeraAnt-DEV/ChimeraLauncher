@@ -702,12 +702,15 @@ class GamePackageManager private constructor(
         progressEnd: Int = 74,
         excludeReasons: Map<String, String> = emptyMap()
     ): List<LibraryLoadResult> {
-        val deviceSupports64Bit = Build.SUPPORTED_64_BIT_ABIS.isNotEmpty()
+        // Keyed off the *process* bitness, not the device's capability. On an arm64 device
+        // running the 32-bit build the device reports 64-bit support while the process is
+        // 32-bit, so a device check would try to load the arm64-only prebuilts and fail.
+        val runningAs64Bit = processIs64Bit()
         val allLibs = (requiredLibs + systemLoadedLibs).filterNot { lib ->
-            // PlayFab/maesdk/gxcore are arm64-only closed-source prebuilts; on a 32-bit
-            // device they aren't bundled, so exclude them up front instead of letting
+            // PlayFab/maesdk/gxcore are arm64-only closed-source prebuilts, so they are
+            // bundled only in the 64-bit build. Exclude them up front instead of letting
             // System.loadLibrary fail mid-launch.
-            systemLoadedLibs.contains(lib) && !deviceSupports64Bit
+            systemLoadedLibs.contains(lib) && !runningAs64Bit
         }
         val loadableLibs = allLibs.filterNot { lib ->
             val libName = normalizeLibraryName(lib)
