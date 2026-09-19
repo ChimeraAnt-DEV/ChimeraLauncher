@@ -23,19 +23,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
-          fetch-depth: 2
+          # Full history so the previous news.json can be recovered from any pushed commit.
+          fetch-depth: 0
 
       - name: Validate release content
         run: python3 scripts/validate_release_content.py
 
       - name: Find the newly published item
         id: news
+        env:
+          # The tip of the branch before this push. Empty for workflow_dispatch.
+          BEFORE_SHA: ${{ github.event.before }}
         run: |
           previous_file="${RUNNER_TEMP}/previous-news.json"
           message_file="${RUNNER_TEMP}/news-message.json"
-          if ! git show HEAD^:resources/launcher/news.json > "$previous_file" 2>/dev/null; then
+          # Compare against the state before this push. Falling back to HEAD^ keeps
+          # workflow_dispatch working, and an empty feed keeps the first-ever run working.
+          base="${BEFORE_SHA}"
+          if [ -z "$base" ] || ! git cat-file -e "${base}^{commit}" 2>/dev/null; then
+            base="HEAD^"
+          fi
+          if ! git show "${base}:resources/launcher/news.json" > "$previous_file" 2>/dev/null; then
             printf '{"schemaVersion":1,"items":[]}' > "$previous_file"
           fi
           python3 scripts/prepare_news_notification.py \
@@ -63,7 +73,7 @@ jobs:
       - name: Authenticate to Firebase
         id: auth
         if: steps.news.outputs.should_send == 'true' && steps.firebase.outputs.enabled == 'true'
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
           token_format: access_token
@@ -107,3 +117,22 @@ jobs:
             -H "Content-Type: application/json; UTF-8" \
             --data-binary "@$request_file" \
             "https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send"
+
+      - name: Summarize the result
+        if: always()
+        env:
+          SHOULD_SEND: ${{ steps.news.outputs.should_send }}
+          FCM_ENABLED: ${{ steps.firebase.outputs.enabled }}
+        run: |
+          {
+            echo "### Launcher news"
+            echo ""
+            if [ "${SHOULD_SEND}" = "true" ] && [ "${FCM_ENABLED}" = "true" ]; then
+              echo "Published a new item and sent the push notification."
+            elif [ "${SHOULD_SEND}" = "true" ]; then
+              echo "Published a new item, but the push notification was skipped."
+              echo "Add the \`FIREBASE_SERVICE_ACCOUNT_JSON\` secret to enable push."
+            else
+              echo "No new notifiable item in this push; nothing was sent."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
