@@ -399,7 +399,6 @@ public class SettingsActivity extends BaseActivity {
         switchEnableGlow = findViewById(R.id.switch_enable_glow);
         switchCompactMode = findViewById(R.id.switch_compact_mode);
         btnResetCustomizations = findViewById(R.id.btn_reset_customizations);
-
         // Animation Speed SeekBar
         SeekBar seekAnimationSpeed = findViewById(R.id.seek_animation_speed);
         if (seekAnimationSpeed != null) {
@@ -565,6 +564,31 @@ public class SettingsActivity extends BaseActivity {
             switchCompactMode.setChecked(personalizationManager.isCompactMode());
             switchCompactMode.setOnCheckedChangeListener((buttonView, isChecked) -> {
                 personalizationManager.setCompactMode(isChecked);
+            });
+        }
+
+        // Haptic Feedback Toggle
+        SwitchMaterial switchHaptics = findViewById(R.id.switch_haptic_feedback);
+        if (switchHaptics != null) {
+            switchHaptics.setChecked(personalizationManager.isHapticFeedbackEnabled());
+            switchHaptics.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                personalizationManager.setHapticFeedbackEnabled(isChecked);
+                if (isChecked) {
+                    org.chimeramc.launcher.ui.animation.UiTouchFeedback.confirm(this);
+                }
+            });
+        }
+
+        // Dynamic Color Toggle — only meaningful where the platform can produce a palette.
+        SwitchMaterial switchDynamicColor = findViewById(R.id.switch_dynamic_color);
+        if (switchDynamicColor != null) {
+            boolean supported = ThemeManager.isDynamicColorSupported();
+            switchDynamicColor.setEnabled(supported);
+            switchDynamicColor.setAlpha(supported ? 1f : 0.5f);
+            switchDynamicColor.setChecked(supported && personalizationManager.isDynamicColorEnabled());
+            switchDynamicColor.setOnCheckedChangeListener((buttonView, isChecked) -> {
+                personalizationManager.setDynamicColorEnabled(isChecked);
+                recreate();
             });
         }
 

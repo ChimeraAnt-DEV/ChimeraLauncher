@@ -90,7 +90,10 @@ public class FileListAdapter extends RecyclerView.Adapter<FileListAdapter.ViewHo
                 btn.setIconTint(android.content.res.ColorStateList.valueOf(accentColor));
             }
 
-            btnDownload.setOnClickListener(v -> listener.onDownloadClick(file));
+            btnDownload.setOnClickListener(v -> {
+                org.chimeramc.launcher.ui.animation.UiTouchFeedback.confirm(v.getContext());
+                listener.onDownloadClick(file);
+            });
         }
     }
 }

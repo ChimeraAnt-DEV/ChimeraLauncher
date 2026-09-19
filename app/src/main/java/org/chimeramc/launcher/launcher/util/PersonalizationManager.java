@@ -52,6 +52,8 @@ public class PersonalizationManager {
     private static final String KEY_SHOW_ANIMATIONS = "show_animations";
     private static final String KEY_ENABLE_GLOW = "enable_glow_effects";
     private static final String KEY_COMPACT_MODE = "compact_mode";
+    private static final String KEY_HAPTIC_FEEDBACK = "haptic_feedback";
+    public static final String KEY_DYNAMIC_COLOR = "dynamic_color";
 
     public static final int BG_BLUR_MIN = 0;
     public static final int BG_BLUR_MAX = 25;
@@ -309,6 +311,36 @@ public class PersonalizationManager {
         sChangeGeneration++;
     }
 
+    /**
+     * Whether touch interactions emit haptics. On by default: the signals are deliberately
+     * light, and the heavier ones only fire on confirm/reject. Turning it off silences every
+     * signal from {@link org.chimeramc.launcher.ui.animation.UiTouchFeedback}.
+     */
+    public boolean isHapticFeedbackEnabled() {
+        return prefs.getBoolean(KEY_HAPTIC_FEEDBACK, true);
+    }
+
+    public void setHapticFeedbackEnabled(boolean enabled) {
+        if (isHapticFeedbackEnabled() == enabled) return;
+        prefs.edit().putBoolean(KEY_HAPTIC_FEEDBACK, enabled).apply();
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.setEnabled(enabled);
+        sChangeGeneration++;
+    }
+
+    /**
+     * Material You palette derived from the wallpaper. Off by default, and only ever takes
+     * effect on Android 12+ where the platform can produce one.
+     */
+    public boolean isDynamicColorEnabled() {
+        return prefs.getBoolean(KEY_DYNAMIC_COLOR, false);
+    }
+
+    public void setDynamicColorEnabled(boolean enabled) {
+        if (isDynamicColorEnabled() == enabled) return;
+        prefs.edit().putBoolean(KEY_DYNAMIC_COLOR, enabled).apply();
+        sChangeGeneration++;
+    }
+
     public void resetAllCustomizations() {
         prefs.edit()
             .remove(KEY_ACCENT_COLOR)
@@ -324,7 +356,10 @@ public class PersonalizationManager {
             .remove(KEY_SHOW_ANIMATIONS)
             .remove(KEY_ENABLE_GLOW)
             .remove(KEY_COMPACT_MODE)
+            .remove(KEY_HAPTIC_FEEDBACK)
+            .remove(KEY_DYNAMIC_COLOR)
             .apply();
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.setEnabled(true);
         sChangeGeneration++;
     }
 
@@ -656,9 +691,10 @@ public class PersonalizationManager {
     }
 
     public void applyAccentColorRecursive(View view, int accentColor, Context ctx) {
-        int defaultPrimary = ContextCompat.getColor(ctx, R.color.primary);
-        int defaultSecondary = ContextCompat.getColor(ctx, R.color.secondary);
-        int defaultTertiary = ContextCompat.getColor(ctx, R.color.tertiary);
+        int defaultPrimary = resolveThemeColor(ctx, androidx.appcompat.R.attr.colorPrimary, R.color.primary);
+        int defaultPrimaryContainer = resolveThemeColor(ctx, com.google.android.material.R.attr.colorPrimaryContainer, R.color.primary_container);
+        int defaultSecondary = resolveThemeColor(ctx, com.google.android.material.R.attr.colorSecondary, R.color.secondary);
+        int defaultTertiary = resolveThemeColor(ctx, com.google.android.material.R.attr.colorTertiary, R.color.tertiary);
         int defaultAccentText = ContextCompat.getColor(ctx, R.color.accent_text);
 
         if (view instanceof com.google.android.material.switchmaterial.SwitchMaterial) {
@@ -731,7 +767,8 @@ public class PersonalizationManager {
                 try {
                     if (gd.getColor() != null) {
                         int gdColor = gd.getColor().getDefaultColor();
-                        if (gdColor == defaultPrimary || gdColor == defaultSecondary || gdColor == defaultTertiary) {
+                        if (gdColor == defaultPrimary || gdColor == defaultSecondary || gdColor == defaultTertiary
+                                || gdColor == defaultPrimaryContainer) {
                             gd.setColor(accentColor);
                             btn.setTextColor(Color.WHITE);
                         }
@@ -784,6 +821,30 @@ public class PersonalizationManager {
 
     private boolean isDarkMode(Activity activity) {
         return isDarkMode((Context) activity);
+    }
+
+    /**
+     * Resolves a theme attribute to a concrete color, falling back to a static resource.
+     *
+     * The accent-override logic compares a view's current color against "the theme's
+     * primary" to decide whether the view is still wearing the default palette. With
+     * Material You that default is no longer a fixed {@code @color/primary} — it depends on
+     * the wallpaper — so comparing against the static resource would silently stop matching
+     * and a custom accent would no longer override tinted views.
+     */
+    private static int resolveThemeColor(Context ctx, int attr, int fallbackRes) {
+        try {
+            android.util.TypedValue value = new android.util.TypedValue();
+            if (ctx.getTheme().resolveAttribute(attr, value, true) && value.resourceId != 0) {
+                return ContextCompat.getColor(ctx, value.resourceId);
+            }
+            if (value.type >= android.util.TypedValue.TYPE_FIRST_COLOR_INT
+                    && value.type <= android.util.TypedValue.TYPE_LAST_COLOR_INT) {
+                return value.data;
+            }
+        } catch (Throwable ignored) {
+        }
+        return ContextCompat.getColor(ctx, fallbackRes);
     }
 
     public boolean isDarkMode(Context ctx) {

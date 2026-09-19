@@ -1,9 +1,12 @@
 package org.chimeramc.launcher.util;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
 
 import androidx.appcompat.app.AppCompatDelegate;
+
+import com.google.android.material.color.DynamicColors;
 
 public class ThemeManager {
     public static final int MODE_FOLLOW_SYSTEM = 0;
@@ -19,6 +22,43 @@ public class ThemeManager {
     public ThemeManager(Activity activity) {
         this.activity = activity;
         prefs = activity.getSharedPreferences(THEME_PREFS, Activity.MODE_PRIVATE);
+    }
+
+    /**
+     * Material You dynamic color, applied per activity right before the content view is
+     * inflated so the derived palette is in place for the first layout pass.
+     *
+     * Applying it here rather than once from {@code Application} keeps it behind the user's
+     * "Match Wallpaper Colors" toggle: the material helper installs an overlay theme, and an
+     * activity that has already inflated its views would keep the old colors. The activity is
+     * recreated when the toggle flips, so the overlay is added or dropped cleanly.
+     *
+     * A custom accent color still wins: {@link PersonalizationManager} tints views on top of
+     * whichever palette is active, which is what the setting's description promises.
+     */
+    public static void applyDynamicColors(Activity activity) {
+        if (activity == null) return;
+        if (!isDynamicColorEnabled(activity)) return;
+        try {
+            if (!DynamicColors.isDynamicColorAvailable()) return;
+            DynamicColors.applyToActivityIfAvailable(activity);
+        } catch (Throwable ignored) {
+            // A device without the Material You resources simply keeps the static palette.
+        }
+    }
+
+    public static boolean isDynamicColorEnabled(Context context) {
+        if (context == null) return false;
+        return context.getSharedPreferences(PersonalizationManager.PREFS_NAME, Context.MODE_PRIVATE)
+                .getBoolean(PersonalizationManager.KEY_DYNAMIC_COLOR, false);
+    }
+
+    public static boolean isDynamicColorSupported() {
+        try {
+            return DynamicColors.isDynamicColorAvailable();
+        } catch (Throwable ignored) {
+            return false;
+        }
     }
 
     public void applyTheme() {

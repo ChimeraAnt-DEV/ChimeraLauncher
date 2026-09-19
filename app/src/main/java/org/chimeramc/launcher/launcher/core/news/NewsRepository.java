@@ -9,6 +9,7 @@ import android.text.TextUtils;
 import com.google.gson.Gson;
 
 import org.chimeramc.launcher.settings.LowLatencyNetworkManager;
+import org.chimeramc.launcher.settings.ThermalGovernor;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -69,6 +70,11 @@ public final class NewsRepository {
     public static void refreshIfStale(Context context, Callback callback) {
         if (LowLatencyNetworkManager.isGameSessionActive()) {
             // Pause non-essential polling while a session is running (Reduce Network Latency).
+            loadCached(context, callback);
+            return;
+        }
+        if (ThermalGovernor.shouldPauseBackgroundWork()) {
+            // Device is under thermal pressure; serve the cache and spare the CPU/radio.
             loadCached(context, callback);
             return;
         }

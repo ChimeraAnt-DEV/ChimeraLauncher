@@ -8,6 +8,7 @@ import org.chimeramc.launcher.core.crash.CrashReporter
 import org.chimeramc.launcher.core.news.NewsNotificationHelper
 import org.chimeramc.launcher.settings.FeatureSettings
 import org.chimeramc.launcher.settings.LowLatencyNetworkManager
+import org.chimeramc.launcher.settings.ThermalGovernor
 import org.chimeramc.launcher.ui.dialogs.LogcatOverlayManager
 
 class LauncherApplication : Application() {
@@ -17,7 +18,14 @@ class LauncherApplication : Application() {
         context = applicationContext
         FeatureSettings.init(applicationContext)
         LowLatencyNetworkManager.init(applicationContext)
+        ThermalGovernor.init(applicationContext)
         CrashReporter.init(this)
+        // Mirror the persisted haptics preference into the static feedback layer so the
+        // very first interaction honours it, before Settings is ever opened.
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.setEnabled(
+            org.chimeramc.launcher.util.PersonalizationManager(applicationContext)
+                .isHapticFeedbackEnabled()
+        )
         val processName = Application.getProcessName()
         if (processName.endsWith(":crash")) return
 

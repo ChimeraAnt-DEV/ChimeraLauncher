@@ -218,6 +218,7 @@ public class ControllerActivity extends BaseActivity {
         profileManager.setActiveSlot(currentType, slot);
         ControllerProfile activeProfile = profileManager.getActiveProfile(currentType);
         ControllerInputProcessor.setActiveProfile(currentType, activeProfile);
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.selection(this);
         Toast.makeText(this, getString(R.string.controller_profile_active_changed, activeProfile.getName()), Toast.LENGTH_SHORT).show();
         refreshProfiles();
     }
@@ -256,6 +257,7 @@ public class ControllerActivity extends BaseActivity {
     private void deleteProfile() {
         int active = profileManager.getActiveSlot(currentType);
         profileManager.deleteProfile(currentType, active);
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.reject(this);
         Toast.makeText(this, R.string.controller_profile_deleted, Toast.LENGTH_SHORT).show();
         refreshProfiles();
     }
@@ -350,6 +352,7 @@ public class ControllerActivity extends BaseActivity {
                 List<ControllerProfile> profiles = profileManager.getProfiles(currentType);
                 profiles.set(active, working);
                 profileManager.saveProfiles(currentType, profiles);
+                org.chimeramc.launcher.ui.animation.UiTouchFeedback.confirm(ControllerActivity.this);
                 refreshProfiles();
             })
             .setNegativeButton(getString(R.string.controller_cancel), v -> {

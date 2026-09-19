@@ -9,6 +9,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 
 import androidx.appcompat.widget.AppCompatTextView;
 
@@ -50,6 +51,8 @@ final class ControlEditorCanvas extends ViewGroup {
     private final EditListener listener;
     private final Map<EditorItemView, EditorTarget> targets = new HashMap<>();
     private final Paint guidePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint safeZonePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private ControlSafeZone safeZone = ControlSafeZone.full(0, 0);
     private CustomControls profile;
     private int guideX = NO_GUIDE;
     private int guideY = NO_GUIDE;
@@ -62,6 +65,9 @@ final class ControlEditorCanvas extends ViewGroup {
         float density = getResources().getDisplayMetrics().density;
         guidePaint.setColor(0xFF4AE0A0);
         guidePaint.setStrokeWidth(Math.max(2f, density));
+        safeZonePaint.setColor(0x66FF5252);
+        safeZonePaint.setStyle(Paint.Style.STROKE);
+        safeZonePaint.setStrokeWidth(Math.max(1f, density));
     }
 
     void setProfile(CustomControls profile) {
@@ -121,15 +127,23 @@ final class ControlEditorCanvas extends ViewGroup {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         int width = right - left;
         int height = bottom - top;
+        safeZone = SafeZoneInsets.forView(this);
         for (int i = 0; i < getChildCount(); i++) {
             EditorItemView child = (EditorItemView) getChildAt(i);
             ControlData data = targets.get(child).data;
             int x = evaluate(data.dynamicX, data, width, height, true);
             int y = evaluate(data.dynamicY, data, width, height, false);
-            x = Math.max(0, Math.min(x, width - child.getMeasuredWidth()));
-            y = Math.max(0, Math.min(y, height - child.getMeasuredHeight()));
+            x = safeZone.clampX(x, child.getMeasuredWidth());
+            y = safeZone.clampY(y, child.getMeasuredHeight());
             child.layout(x, y, x + child.getMeasuredWidth(), y + child.getMeasuredHeight());
         }
+    }
+
+    @Override
+    public WindowInsets onApplyWindowInsets(WindowInsets insets) {
+        WindowInsets result = super.onApplyWindowInsets(insets);
+        requestLayout();
+        return result;
     }
 
     @Override
@@ -137,24 +151,27 @@ final class ControlEditorCanvas extends ViewGroup {
         super.dispatchDraw(canvas);
         if (guideX != NO_GUIDE) canvas.drawLine(guideX, 0, guideX, getHeight(), guidePaint);
         if (guideY != NO_GUIDE) canvas.drawLine(0, guideY, getWidth(), guideY, guidePaint);
+        if (!safeZone.coversWholeView()) {
+            canvas.drawRect(safeZone.left, safeZone.top, safeZone.right, safeZone.bottom, safeZonePaint);
+        }
     }
 
     private SnapPosition snap(EditorItemView moving, int requestedX, int requestedY) {
-        int maxX = Math.max(0, getWidth() - moving.getWidth());
-        int maxY = Math.max(0, getHeight() - moving.getHeight());
-        int x = Math.max(0, Math.min(requestedX, maxX));
-        int y = Math.max(0, Math.min(requestedY, maxY));
+        int maxX = Math.max(safeZone.left, safeZone.right - moving.getWidth());
+        int maxY = Math.max(safeZone.top, safeZone.bottom - moving.getHeight());
+        int x = safeZone.clampX(requestedX, moving.getWidth());
+        int y = safeZone.clampY(requestedY, moving.getHeight());
         int threshold = Math.round(8 * getResources().getDisplayMetrics().density);
         int gap = Math.round(8 * getResources().getDisplayMetrics().density);
         AxisSnap xSnap = new AxisSnap(x, threshold);
         AxisSnap ySnap = new AxisSnap(y, threshold);
 
-        xSnap.offer(0, 0);
-        xSnap.offer(maxX, getWidth());
-        xSnap.offer(maxX / 2, getWidth() / 2);
-        ySnap.offer(0, 0);
-        ySnap.offer(maxY, getHeight());
-        ySnap.offer(maxY / 2, getHeight() / 2);
+        xSnap.offer(safeZone.left, safeZone.left);
+        xSnap.offer(maxX, safeZone.right);
+        xSnap.offer((safeZone.left + maxX) / 2, (safeZone.left + safeZone.right) / 2);
+        ySnap.offer(safeZone.top, safeZone.top);
+        ySnap.offer(maxY, safeZone.bottom);
+        ySnap.offer((safeZone.top + maxY) / 2, (safeZone.top + safeZone.bottom) / 2);
 
         for (int i = 0; i < getChildCount(); i++) {
             View other = getChildAt(i);
@@ -174,8 +191,8 @@ final class ControlEditorCanvas extends ViewGroup {
         }
 
         return new SnapPosition(
-                Math.max(0, Math.min(xSnap.value, maxX)),
-                Math.max(0, Math.min(ySnap.value, maxY)),
+                safeZone.clampX(xSnap.value, moving.getWidth()),
+                safeZone.clampY(ySnap.value, moving.getHeight()),
                 xSnap.guide,
                 ySnap.guide);
     }
@@ -288,10 +305,8 @@ final class ControlEditorCanvas extends ViewGroup {
                     return true;
                 case MotionEvent.ACTION_UP:
                     if (moved) {
-                        int x = Math.max(0, Math.min(Math.round(getLeft() + getTranslationX()),
-                                getWidth() == 0 ? 0 : ControlEditorCanvas.this.getWidth() - getWidth()));
-                        int y = Math.max(0, Math.min(Math.round(getTop() + getTranslationY()),
-                                getHeight() == 0 ? 0 : ControlEditorCanvas.this.getHeight() - getHeight()));
+                        int x = safeZone.clampX(Math.round(getLeft() + getTranslationX()), getWidth());
+                        int y = safeZone.clampY(Math.round(getTop() + getTranslationY()), getHeight());
                         target.data.dynamicX = Integer.toString(x);
                         target.data.dynamicY = Integer.toString(y);
                         setTranslationX(0f);

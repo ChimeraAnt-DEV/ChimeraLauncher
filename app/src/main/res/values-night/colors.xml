@@ -50,4 +50,10 @@
     <color name="grad_content_end">#1400ACC1</color>
     <color name="grad_pulse_glow">#444AE0A0</color>
 
+    <!-- Glass surfaces: light-mode white translucency reads as fog on a black backdrop, so
+         dark mode uses a subtler lift with a brighter hairline border. -->
+    <color name="glass_background">#40FFFFFF</color>
+    <color name="glass_background_elevated">#4DFFFFFF</color>
+    <color name="glass_border">#33FFFFFF</color>
+
 </resources>

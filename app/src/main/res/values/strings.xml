@@ -1041,6 +1041,10 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="show_animations">Show Animations</string>
     <string name="enable_glow_effects">Enable Glow Effects</string>
     <string name="compact_mode">Compact Mode</string>
+    <string name="haptic_feedback">Haptic Feedback</string>
+    <string name="haptic_feedback_desc">Vibrate briefly on presses and toggles. Confirming an action and deleting a profile feel different. Turn off to silence all touch vibration.</string>
+    <string name="dynamic_color">Match Wallpaper Colors</string>
+    <string name="dynamic_color_desc">Tint the app with colors derived from your wallpaper (Android 12+). Your custom accent color still wins where you set one.</string>
     <string name="reset_to_defaults">Reset to Defaults</string>
     <string name="reset_settings_confirm">Reset all customization settings to default values?</string>
     <string name="settings_reset">Settings Reset</string>
