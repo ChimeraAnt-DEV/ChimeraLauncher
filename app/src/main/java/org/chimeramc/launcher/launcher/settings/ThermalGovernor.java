@@ -2,9 +2,8 @@ package org.chimeramc.launcher.settings;
 
 import android.content.Context;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.PowerManager;
+
+import androidx.annotation.RequiresApi;
 
 import org.chimeramc.launcher.util.ThermalPolicy;
 
@@ -17,18 +16,16 @@ import org.chimeramc.launcher.util.ThermalPolicy;
  * news polling, changelog checks, DNS warm-up. User-initiated work (an explicit download)
  * is never paused, because a person waiting on a progress bar is not background work.
  *
- * The listener is only registered on API 29+, where the platform reports thermal status.
- * Below that, {@link #severity()} reads as cool and nothing is throttled.
+ * The platform thermal API only exists from API 29, so every reference to it lives in
+ * {@link Api29}. That separation is load-bearing, not tidiness: a static field whose type is
+ * an API-29 class makes this class fail to initialize on API 28, because the nested interface
+ * cannot be resolved while running the static initializer. An {@code SDK_INT} check inside a
+ * method cannot prevent that, since class initialization happens before any method body runs.
  */
 public final class ThermalGovernor {
 
     private static volatile Context sAppContext;
-    private static final Handler MAIN = new Handler(Looper.getMainLooper());
-    private static final PowerManager.OnThermalStatusChangedListener LISTENER =
-            status -> { /* listener only serves to keep the callback wired on API 29+ */ };
-
     private static volatile int sSeverity = ThermalPolicy.SEVERITY_NONE;
-    private static volatile boolean sRegistered;
 
     private ThermalGovernor() {
     }
@@ -36,20 +33,8 @@ public final class ThermalGovernor {
     public static void init(Context context) {
         if (context == null) return;
         sAppContext = context.getApplicationContext();
-        registerListener();
-    }
-
-    private static void registerListener() {
-        if (sRegistered) return;
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return;
-        try {
-            PowerManager powerManager =
-                    (PowerManager) sAppContext.getSystemService(Context.POWER_SERVICE);
-            if (powerManager == null) return;
-            powerManager.addThermalStatusListener(MAIN::post, LISTENER);
-            sRegistered = true;
-        } catch (Throwable ignored) {
-            // No thermal reporting available; severity stays cool and nothing is held back.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            Api29.startListener(sAppContext);
         }
     }
 
@@ -61,14 +46,12 @@ public final class ThermalGovernor {
      * transition. The call is cheap.
      */
     public static int severity() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q || sAppContext == null) {
+        Context context = sAppContext;
+        if (context == null || Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
             return ThermalPolicy.SEVERITY_NONE;
         }
         try {
-            PowerManager powerManager =
-                    (PowerManager) sAppContext.getSystemService(Context.POWER_SERVICE);
-            if (powerManager == null) return ThermalPolicy.SEVERITY_NONE;
-            int severity = ThermalPolicy.severityFor(powerManager.getCurrentThermalStatus());
+            int severity = ThermalPolicy.severityFor(Api29.currentStatus(context));
             sSeverity = severity;
             return severity;
         } catch (Throwable ignored) {
@@ -84,5 +67,47 @@ public final class ThermalGovernor {
     /** True when non-critical background polling should be paused. */
     public static boolean shouldPauseBackgroundWork() {
         return !ThermalPolicy.allowsBackgroundWork(severity());
+    }
+
+    /**
+     * Everything that touches the API-29 thermal API. Holds a listener so the callback stays
+     * wired; the reading itself is pulled on demand by {@link #severity()}.
+     *
+     * Annotated so the API-level requirement is stated in one place and Lint can verify every
+     * call site keeps its {@code SDK_INT} guard.
+     */
+    @RequiresApi(Build.VERSION_CODES.Q)
+    private static final class Api29 {
+
+        private static final android.os.Handler MAIN =
+                new android.os.Handler(android.os.Looper.getMainLooper());
+
+        private static final android.os.PowerManager.OnThermalStatusChangedListener LISTENER =
+                status -> { };
+
+        private static volatile boolean sRegistered;
+
+        private Api29() {
+        }
+
+        static void startListener(Context context) {
+            if (sRegistered) return;
+            try {
+                android.os.PowerManager powerManager =
+                        (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+                if (powerManager == null) return;
+                powerManager.addThermalStatusListener(MAIN::post, LISTENER);
+                sRegistered = true;
+            } catch (Throwable ignored) {
+                // No thermal reporting available; severity stays cool and nothing is held back.
+            }
+        }
+
+        static int currentStatus(Context context) {
+            android.os.PowerManager powerManager =
+                    (android.os.PowerManager) context.getSystemService(Context.POWER_SERVICE);
+            if (powerManager == null) return ThermalPolicy.STATUS_NONE;
+            return powerManager.getCurrentThermalStatus();
+        }
     }
 }
