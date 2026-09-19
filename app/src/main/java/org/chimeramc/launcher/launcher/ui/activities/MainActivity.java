@@ -1163,12 +1163,20 @@ import okhttp3.OkHttpClient;
     }
     
     private void applyBlurIntensity(int intensity) {
-        // Blur implementation - using background dimming as fallback
-        if (binding != null && binding.getRoot() != null) {
-            // Higher intensity = more blur/dim
-            float dimAmount = intensity / 200f; // 0.0 to 0.5
-            binding.getRoot().setBackgroundColor(Color.argb((int)(dimAmount * 255), 0, 0, 0));
+        // Blur intensity is not a blur: this method dims the dashboard. Painting a black
+        // scrim over the whole root also darkens the wallpaper image that the user picked,
+        // so the scrim is only applied while a background image is actually in use. Without
+        // one there is nothing behind the cards to blur, and the scrim would just make the
+        // dashboard needlessly dark.
+        if (binding == null || binding.getRoot() == null) return;
+        PersonalizationManager pm = new PersonalizationManager(this);
+        if (!pm.hasBackgroundImage()) {
+            // Leave the layout's own background alone rather than painting a scrim
+            // over a dashboard that has nothing behind it.
+            return;
         }
+        float dimAmount = intensity / 200f; // 0.0 to 0.5
+        binding.getRoot().setBackgroundColor(Color.argb((int) (dimAmount * 255), 0, 0, 0));
     }
 
     private void applyGlowEffects(boolean enabled) {

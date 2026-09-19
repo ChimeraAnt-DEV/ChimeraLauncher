@@ -416,7 +416,7 @@ public class MainActivity extends GameActivity implements View.OnKeyListener, Fi
 
     public ThermalMonitor getThermalMonitor() {
         if (mThermalMonitor == null) {
-            mThermalMonitor = new ThermalMonitor();
+            mThermalMonitor = new ThermalMonitor(this);
         }
         return mThermalMonitor;
     }

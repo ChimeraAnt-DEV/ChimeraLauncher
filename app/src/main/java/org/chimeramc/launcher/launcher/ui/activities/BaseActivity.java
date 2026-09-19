@@ -92,6 +92,9 @@ public class BaseActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         ThemeManager themeManager = new ThemeManager(this);
         themeManager.applyTheme();
+        // Must run before super.onCreate so the dynamic-color overlay theme is installed
+        // before any view is inflated in this activity.
+        ThemeManager.applyDynamicColors(this);
         appliedThemeGeneration = ThemeManager.getThemeChangeGeneration();
         appliedPersonalizationGeneration = PersonalizationManager.getChangeGeneration();
         super.onCreate(savedInstanceState);

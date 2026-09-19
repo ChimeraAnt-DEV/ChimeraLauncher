@@ -2,6 +2,7 @@ package org.chimeramc.launcher.settings;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 
 import java.io.IOException;
@@ -37,6 +38,9 @@ import javax.net.SocketFactory;
  *    TLS handshakes are already done when the user opens a screen.
  *  - Marks the start/end of a game session so background pollers stop competing for the
  *    radio during play; airtime contention is real added latency on mobile.
+ *  - Holds a low-latency Wi-Fi lock for the duration of a session, so the radio does not
+ *    fall back into its power-save polling cycle between packets. It is released with the
+ *    session, or it would keep the radio awake and drain the battery.
  */
 public final class LowLatencyNetworkManager {
     @SuppressLint("StaticFieldLeak")
@@ -187,6 +191,7 @@ public final class LowLatencyNetworkManager {
 
     public static void prefetchDnsOnBackground() {
         if (!isEnabled()) return;
+        if (ThermalGovernor.shouldPauseSpeculativeWork()) return;
         for (final String host : PREFETCH_HOSTS) {
             DNS_EXECUTOR.execute(() -> {
                 try {
@@ -207,9 +212,51 @@ public final class LowLatencyNetworkManager {
 
     public static void setGameSessionActive(boolean active) {
         GameQuietZoneHolder.active = active;
+        updateWifiLock(active);
+    }
+
+    /**
+     * Holds a low-latency Wi-Fi lock for the duration of a game session.
+     *
+     * The lock asks the Wi-Fi stack to keep the radio out of its power-save polling cycle, so
+     * the device does not add wake-up delay to the packets a game session sends. It only
+     * applies on Wi-Fi (on mobile data there is nothing to hold) and only while the "Reduce
+     * Network Latency" toggle is on. The lock is reference-counted and always released, or the
+     * radio would stay out of power save after the session ends and quietly drain the battery.
+     */
+    private static synchronized void updateWifiLock(boolean active) {
+        Context context = sAppContext;
+        if (context == null) return;
+        try {
+            if (active && isEnabled()) {
+                if (sWifiLock != null && sWifiLock.isHeld()) return;
+                WifiManager wifiManager =
+                        (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+                if (wifiManager == null) return;
+                if (sWifiLock == null) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        sWifiLock = wifiManager.createWifiLock(
+                                WifiManager.WIFI_MODE_FULL_LOW_LATENCY,
+                                "ChimeraLauncher:GameLowLatencyLock");
+                    } else {
+                        sWifiLock = wifiManager.createWifiLock(
+                                WifiManager.WIFI_MODE_FULL_HIGH_PERF,
+                                "ChimeraLauncher:GameLowLatencyLock");
+                    }
+                }
+                sWifiLock.setReferenceCounted(false);
+                sWifiLock.acquire();
+            } else if (sWifiLock != null && sWifiLock.isHeld()) {
+                sWifiLock.release();
+            }
+        } catch (Throwable ignored) {
+            // A device that refuses the lock simply keeps its default radio behaviour.
+        }
     }
 
     private static final class GameQuietZoneHolder {
         private static volatile boolean active;
     }
+
+    private static volatile WifiManager.WifiLock sWifiLock;
 }

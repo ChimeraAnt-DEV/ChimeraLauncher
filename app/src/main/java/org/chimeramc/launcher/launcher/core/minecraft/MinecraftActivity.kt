@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.AssetManager
 import android.os.Handler
+import android.os.Build
 import android.os.Looper
 import android.graphics.Color
 import android.os.Bundle
@@ -26,6 +27,7 @@ import org.chimeramc.launcher.core.mods.ModManager
 import org.levimc.launcher.core.mods.inbuilt.nativemod.PojavControlsMod
 import org.chimeramc.launcher.core.mods.inbuilt.overlay.InbuiltOverlayManager
 import org.chimeramc.launcher.launcher.controller.ControllerInputProcessor
+import org.chimeramc.launcher.util.DisplayModePreference
 import org.chimeramc.launcher.preloader.PreloaderInput
 import org.chimeramc.pojavcontrols.PojavControls
 import org.chimeramc.pojavcontrols.PojavControlsHost
@@ -151,10 +153,40 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
             ControllerInputProcessor.detectAndLoad(this)
             MinecraftActivityState.onCreated(this)
             startPlaytimeSession(intent.getStringExtra(MinecraftLauncher.EXTRA_STORAGE_PROFILE_ID))
+            applyHighRefreshRateMode()
         } catch (throwable: Throwable) {
             trace.error("Post-init hook failed", formatLaunchFailure(throwable))
         }
         trace.mark("MinecraftActivity onCreate finished")
+    }
+
+    /**
+     * Asks the window manager to run this window on a high-refresh display mode so the game
+     * can render past the panel's default rate.
+     *
+     * Only a mode that keeps the resolution already in use is selected. On many panels the
+     * fast modes are lower resolution, and picking the fastest mode outright would trade a
+     * sharper picture for frames without saying so. If no same-resolution fast mode exists
+     * the window is left untouched.
+     */
+    private fun applyHighRefreshRateMode() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        try {
+            val current = display?.mode ?: return
+            val modes = display?.supportedModes?.map {
+                DisplayModePreference.Mode(it.modeId, it.refreshRate, it.physicalWidth, it.physicalHeight)
+            } ?: return
+            val chosen = DisplayModePreference.selectHighRefreshModeId(
+                modes, current.physicalWidth, current.physicalHeight
+            )
+            if (chosen == DisplayModePreference.NO_MODE || chosen == current.modeId) return
+            val params = window.attributes
+            params.preferredDisplayModeId = chosen
+            window.attributes = params
+            trace.mark("High refresh display mode applied: $chosen")
+        } catch (throwable: Throwable) {
+            trace.error("High refresh display mode failed", formatLaunchFailure(throwable))
+        }
     }
 
 

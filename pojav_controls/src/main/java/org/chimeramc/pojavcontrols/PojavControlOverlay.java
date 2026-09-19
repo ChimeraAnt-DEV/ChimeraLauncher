@@ -16,6 +16,7 @@ import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ final class PojavControlOverlay extends ViewGroup {
     private final ArrayList<RuntimeJoystick> joysticks = new ArrayList<>();
     private final ArrayList<DrawerRuntime> drawers = new ArrayList<>();
     private final Map<View, DrawerPlacement> drawerPlacements = new HashMap<>();
+    private ControlSafeZone safeZone = ControlSafeZone.full(0, 0);
     private CustomControls profile;
     private boolean controlsVisible = true;
     private boolean virtualMouse;
@@ -199,6 +201,7 @@ final class PojavControlOverlay extends ViewGroup {
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
         int width = right - left;
         int height = bottom - top;
+        safeZone = SafeZoneInsets.forView(this);
         for (int i = 0; i < getChildCount(); i++) {
             View child = getChildAt(i);
             if (child == runtimeSurface) {
@@ -210,8 +213,8 @@ final class PojavControlOverlay extends ViewGroup {
                     virtualCursorX = width / 2f;
                     virtualCursorY = height / 2f;
                 }
-                int x = Math.round(virtualCursorX);
-                int y = Math.round(virtualCursorY);
+                int x = safeZone.clampX(Math.round(virtualCursorX), child.getMeasuredWidth());
+                int y = safeZone.clampY(Math.round(virtualCursorY), child.getMeasuredHeight());
                 child.layout(x, y, x + child.getMeasuredWidth(), y + child.getMeasuredHeight());
                 continue;
             }
@@ -219,14 +222,26 @@ final class PojavControlOverlay extends ViewGroup {
             ControlData data = dataFor(child);
             int x = evaluatePosition(data.dynamicX, data, width, height, true);
             int y = evaluatePosition(data.dynamicY, data, width, height, false);
-            x = Math.max(0, Math.min(x, width - child.getMeasuredWidth()));
-            y = Math.max(0, Math.min(y, height - child.getMeasuredHeight()));
+            x = safeZone.clampX(x, child.getMeasuredWidth());
+            y = safeZone.clampY(y, child.getMeasuredHeight());
             child.layout(x, y, x + child.getMeasuredWidth(), y + child.getMeasuredHeight());
         }
         for (Map.Entry<View, DrawerPlacement> entry : drawerPlacements.entrySet()) {
             layoutDrawerChild(entry.getKey(), entry.getValue(), width, height);
         }
         updateVisibility();
+    }
+
+    /**
+     * Insets can arrive after the first layout (and change when the cutout mode or bars
+     * change). Re-run layout so controls move out from under the cutout instead of staying
+     * clipped until the next profile reload.
+     */
+    @Override
+    public WindowInsets onApplyWindowInsets(WindowInsets insets) {
+        WindowInsets result = super.onApplyWindowInsets(insets);
+        requestLayout();
+        return result;
     }
 
     @Override
@@ -280,8 +295,10 @@ final class PojavControlOverlay extends ViewGroup {
     }
 
     private void clampVirtualCursor() {
-        virtualCursorX = Math.max(0f, Math.min(virtualCursorX, Math.max(0, getWidth() - 1)));
-        virtualCursorY = Math.max(0f, Math.min(virtualCursorY, Math.max(0, getHeight() - 1)));
+        virtualCursorX = Math.max(safeZone.left,
+                Math.min(virtualCursorX, Math.max(safeZone.left, safeZone.right - 1)));
+        virtualCursorY = Math.max(safeZone.top,
+                Math.min(virtualCursorY, Math.max(safeZone.top, safeZone.bottom - 1)));
     }
 
     private void updateVirtualMouseButtons() {
@@ -475,8 +492,8 @@ final class PojavControlOverlay extends ViewGroup {
                 y = evaluatePosition(data.dynamicY, data, screenWidth, screenHeight, false);
             }
         }
-        x = Math.max(0, Math.min(x, screenWidth - child.getMeasuredWidth()));
-        y = Math.max(0, Math.min(y, screenHeight - child.getMeasuredHeight()));
+        x = safeZone.clampX(x, child.getMeasuredWidth());
+        y = safeZone.clampY(y, child.getMeasuredHeight());
         child.layout(x, y, x + child.getMeasuredWidth(), y + child.getMeasuredHeight());
     }
 
