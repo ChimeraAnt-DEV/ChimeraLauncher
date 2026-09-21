@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.view.KeyEvent;
 
+import org.chimeramc.launcher.ui.activities.CustomizeActivity;
 import org.chimeramc.launcher.ui.activities.InstancesActivity;
 import org.chimeramc.launcher.ui.activities.MainActivity;
 import org.chimeramc.launcher.ui.activities.ModsFullscreenActivity;
@@ -21,7 +22,11 @@ public class LauncherTabTest {
         assertSame(LauncherTab.LAUNCH, tabs[0]);
         assertSame(LauncherTab.VERSIONS, tabs[1]);
         assertSame(LauncherTab.MODS, tabs[2]);
-        assertSame(LauncherTab.SETTINGS, tabs[3]);
+        assertSame(LauncherTab.CUSTOMIZE, tabs[3]);
+        assertSame(LauncherTab.SETTINGS, tabs[4]);
+        // Five tabs are what fits a phone next to the news bell and account avatar; About
+        // lives inside Settings and Controller/Skins inside Customize.
+        assertEquals(5, tabs.length);
     }
 
     @Test
@@ -29,6 +34,7 @@ public class LauncherTabTest {
         assertSame(MainActivity.class, LauncherTab.LAUNCH.activity());
         assertSame(InstancesActivity.class, LauncherTab.VERSIONS.activity());
         assertSame(ModsFullscreenActivity.class, LauncherTab.MODS.activity());
+        assertSame(CustomizeActivity.class, LauncherTab.CUSTOMIZE.activity());
     }
 
     @Test

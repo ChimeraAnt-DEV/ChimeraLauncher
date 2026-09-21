@@ -32,13 +32,15 @@ To enable Microsoft login, users must:
 3. Add client ID to app settings
 
 ## Java Edition Support
-The launcher includes experimental Java Edition support via the JavaEditionModManager class. This requires:
-- External Java runtime (not bundled)
-- User-provided Java Edition files
+Not supported. Java Edition cannot run on Android's ART runtime: it needs a full desktop
+JVM class library, AWT/Java2D, desktop OpenGL and a JNI-compatible LWJGL, none of which
+Android provides. A real implementation requires a bundled per-architecture JRE plus a
+GL-to-GL ES/Vulkan translation layer (GL4ES/Zink/virglrenderer), and licensing constraints
+mean it must be built from permissive components only. There is no stub to configure.
 
 ## Mod Sources
 - CurseForge API (user must provide API key)
-- Modrinth API (open)
+- Modrinth index (browse-only; Modrinth hosts Java Edition content this launcher cannot install)
 - Local mod imports
 
 ## License

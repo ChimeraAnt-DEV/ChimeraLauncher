@@ -22,6 +22,9 @@ import android.graphics.Canvas;
 import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.core.mods.FileHandler;
 import org.chimeramc.launcher.core.mods.Mod;
+import org.chimeramc.launcher.core.mods.ModLoadDiagnostics;
+import org.chimeramc.launcher.core.mods.ModManager;
+import org.chimeramc.launcher.core.mods.ModSafeMode;
 import org.chimeramc.launcher.core.mods.inbuilt.manager.InbuiltModManager;
 import org.chimeramc.launcher.core.versions.VersionManager;
 import org.chimeramc.launcher.ui.adapter.ModsAdapter;
@@ -31,7 +34,9 @@ import org.chimeramc.launcher.ui.views.MainViewModel;
 import org.chimeramc.launcher.ui.views.MainViewModelFactory;
 import org.chimeramc.launcher.util.PersonalizationManager;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ModsFullscreenActivity extends BaseActivity {
 
@@ -60,6 +65,7 @@ public class ModsFullscreenActivity extends BaseActivity {
         setupViews();
         setupViewModel();
         setupRecyclerView();
+        setupLoadDiagnostics();
         fileHandler = new FileHandler(this, viewModel, VersionManager.get(this));
         
         pickModLauncher = registerForActivityResult(
@@ -95,6 +101,10 @@ public class ModsFullscreenActivity extends BaseActivity {
         });
         DynamicAnim.applyPressScale(addModButton);
 
+        Button modHubButton = findViewById(R.id.mod_hub_fullscreen_button);
+        modHubButton.setOnClickListener(v -> startActivity(new Intent(this, ModHubActivity.class)));
+        DynamicAnim.applyPressScale(modHubButton);
+
         Button modMenuButton = findViewById(R.id.mod_menu_button);
         boolean isMenuEnabled = inbuiltModManager.isModMenuEnabled();
         modMenuButton.setText(getString(R.string.mod_menu) + ": " + (isMenuEnabled ? "ON" : "OFF"));
@@ -114,6 +124,129 @@ public class ModsFullscreenActivity extends BaseActivity {
         if (root != null) {
             personalizationManager.applyAccentToView(root, this);
         }
+    }
+
+    /**
+     * Shows why mods failed to load on the last launch, and offers to disable the mods that
+     * were already live when the process died.
+     *
+     * A native mod that crashes the process does so mid-load, so neither the launch log nor the
+     * normal "skipped incompatible mods" dialog can name it. {@link ModSafeMode} records the
+     * loaded mods as they load, so a launch marker still set here means the previous launch
+     * crashed and the recorded mods are exactly the ones that were live.
+     */
+    private void setupLoadDiagnostics() {
+        List<ModLoadDiagnostics.Record> failures = ModLoadDiagnostics.getAll(this);
+        Map<String, ModLoadDiagnostics.Record> byMod = new LinkedHashMap<>();
+        for (ModLoadDiagnostics.Record failure : failures) {
+            byMod.put(failure.modId, failure);
+        }
+        if (modsAdapter != null) {
+            modsAdapter.setLoadFailures(byMod);
+        }
+
+        if (!failures.isEmpty()) {
+            showLoadFailureBanner(failures);
+        }
+
+        if (ModSafeMode.hasCrashLoop(this)) {
+            promptForCrashSafeMode();
+        }
+    }
+
+    private void showLoadFailureBanner(List<ModLoadDiagnostics.Record> failures) {
+        View banner = findViewById(R.id.mod_load_diagnostics_banner);
+        if (banner == null) {
+            return;
+        }
+        TextView message = findViewById(R.id.mod_load_diagnostics_message);
+        TextView details = findViewById(R.id.mod_load_diagnostics_details);
+
+        message.setText(getString(R.string.mod_load_diagnostics_message, failures.size()));
+
+        StringBuilder lines = new StringBuilder();
+        for (ModLoadDiagnostics.Record failure : failures) {
+            if (lines.length() > 0) {
+                lines.append('\n');
+            }
+            String name = failure.modName.isEmpty() ? failure.modId : failure.modName;
+            lines.append(getString(R.string.mod_name_bullet, name,
+                    getString(ModsAdapter.reasonResForKind(failure.kind))));
+        }
+        details.setText(lines.toString());
+
+        View dismiss = findViewById(R.id.mod_load_diagnostics_dismiss);
+        if (dismiss != null) {
+            dismiss.setOnClickListener(v -> {
+                banner.setVisibility(View.GONE);
+                ModLoadDiagnostics.clear(this);
+                if (modsAdapter != null) {
+                    modsAdapter.setLoadFailures(java.util.Collections.emptyMap());
+                }
+            });
+        }
+        banner.setVisibility(View.VISIBLE);
+    }
+
+    /**
+     * Offers to disable the mods recorded as loaded before the crash. Disabling is the only
+     * useful action: the user cannot be expected to know which of several native mods was at
+     * fault, and leaving them enabled guarantees the same crash loop.
+     */
+    private void promptForCrashSafeMode() {
+        List<String> suspectIds = ModSafeMode.suspectModIds(this);
+        if (suspectIds.isEmpty()) {
+            ModSafeMode.acknowledgeCrash(this, false);
+            return;
+        }
+
+        List<Mod> installed = viewModel.getModsLiveData().getValue();
+        List<Mod> suspects = new ArrayList<>();
+        if (installed != null) {
+            for (Mod mod : installed) {
+                if (suspectIds.contains(mod.getId()) && mod.isEnabled()) {
+                    suspects.add(mod);
+                }
+            }
+        }
+        if (suspects.isEmpty()) {
+            ModSafeMode.acknowledgeCrash(this, false);
+            return;
+        }
+
+        StringBuilder names = new StringBuilder();
+        for (Mod mod : suspects) {
+            if (names.length() > 0) {
+                names.append('\n');
+            }
+            names.append("- ").append(mod.getDisplayName());
+        }
+
+        String lastCrash = formatCrashTime(ModSafeMode.getLastCrashTime(this));
+        new CustomAlertDialog(this)
+                .setTitleText(getString(R.string.mod_safe_mode_title))
+                .setMessage(getString(R.string.mod_safe_mode_message,
+                        lastCrash, suspects.size(), names.toString()))
+                .setBlurBackground(true)
+                .setPositiveButton(getString(R.string.mod_safe_mode_disable), v -> {
+                    for (Mod mod : suspects) {
+                        viewModel.setModEnabled(mod.getId(), false);
+                    }
+                    ModSafeMode.acknowledgeCrash(this, true);
+                    Toast.makeText(this, R.string.mod_safe_mode_disabled, Toast.LENGTH_LONG).show();
+                    viewModel.refreshMods();
+                })
+                .setNegativeButton(getString(R.string.mod_safe_mode_keep), v ->
+                        ModSafeMode.acknowledgeCrash(this, false))
+                .show();
+    }
+
+    private String formatCrashTime(long timestampMs) {
+        if (timestampMs <= 0L) {
+            return getString(R.string.mod_safe_mode_recent);
+        }
+        return new java.text.SimpleDateFormat("MMM d, HH:mm", java.util.Locale.getDefault())
+                .format(new java.util.Date(timestampMs));
     }
 
     private void startFilePicker() {

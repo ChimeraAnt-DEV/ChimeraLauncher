@@ -13,14 +13,17 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 
 import org.chimeramc.launcher.R;
 import org.chimeramc.launcher.core.mods.Mod;
+import org.chimeramc.launcher.core.mods.ModLoadDiagnostics;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder> {
 
     private List<Mod> mods = new ArrayList<>();
+    private Map<String, ModLoadDiagnostics.Record> loadFailures = Collections.emptyMap();
     private OnModEnableChangeListener onModEnableChangeListener;
     private OnModReorderListener onModReorderListener;
     private OnModClickListener onModClickListener;
@@ -60,6 +63,35 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
         this.itemTouchHelper = itemTouchHelper;
     }
 
+    /** Supplies the last-launch failures so each row can flag a mod that did not load. */
+    public void setLoadFailures(Map<String, ModLoadDiagnostics.Record> failures) {
+        this.loadFailures = failures != null ? failures : Collections.emptyMap();
+        notifyDataSetChanged();
+    }
+
+    /**
+     * Maps a failure category to the short line shown on the row. The user-facing wording is a
+     * category, not the raw native message, because a raw {@code dlopen} error does not tell
+     * the user whether to install a dependency or fetch a matching mod build.
+     */
+    public static int reasonResForKind(String kind) {
+        if (kind == null) {
+            return R.string.mod_load_diagnostics_unknown;
+        }
+        switch (kind) {
+            case ModLoadDiagnostics.KIND_INCOMPATIBLE:
+                return R.string.mod_load_diagnostics_incompatible;
+            case ModLoadDiagnostics.KIND_DLOPEN:
+                return R.string.mod_load_diagnostics_dlopen;
+            case ModLoadDiagnostics.KIND_SYMBOL:
+                return R.string.mod_load_diagnostics_symbol;
+            case ModLoadDiagnostics.KIND_MISSING_DEPENDENCY:
+                return R.string.mod_load_diagnostics_missing_dependency;
+            default:
+                return R.string.mod_load_diagnostics_unknown;
+        }
+    }
+
     @NonNull
     @Override
     public ModViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -85,6 +117,16 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
 
         if (holder.configBadge != null) {
             holder.configBadge.setVisibility(View.GONE);
+        }
+
+        if (holder.failureBadge != null) {
+            ModLoadDiagnostics.Record failure = loadFailures.get(mod.getId());
+            if (failure == null) {
+                holder.failureBadge.setVisibility(View.GONE);
+            } else {
+                holder.failureBadge.setText(reasonResForKind(failure.kind));
+                holder.failureBadge.setVisibility(View.VISIBLE);
+            }
         }
 
         holder.switchBtn.setOnCheckedChangeListener(null);
@@ -184,6 +226,7 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
         TextView name;
         TextView orderText;
         TextView configBadge;
+        TextView failureBadge;
         TextView authorText;
         TextView versionText;
         Switch switchBtn;
@@ -194,6 +237,7 @@ public class ModsAdapter extends RecyclerView.Adapter<ModsAdapter.ModViewHolder>
             name = itemView.findViewById(R.id.mod_name);
             orderText = itemView.findViewById(R.id.mod_order);
             configBadge = itemView.findViewById(R.id.mod_config_badge);
+            failureBadge = itemView.findViewById(R.id.mod_failure_badge);
             authorText = itemView.findViewById(R.id.mod_author);
             versionText = itemView.findViewById(R.id.mod_version);
             switchBtn = itemView.findViewById(R.id.mod_switch);

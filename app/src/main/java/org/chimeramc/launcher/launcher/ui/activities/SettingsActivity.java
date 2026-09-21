@@ -25,6 +25,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.switchmaterial.SwitchMaterial;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -35,10 +36,12 @@ import org.chimeramc.launcher.core.crash.CrashReporter;
 import org.chimeramc.launcher.preloader.PreloaderSignatureRulesManager;
 import org.chimeramc.launcher.settings.FeatureSettings;
 import org.chimeramc.launcher.settings.LowLatencyNetworkManager;
+import org.chimeramc.launcher.settings.PerformancePresetManager;
 import org.chimeramc.launcher.ui.animation.DynamicAnim;
 import org.chimeramc.launcher.ui.dialogs.LogcatOverlayManager;
 import org.chimeramc.launcher.util.GithubReleaseUpdater;
 import org.chimeramc.launcher.util.LanguageManager;
+import org.chimeramc.launcher.util.LauncherSettingsBackup;
 import org.chimeramc.launcher.util.LauncherStorage;
 import org.chimeramc.launcher.util.PermissionsHandler;
 import org.chimeramc.launcher.util.PersonalizationManager;
@@ -53,6 +56,8 @@ public class SettingsActivity extends BaseActivity {
     private PermissionsHandler permissionsHandler;
     private ActivityResultLauncher<Intent> permissionResultLauncher;
     private ActivityResultLauncher<Intent> bgImagePickerLauncher;
+    private ActivityResultLauncher<String> settingsExportLauncher;
+    private ActivityResultLauncher<String[]> settingsImportLauncher;
     private int updateButtonTapCount = 0;
     private long lastUpdateButtonTapTime = 0;
     private static final int EASTER_EGG_TAP_COUNT = 3;
@@ -136,6 +141,20 @@ public class SettingsActivity extends BaseActivity {
                             recreate();
                         }
                     }
+                }
+        );
+
+        settingsExportLauncher = registerForActivityResult(
+                new ActivityResultContracts.CreateDocument("application/json"),
+                uri -> {
+                    if (uri != null) exportSettingsBackup(uri);
+                }
+        );
+
+        settingsImportLauncher = registerForActivityResult(
+                new ActivityResultContracts.OpenDocument(),
+                uri -> {
+                    if (uri != null) importSettingsBackup(uri);
                 }
         );
 
@@ -223,6 +242,7 @@ public class SettingsActivity extends BaseActivity {
     private void setupBasicSection() {
         LanguageManager languageManager = new LanguageManager(this);
         FeatureSettings fs = FeatureSettings.getInstance();
+        setupPerformancePreset();
 
         // Keep English at the top (default language).
         // Sort all other languages alphabetically by their display name.
@@ -338,11 +358,73 @@ public class SettingsActivity extends BaseActivity {
         setupCurseForgeKeyRow();
     }
 
+    /**
+     * Wires the Battery / Balanced / Performance choice.
+     *
+     * The preset writes through the individual feature settings, so this method also has to
+     * re-read the dependent switches afterwards: otherwise flipping to Performance would
+     * change the stored value but leave the "Reduce Network Latency" switch above showing the
+     * old state, which reads as the preset having done nothing.
+     */
+    private void setupPerformancePreset() {
+        MaterialButtonToggleGroup group = findViewById(R.id.performance_preset_group);
+        TextView description = findViewById(R.id.performance_preset_description);
+        if (group == null) return;
+
+        PerformancePresetManager.Preset current = PerformancePresetManager.current(this);
+        group.check(buttonIdFor(current));
+        if (description != null) {
+            description.setText(PerformancePresetManager.describe(current));
+        }
+        group.addOnButtonCheckedListener((toggleGroup, checkedId, isChecked) -> {
+            if (!isChecked) return;
+            PerformancePresetManager.Preset preset = presetFor(checkedId);
+            PerformancePresetManager.apply(this, preset);
+            if (description != null) {
+                description.setText(PerformancePresetManager.describe(preset));
+            }
+            syncPerformanceDependentSwitches();
+        });
+    }
+
+    /** Mirrors the preset's settings back into the individual switches on the same screen. */
+    private void syncPerformanceDependentSwitches() {
+        FeatureSettings fs = FeatureSettings.getInstance();
+        SwitchMaterial lowInputDelay = findViewById(R.id.switch_low_input_delay);
+        if (lowInputDelay != null) {
+            lowInputDelay.setChecked(fs.isLowInputDelayEnabled());
+        }
+        SwitchMaterial reduceLatency = findViewById(R.id.switch_reduce_network_latency);
+        if (reduceLatency != null) {
+            reduceLatency.setChecked(fs.isReduceNetworkLatencyEnabled());
+        }
+        org.chimeramc.launcher.launcher.controller.ControllerInputProcessor.reload(this);
+    }
+
+    private static int buttonIdFor(PerformancePresetManager.Preset preset) {
+        switch (preset) {
+            case BATTERY:
+                return R.id.performance_preset_battery;
+            case PERFORMANCE:
+                return R.id.performance_preset_performance;
+            case BALANCED:
+            default:
+                return R.id.performance_preset_balanced;
+        }
+    }
+
+    private static PerformancePresetManager.Preset presetFor(int buttonId) {
+        if (buttonId == R.id.performance_preset_battery) return PerformancePresetManager.Preset.BATTERY;
+        if (buttonId == R.id.performance_preset_performance) return PerformancePresetManager.Preset.PERFORMANCE;
+        return PerformancePresetManager.Preset.BALANCED;
+    }
+
     private void setupCurseForgeKeyRow() {
         TextView status = findViewById(R.id.curseforge_api_key_status);
         com.google.android.material.button.MaterialButton button = findViewById(R.id.btn_curseforge_api_key);
         if (status == null || button == null) return;
         refreshCurseForgeKeyRow(status, button);
+
 
         View.OnClickListener open = v -> org.chimeramc.launcher.core.curseforge.CurseForgeKeyDialog.show(
                 this, () -> refreshCurseForgeKeyRow(status, button));
@@ -878,7 +960,7 @@ public class SettingsActivity extends BaseActivity {
             navSignInBtn.setTextColor(Color.WHITE);
         }
         
-        int[] navTabIds = {R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_about, R.id.nav_tab_settings, R.id.nav_tab_controller};
+        int[] navTabIds = {R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_customize, R.id.nav_tab_settings};
         for (int id : navTabIds) {
             TextView navTab = findViewById(id);
             if (navTab != null && id == R.id.nav_tab_settings && accent != 0) {
@@ -1189,6 +1271,67 @@ public class SettingsActivity extends BaseActivity {
 
         findViewById(R.id.settings_btn_discord).setOnClickListener(v ->
                 startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://discord.gg/jsnzw4ueAt"))));
+
+        View openAbout = findViewById(R.id.settings_open_about);
+        if (openAbout != null) {
+            openAbout.setOnClickListener(v -> startActivity(new Intent(this, AboutActivity.class)));
+        }
+
+        View export = findViewById(R.id.settings_export_backup);
+        if (export != null) {
+            export.setOnClickListener(v ->
+                    settingsExportLauncher.launch("chimera-launcher-settings.json"));
+        }
+        View importButton = findViewById(R.id.settings_import_backup);
+        if (importButton != null) {
+            importButton.setOnClickListener(v ->
+                    settingsImportLauncher.launch(new String[]{"application/json", "text/*", "*/*"}));
+        }
+    }
+
+    /**
+     * Writes the launcher's configuration to the chosen document.
+     *
+     * Credentials are excluded by {@link LauncherSettingsBackup}; the toast repeats that so a
+     * user cannot reasonably think they are sharing a full account backup.
+     */
+    private void exportSettingsBackup(Uri target) {
+        try (java.io.OutputStream out = getContentResolver().openOutputStream(target)) {
+            if (out == null) throw new java.io.IOException("Could not open the selected file");
+            String json = LauncherSettingsBackup.export(this, true, true);
+            out.write(json.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            out.flush();
+            Toast.makeText(this, R.string.settings_backup_exported, Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(this, getString(R.string.settings_backup_failed, describe(e)), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private void importSettingsBackup(Uri source) {
+        try (java.io.InputStream in = getContentResolver().openInputStream(source)) {
+            if (in == null) throw new java.io.IOException("Could not open the selected file");
+            java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+            byte[] chunk = new byte[8192];
+            int read;
+            while ((read = in.read(chunk)) > 0) buffer.write(chunk, 0, read);
+            String json = new String(buffer.toByteArray(), java.nio.charset.StandardCharsets.UTF_8);
+            LauncherSettingsBackup.ImportResult result = LauncherSettingsBackup.importFrom(this, json);
+            if (!result.success) {
+                Toast.makeText(this, result.message, Toast.LENGTH_LONG).show();
+                return;
+            }
+            Toast.makeText(this, getString(R.string.settings_backup_imported, result.profileCount),
+                    Toast.LENGTH_LONG).show();
+            // Rebuild the screen so every control shows the restored values rather than the
+            // ones it was bound with on entry.
+            recreate();
+        } catch (Exception e) {
+            Toast.makeText(this, getString(R.string.settings_backup_failed, describe(e)), Toast.LENGTH_LONG).show();
+        }
+    }
+
+    private static String describe(Exception e) {
+        return e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
     }
 
     private void handleUpdateButtonClick() {

@@ -115,6 +115,38 @@ public final class ControllerInputProcessor {
         }
     }
 
+    /**
+     * Applies a per-instance controller profile binding, if the instance has one.
+     *
+     * Called when a session starts so an instance can bring its own controller setup. The
+     * bound controller type wins over whatever is currently connected: a player who binds a
+     * profile to an instance expects that instance to use it, and the alternative (silently
+     * ignoring the binding when a different pad is plugged in) makes the binding look broken.
+     *
+     * @return true when a binding was applied
+     */
+    public static boolean applyInstanceBinding(Context context, String profileId) {
+        if (context == null || profileId == null || profileId.trim().isEmpty()) return false;
+        ControllerProfileManager manager = new ControllerProfileManager(context);
+        ControllerProfileManager.Binding binding = manager.getBinding(profileId);
+        if (binding == null) return false;
+        ControllerProfile profile = manager.getProfile(binding.type, binding.slot);
+        if (profile == null) return false;
+        setActiveProfile(binding.type, profile);
+        return true;
+    }
+
+    /**
+     * Applies instance bindings for any instance id that matches, used when the bound
+     * instance is already known at selection time rather than at launch.
+     */
+    public static void reloadForInstance(Context context, String profileId) {
+        if (context == null) return;
+        if (!applyInstanceBinding(context, profileId)) {
+            detectAndLoad(context);
+        }
+    }
+
     public static int remapKey(int keyCode) {
         ControllerResponse response = active;
         if (response == null || keyCode <= 0) {
@@ -129,6 +161,102 @@ public final class ControllerInputProcessor {
             return value;
         }
         return response.adjustAxis(axis, value);
+    }
+
+    /**
+     * Rewrites a motion event's stick and trigger axes through the active profile and returns
+     * the event the game should see.
+     *
+     * This is what makes the response-curve and trigger-curve editors observable in gameplay.
+     * Swallowing in-dead-zone events (see {@link #isWithinDeadZone}) is not enough on its own:
+     * the game reads the axis values off the event, so without rewriting them a curve would
+     * change nothing the player can feel.
+     *
+     * Allocates only when an axis actually changes, so an all-default profile (and every
+     * non-joystick event) stays on the zero-allocation path. When it does allocate, the caller
+     * owns the returned event; the original is returned untouched otherwise, so callers must
+     * compare identity before recycling.
+     */
+    public static MotionEvent transformMotionEvent(MotionEvent event) {
+        ControllerResponse response = active;
+        if (response == null || event == null) {
+            return event;
+        }
+        int sources = event.getSource();
+        if ((sources & InputDevice.SOURCE_JOYSTICK) != InputDevice.SOURCE_JOYSTICK
+                && (sources & InputDevice.SOURCE_GAMEPAD) != InputDevice.SOURCE_GAMEPAD) {
+            return event;
+        }
+
+        int pointerCount = event.getPointerCount();
+        if (pointerCount <= 0) return event;
+
+        // Read through PointerCoords rather than MotionEvent.getAxisValue(axis, pointerIndex),
+        // which only exists from API 29; this project supports API 28.
+        boolean changed = false;
+        float[][] rewritten = new float[pointerCount][TRANSFORM_AXES.length];
+        MotionEvent.PointerCoords scratch = new MotionEvent.PointerCoords();
+        for (int p = 0; p < pointerCount; p++) {
+            event.getPointerCoords(p, scratch);
+            for (int a = 0; a < TRANSFORM_AXES.length; a++) {
+                int axis = TRANSFORM_AXES[a];
+                float original = scratch.getAxisValue(axis);
+                float updated = response.adjustAxisOrTrigger(axis, original);
+                rewritten[p][a] = updated;
+                if (updated != original) {
+                    changed = true;
+                }
+            }
+        }
+        if (!changed) return event;
+
+        MotionEvent.PointerProperties[] properties = new MotionEvent.PointerProperties[pointerCount];
+        MotionEvent.PointerCoords[] coords = new MotionEvent.PointerCoords[pointerCount];
+        for (int p = 0; p < pointerCount; p++) {
+            properties[p] = new MotionEvent.PointerProperties();
+            event.getPointerProperties(p, properties[p]);
+            coords[p] = new MotionEvent.PointerCoords();
+            event.getPointerCoords(p, coords[p]);
+            for (int a = 0; a < TRANSFORM_AXES.length; a++) {
+                coords[p].setAxisValue(TRANSFORM_AXES[a], rewritten[p][a]);
+            }
+        }
+
+        return MotionEvent.obtain(
+                event.getDownTime(),
+                event.getEventTime(),
+                event.getAction(),
+                pointerCount,
+                properties,
+                coords,
+                event.getMetaState(),
+                event.getButtonState(),
+                event.getXPrecision(),
+                event.getYPrecision(),
+                event.getDeviceId(),
+                event.getEdgeFlags(),
+                event.getSource(),
+                event.getFlags());
+    }
+
+    /** Axes the profile rewrites on the way to the game. */
+    private static final int[] TRANSFORM_AXES = {
+            MotionEvent.AXIS_X,
+            MotionEvent.AXIS_Y,
+            MotionEvent.AXIS_Z,
+            MotionEvent.AXIS_RZ,
+            MotionEvent.AXIS_LTRIGGER,
+            MotionEvent.AXIS_RTRIGGER,
+            MotionEvent.AXIS_BRAKE,
+            MotionEvent.AXIS_GAS,
+    };
+
+    public static float adjustTriggerValue(int axis, float value) {
+        ControllerResponse response = active;
+        if (response == null) {
+            return value;
+        }
+        return response.adjustTrigger(axis, value);
     }
 
     /**

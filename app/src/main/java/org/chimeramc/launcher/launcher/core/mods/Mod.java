@@ -77,6 +77,16 @@ public class Mod {
         return enabled;
     }
 
+    /** Counts the enabled mods in a discovered per-instance list; null-safe. */
+    public static int countEnabled(List<Mod> mods) {
+        if (mods == null) return 0;
+        int count = 0;
+        for (Mod mod : mods) {
+            if (mod != null && mod.isEnabled()) count++;
+        }
+        return count;
+    }
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }

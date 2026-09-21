@@ -29,6 +29,15 @@ public class ControllerIllustrationView extends View {
     private final Paint accentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint bodyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint wellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint detailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint symbolPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final RectF scratch = new RectF();
+    private int bodyColor = 0xFF262A32;
+    private int bodyHighlightColor = 0xFF484E5A;
+    private int wellColor = 0xFF14161C;
     private int accentColor = -1;
     private float cx;
     private float cy;
@@ -52,6 +61,10 @@ public class ControllerIllustrationView extends View {
         accentPaint.setStrokeWidth(2.5f);
         glowPaint.setColor((int) 0xFF4AE0A0L);
         textPaint.setTextAlign(Paint.Align.CENTER);
+        highlightPaint.setColor(0x38FFFFFF);
+        symbolPaint.setStyle(Paint.Style.STROKE);
+        symbolPaint.setStrokeCap(Paint.Cap.ROUND);
+        symbolPaint.setStrokeJoin(Paint.Join.ROUND);
         rebuild();
     }
 
@@ -63,16 +76,23 @@ public class ControllerIllustrationView extends View {
 
     private void applyThemeColors() {
         if (isDarkMode()) {
-            basePaint.setColor(Color.rgb(38, 42, 50));
-            outlinePaint.setColor(Color.rgb(120, 128, 140));
-            buttonPaint.setColor(Color.rgb(72, 78, 90));
+            bodyColor = 0xFF262A32;
+            bodyHighlightColor = 0xFF3A404B;
+            wellColor = 0xFF14161C;
+            outlinePaint.setColor(Color.rgb(96, 104, 118));
+            buttonPaint.setColor(Color.rgb(58, 64, 74));
+            detailPaint.setColor(Color.rgb(30, 34, 42));
             textPaint.setColor(Color.rgb(210, 218, 228));
         } else {
-            basePaint.setColor(Color.rgb(232, 235, 240));
-            outlinePaint.setColor(Color.rgb(110, 120, 130));
-            buttonPaint.setColor(Color.rgb(190, 196, 202));
+            bodyColor = 0xFFE4E7EC;
+            bodyHighlightColor = 0xFFF2F4F7;
+            wellColor = 0xFFC7CCD3;
+            outlinePaint.setColor(Color.rgb(140, 148, 158));
+            buttonPaint.setColor(Color.rgb(206, 211, 217));
+            detailPaint.setColor(Color.rgb(170, 176, 185));
             textPaint.setColor(Color.rgb(60, 64, 72));
         }
+        basePaint.setColor(bodyColor);
     }
 
     public void setType(ControllerType type) {
@@ -102,59 +122,61 @@ public class ControllerIllustrationView extends View {
         regions.clear();
         regionById.clear();
         if (type == ControllerType.XBOX) {
-            addRegion("ls",  0.335f,  0.66f,  0.05f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.665f,  0.70f,  0.05f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.335f,  0.66f,  0.055f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.665f,  0.70f,  0.055f, "", Shape.STICK_RING);
-            addRegion("dp",  0.25f,  0.48f,  0.042f, "", Shape.DPAD);
-            addRegion("a",  0.65f,  0.34f,  0.043f, "A", Shape.FACE_XBOX);
-            addRegion("b",  0.75f,  0.27f,  0.043f, "B", Shape.FACE_XBOX);
-            addRegion("x",  0.58f,  0.27f,  0.043f, "X", Shape.FACE_XBOX);
-            addRegion("y",  0.65f,  0.20f,  0.043f, "Y", Shape.FACE_XBOX);
-            addRegion("lb",  0.30f,  0.115f,  0.030f, "LB", Shape.BUMPER);
-            addRegion("rb",  0.70f,  0.115f,  0.030f, "RB", Shape.BUMPER);
-            addRegion("lt",  0.17f,  0.06f,  0.030f, "", Shape.TRIGGER);
-            addRegion("rt",  0.83f,  0.06f,  0.030f, "", Shape.TRIGGER);
-            addRegion("menu",  0.50f,  0.465f,  0.024f, "", Shape.CENTER_BUTTON);
-            addRegion("view",  0.44f,  0.465f,  0.024f, "", Shape.CENTER_BUTTON);
+            // Real Xbox layout: left stick upper-left, d-pad lower-left, ABXY upper-right,
+            // right stick lower-centre-right.
+            addRegion("ls",  0.320f, 0.400f, 0.052f, "LS", Shape.CIRCLE);
+            addRegion("rs",  0.662f, 0.640f, 0.052f, "RS", Shape.CIRCLE);
+            addRegion("lsRing",  0.320f, 0.400f, 0.062f, "", Shape.STICK_RING);
+            addRegion("rsRing",  0.662f, 0.640f, 0.062f, "", Shape.STICK_RING);
+            addRegion("dp",  0.278f, 0.665f, 0.046f, "", Shape.DPAD);
+            addRegion("a",  0.702f, 0.400f, 0.045f, "A", Shape.FACE_XBOX);
+            addRegion("b",  0.790f, 0.320f, 0.045f, "B", Shape.FACE_XBOX);
+            addRegion("x",  0.614f, 0.320f, 0.045f, "X", Shape.FACE_XBOX);
+            addRegion("y",  0.702f, 0.240f, 0.045f, "Y", Shape.FACE_XBOX);
+            addRegion("lb",  0.32f, 0.155f, 0.030f, "LB", Shape.BUMPER);
+            addRegion("rb",  0.68f, 0.155f, 0.030f, "RB", Shape.BUMPER);
+            addRegion("lt",  0.19f, 0.145f, 0.032f, "", Shape.TRIGGER);
+            addRegion("rt",  0.81f, 0.145f, 0.032f, "", Shape.TRIGGER);
+            addRegion("menu",  0.575f, 0.430f, 0.022f, "", Shape.CENTER_BUTTON);
+            addRegion("view",  0.425f, 0.430f, 0.022f, "", Shape.CENTER_BUTTON);
         } else if (type == ControllerType.DS4) {
 
-            addRegion("ls",  0.335f,  0.62f,  0.05f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.665f,  0.62f,  0.05f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.335f,  0.62f,  0.055f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.665f,  0.62f,  0.055f, "", Shape.STICK_RING);
-            addRegion("dp",  0.26f,  0.42f,  0.040f, "", Shape.DPAD);
-            addRegion("a",  0.76f,  0.30f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("b",  0.70f,  0.38f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("x",  0.64f,  0.30f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("y",  0.70f,  0.22f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("lb",  0.34f,  0.135f,  0.030f, "L1", Shape.BUMPER);
-            addRegion("rb",  0.66f,  0.135f,  0.030f, "R1", Shape.BUMPER);
-            addRegion("lt",  0.20f,  0.075f,  0.030f, "", Shape.TRIGGER);
-            addRegion("rt",  0.80f,  0.075f,  0.030f, "", Shape.TRIGGER);
-            addRegion("touch",  0.50f,  0.06f,  0.050f, "", Shape.TOUCHPAD);
-            addRegion("share",  0.36f,  0.42f,  0.020f, "", Shape.CENTER_BUTTON);
-            addRegion("options",  0.44f,  0.42f,  0.020f, "", Shape.CENTER_BUTTON);
-            addRegion("ps",  0.50f,  0.465f,  0.022f, "", Shape.PS_LOGO);
+            addRegion("ls",  0.312f,  0.735f,  0.052f, "LS", Shape.CIRCLE);
+            addRegion("rs",  0.688f,  0.735f,  0.052f, "RS", Shape.CIRCLE);
+            addRegion("lsRing",  0.312f,  0.735f,  0.062f, "", Shape.STICK_RING);
+            addRegion("rsRing",  0.688f,  0.735f,  0.062f, "", Shape.STICK_RING);
+            addRegion("dp",  0.288f,  0.510f,  0.044f, "", Shape.DPAD);
+            addRegion("a",  0.760f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("b",  0.706f,  0.560f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("x",  0.654f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("y",  0.706f,  0.440f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("lb",  0.33f,  0.295f,  0.030f, "L1", Shape.BUMPER);
+            addRegion("rb",  0.67f,  0.295f,  0.030f, "R1", Shape.BUMPER);
+            addRegion("lt",  0.19f,  0.285f,  0.030f, "", Shape.TRIGGER);
+            addRegion("rt",  0.81f,  0.285f,  0.030f, "", Shape.TRIGGER);
+            addRegion("touch",  0.50f,  0.355f,  0.050f, "", Shape.TOUCHPAD);
+            addRegion("share",  0.415f,  0.450f,  0.019f, "", Shape.CENTER_BUTTON);
+            addRegion("options",  0.585f,  0.450f,  0.019f, "", Shape.CENTER_BUTTON);
+            addRegion("ps",  0.50f,  0.470f,  0.022f, "", Shape.PS_LOGO);
         } else {
 
-            addRegion("ls",  0.335f,  0.62f,  0.05f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.665f,  0.62f,  0.05f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.335f,  0.62f,  0.055f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.665f,  0.62f,  0.055f, "", Shape.STICK_RING);
-            addRegion("dp",  0.26f,  0.42f,  0.040f, "", Shape.DPAD);
-            addRegion("a",  0.76f,  0.30f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("b",  0.70f,  0.38f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("x",  0.64f,  0.30f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("y",  0.70f,  0.22f,  0.040f, "", Shape.FACE_DUAL);
-            addRegion("lb",  0.34f,  0.135f,  0.030f, "L1", Shape.BUMPER);
-            addRegion("rb",  0.66f,  0.135f,  0.030f, "R1", Shape.BUMPER);
-            addRegion("lt",  0.20f,  0.075f,  0.030f, "", Shape.TRIGGER);
-            addRegion("rt",  0.80f,  0.075f,  0.030f, "", Shape.TRIGGER);
-            addRegion("touch",  0.50f,  0.06f,  0.050f, "", Shape.TOUCHPAD);
-            addRegion("share",  0.42f,  0.465f,  0.020f, "", Shape.CENTER_BUTTON);
-            addRegion("options",  0.58f,  0.465f,  0.020f, "", Shape.CENTER_BUTTON);
-            addRegion("ps",  0.50f,  0.42f,  0.022f, "", Shape.PS_LOGO);
+            addRegion("ls",  0.312f,  0.735f,  0.052f, "LS", Shape.CIRCLE);
+            addRegion("rs",  0.688f,  0.735f,  0.052f, "RS", Shape.CIRCLE);
+            addRegion("lsRing",  0.312f,  0.735f,  0.062f, "", Shape.STICK_RING);
+            addRegion("rsRing",  0.688f,  0.735f,  0.062f, "", Shape.STICK_RING);
+            addRegion("dp",  0.288f,  0.510f,  0.044f, "", Shape.DPAD);
+            addRegion("a",  0.760f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("b",  0.706f,  0.560f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("x",  0.654f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("y",  0.706f,  0.440f,  0.041f, "", Shape.FACE_DUAL);
+            addRegion("lb",  0.33f,  0.295f,  0.030f, "L1", Shape.BUMPER);
+            addRegion("rb",  0.67f,  0.295f,  0.030f, "R1", Shape.BUMPER);
+            addRegion("lt",  0.19f,  0.285f,  0.030f, "", Shape.TRIGGER);
+            addRegion("rt",  0.81f,  0.285f,  0.030f, "", Shape.TRIGGER);
+            addRegion("touch",  0.50f,  0.355f,  0.050f, "", Shape.TOUCHPAD);
+            addRegion("share",  0.415f,  0.470f,  0.019f, "", Shape.CENTER_BUTTON);
+            addRegion("options",  0.585f,  0.470f,  0.019f, "", Shape.CENTER_BUTTON);
+            addRegion("ps",  0.50f,  0.470f,  0.026f, "", Shape.PS_LOGO);
         }
     }
     private void addRegion(String id, float x, float y, float radius, String label, Shape shape) {
@@ -194,49 +216,118 @@ public class ControllerIllustrationView extends View {
         }
     }
 
+    /**
+     * Xbox silhouette: a wide arched shell that drops into two angled grips.
+     *
+     * Geometry is expressed against the same {@code scale} the regions use, so buttons sit
+     * inside the shell by construction rather than by eyeballed offsets. The outline is built
+     * from cubic segments so the shoulders read as curved plastic, and a clipped sheen along
+     * the top edge gives it the look of a moulded surface instead of a flat blob.
+     */
     private void drawBodyXbox(Canvas canvas) {
-        float aw = scale * 0.72f;
-        float ah = scale * 0.42f;
-        Path p = new Path();
-        p.moveTo(cx - aw, cy - ah - scale * 0.10f);
-        p.lineTo(cx + aw, cy - ah - scale * 0.10f);
-        p.lineTo(cx + aw * 0.80f, cy - ah * 0.30f);
-        p.lineTo(cx + aw * 1.30f, cy + ah * 0.60f);
-        p.lineTo(cx + aw * 1.05f, cy + ah * 1.35f);
-        p.lineTo(cx + aw * 0.60f, cy + ah * 1.10f);
-        p.lineTo(cx - aw *  0.60f, cy + ah *  1.10f);
-        p.lineTo(cx - aw *  1.05f, cy + ah *  1.35f);
-        p.lineTo(cx - aw *  1.30f, cy + ah *  0.60f);
-        p.lineTo(cx - aw *  0.80f, cy - ah *  0.30f);
-        p.close();
-        canvas.drawPath(p, basePaint);
-        canvas.drawPath(p, outlinePaint);
+        float w = scale * 0.62f;
+        float top = cy - scale * 0.74f;
+        float gripBottom = cy + scale * 0.72f;
+        float shellH = gripBottom - top;
+
+        Path shell = new Path();
+        shell.moveTo(cx - w * 0.80f, top);
+        shell.cubicTo(cx - w * 1.05f, top + shellH * 0.01f,
+                cx - w * 1.30f, top + shellH * 0.22f,
+                cx - w * 1.20f, top + shellH * 0.50f);
+        shell.cubicTo(cx - w * 1.10f, top + shellH * 0.78f,
+                cx - w * 0.92f, top + shellH * 0.98f,
+                cx - w * 0.70f, top + shellH * 1.00f);
+        shell.cubicTo(cx - w * 0.44f, top + shellH * 1.02f,
+                cx - w * 0.40f, top + shellH * 0.80f,
+                cx - w * 0.28f, top + shellH * 0.66f);
+        shell.cubicTo(cx - w * 0.16f, top + shellH * 0.56f,
+                cx + w * 0.16f, top + shellH * 0.56f,
+                cx + w * 0.28f, top + shellH * 0.66f);
+        shell.cubicTo(cx + w * 0.40f, top + shellH * 0.80f,
+                cx + w * 0.44f, top + shellH * 1.02f,
+                cx + w * 0.70f, top + shellH * 1.00f);
+        shell.cubicTo(cx + w * 0.92f, top + shellH * 0.98f,
+                cx + w * 1.10f, top + shellH * 0.78f,
+                cx + w * 1.20f, top + shellH * 0.50f);
+        shell.cubicTo(cx + w * 1.30f, top + shellH * 0.22f,
+                cx + w * 1.05f, top + shellH * 0.01f,
+                cx + w * 0.80f, top);
+        shell.close();
+
+        canvas.drawPath(shell, basePaint);
+        // Clip the sheen to the shell so it never spills past the outline.
+        canvas.save();
+        canvas.clipPath(shell);
+        highlightPaint.setColor(isDarkMode() ? 0x22FFFFFF : 0x66FFFFFF);
+        scratch.set(cx - w * 1.3f, top, cx + w * 1.3f, top + shellH * 0.28f);
+        canvas.drawOval(scratch, highlightPaint);
+        canvas.restore();
+        canvas.drawPath(shell, outlinePaint);
     }
 
+    /**
+     * DualShock / DualSense silhouette: a rounded centre shell with a touchpad set into the
+     * top face and two symmetric grips curving down, which is what separates it from the
+     * Xbox pad. Geometry is shared with the region space, same as the Xbox body.
+     */
     private void drawBodyPlayStation(Canvas canvas) {
-        float aw = scale * 0.70f;
-        float ah = scale * 0.40f;
-        Path p = new Path();
-        p.moveTo(cx - aw, cy - ah);
-        p.lineTo(cx + aw, cy - ah);
-        p.lineTo(cx + aw, cy + ah * 0.55f);
-        p.lineTo(cx + aw * 0.90f, cy + ah * 1.20f);
-        p.lineTo(cx + aw * 0.55f, cy + ah * 0.95f);
-        p.lineTo(cx - aw * 0.55f, cy + ah * 0.95f);
-        p.lineTo(cx - aw * 0.90f, cy + ah * 1.20f);
-        p.lineTo(cx - aw, cy + ah * 0.55f);
-        p.close();
-        canvas.drawPath(p, basePaint);
-        canvas.drawPath(p, outlinePaint);
-        float tx = scale * 0.34f;
-        RectF touch = new RectF(cx - tx, cy - ah - scale * 0.16f, cx + tx, cy - ah);
-        canvas.drawRoundRect(touch, scale * 0.08f, scale * 0.08f, basePaint);
-        canvas.drawRoundRect(touch, scale * 0.08f, scale *  0.08f, outlinePaint);
+        float w = scale * 0.60f;
+        float top = cy - scale * 0.72f;
+        float gripBottom = cy + scale * 0.70f;
+        float shellH = gripBottom - top;
+
+        Path shell = new Path();
+        shell.moveTo(cx - w * 0.55f, top);
+        shell.cubicTo(cx - w * 0.92f, top + shellH * 0.01f,
+                cx - w * 1.22f, top + shellH * 0.26f,
+                cx - w * 1.12f, top + shellH * 0.60f);
+        shell.cubicTo(cx - w * 1.02f, top + shellH * 0.88f,
+                cx - w * 0.86f, top + shellH * 1.06f,
+                cx - w * 0.62f, top + shellH * 1.06f);
+        shell.cubicTo(cx - w * 0.42f, top + shellH * 1.06f,
+                cx - w * 0.38f, top + shellH * 0.82f,
+                cx - w * 0.26f, top + shellH * 0.68f);
+        shell.cubicTo(cx - w * 0.15f, top + shellH * 0.58f,
+                cx + w * 0.15f, top + shellH * 0.58f,
+                cx + w * 0.26f, top + shellH * 0.68f);
+        shell.cubicTo(cx + w * 0.38f, top + shellH * 0.82f,
+                cx + w * 0.42f, top + shellH * 1.06f,
+                cx + w * 0.62f, top + shellH * 1.06f);
+        shell.cubicTo(cx + w * 0.86f, top + shellH * 1.06f,
+                cx + w * 1.02f, top + shellH * 0.88f,
+                cx + w * 1.12f, top + shellH * 0.60f);
+        shell.cubicTo(cx + w * 1.22f, top + shellH * 0.26f,
+                cx + w * 0.92f, top + shellH * 0.01f,
+                cx + w * 0.55f, top);
+        shell.close();
+
+        canvas.drawPath(shell, basePaint);
+
+        canvas.save();
+        canvas.clipPath(shell);
+        highlightPaint.setColor(isDarkMode() ? 0x22FFFFFF : 0x66FFFFFF);
+        scratch.set(cx - w * 1.25f, top, cx + w * 1.25f, top + shellH * 0.24f);
+        canvas.drawOval(scratch, highlightPaint);
+
+        // Signature light bar along the seam between the centre shell and the grips.
+        glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF3B82F6);
+        glowPaint.setAlpha(isDarkMode() ? 90 : 130);
+        scratch.set(cx - w * 1.00f, top + shellH * 0.40f, cx + w * 1.00f, top + shellH * 0.46f);
+        canvas.drawRoundRect(scratch, shellH * 0.03f, shellH * 0.03f, glowPaint);
+        canvas.restore();
+
+        canvas.drawPath(shell, outlinePaint);
     }
+
     private void drawRegion(Canvas canvas, Region r) {
-        float px = cx + (r.x -  0.5f *  2f * scale);
-        float py = cy + (r.y -  0.5f * 2f * scale);
-        float pr = r.radius *   2f * scale;
+        // Region coordinates are normalised across the view: 0.5 is centre and the span
+        // between 0.0 and 1.0 maps to twice the scale. The offset must stay inside the
+        // parentheses, otherwise every button is drawn at centre minus scale instead of
+        // spread around the centre, which piles the whole layout into the left half.
+        float px = cx + (r.x - 0.5f) * 2f * scale;
+        float py = cy + (r.y - 0.5f) * 2f * scale;
+        float pr = r.radius * 2f * scale;
         Float strength = glow.get(r.id);
         float g = strength == null ? 0f : strength;
         if (g >  0.05f) {
@@ -267,131 +358,212 @@ public class ControllerIllustrationView extends View {
     }
 
     private void drawStick(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        canvas.drawCircle(px, py, pr, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawCircle(px, py, pr, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
+        // A real stick sits in a recessed well; the well is what makes it read as a stick
+        // rather than a flat disc.
+        wellPaint.setColor(wellColor);
+        canvas.drawCircle(px, py, pr * 1.22f, wellPaint);
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, glowPaint);
+            return;
         }
+        Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
+        ring.setStyle(Paint.Style.STROKE);
+        ring.setStrokeWidth(2f);
+        ring.setColor(outlinePaint.getColor());
+        canvas.drawCircle(px, py, pr * 1.22f, ring);
+
+        // Concave cap: a base disc, a darker rim, then an off-centre highlight.
+        buttonPaint.setColor(isDarkMode() ? 0xFF4A505C : 0xFFCDD2D9);
+        canvas.drawCircle(px, py, pr, buttonPaint);
+        buttonPaint.setColor(isDarkMode() ? 0xFF2E333D : 0xFFB4BAC3);
+        canvas.drawCircle(px, py, pr * 0.86f, buttonPaint);
+        highlightPaint.setColor(isDarkMode() ? 0x33FFFFFF : 0x99FFFFFF);
+        canvas.drawCircle(px - pr * 0.22f, py - pr * 0.26f, pr * 0.42f, highlightPaint);
     }
 
     private void drawRing(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : outlinePaint;
-        canvas.drawCircle(px, py, pr, p);
+        // Decorative outer ring for stick wells; only drawn as a glow halo.
+        if (!glowMode) return;
+        glowPaint.setStyle(Paint.Style.STROKE);
+        glowPaint.setStrokeWidth(pr * 0.18f);
+        canvas.drawCircle(px, py, pr, glowPaint);
+        glowPaint.setStyle(Paint.Style.FILL);
     }
 
     private void drawDPad(Canvas canvas, float px, float py, float pr, boolean glowMode) {
         Paint p = glowMode ? glowPaint : buttonPaint;
-        float arm = pr *  0.8f;
-        RectF v = new RectF(px - pr *  0.28f, py - arm, px + pr *  0.28f, py + arm);
-        RectF h = new RectF(px - arm, py - pr *  0.28f, px + arm, py + pr *  0.28f);
-        canvas.drawRoundRect(v, pr *  0.15f, pr *  0.15f, p);
-        canvas.drawRoundRect(h, pr *  0.15f, pr *  0.15f, p);
+        if (!glowMode) {
+            buttonPaint.setColor(isDarkMode() ? 0xFF3C424C : 0xFFC2C8D0);
+        }
+        float arm = pr * 0.92f;
+        float half = pr * 0.30f;
+        Path cross = new Path();
+        cross.addRoundRect(new RectF(px - half, py - arm, px + half, py + arm), pr * 0.10f, pr * 0.10f,
+                Path.Direction.CW);
+        cross.addRoundRect(new RectF(px - arm, py - half, px + arm, py + half), pr * 0.10f, pr * 0.10f,
+                Path.Direction.CW);
+        canvas.drawPath(cross, p);
         if (!glowMode) {
             outlinePaint.setStrokeWidth(2f);
-            canvas.drawRoundRect(v, pr *  0.15f, pr *  0.15f, outlinePaint);
-            canvas.drawRoundRect(h, pr *  0.15f, pr *  0.15f, outlinePaint);
+            canvas.drawPath(cross, outlinePaint);
             outlinePaint.setStrokeWidth(3f);
+            // Centre dimple.
+            detailPaint.setColor(isDarkMode() ? 0xFF262A32 : 0xFFAEB4BD);
+            canvas.drawCircle(px, py, pr * 0.16f, detailPaint);
         }
     }
+
     private void drawFaceXbox(Canvas canvas, Region r, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : accentPaint;
-        canvas.drawCircle(px, py, pr, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawCircle(px, py, pr, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-            textPaint.setTextSize(pr * 0.8f);
-            canvas.drawText(r.label, px, py + pr * 0.1f, textPaint);
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, glowPaint);
+            return;
         }
+        // Xbox face buttons are coloured letters on dark caps.
+        int tint = faceColor(r.id);
+        buttonPaint.setColor(isDarkMode() ? 0xFF23272F : 0xFFE1E4E9);
+        canvas.drawCircle(px, py, pr, buttonPaint);
+        Paint letter = new Paint(Paint.ANTI_ALIAS_FLAG);
+        letter.setColor(tint);
+        letter.setTextAlign(Paint.Align.CENTER);
+        letter.setFakeBoldText(true);
+        letter.setTextSize(pr * 1.15f);
+        Paint.FontMetrics fm = letter.getFontMetrics();
+        canvas.drawText(r.label, px, py - (fm.ascent + fm.descent) / 2f, letter);
+        outlinePaint.setStrokeWidth(2f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(3f);
     }
 
     private void drawFaceDual(Canvas canvas, Region r, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : accentPaint;
-        canvas.drawCircle(px, py, pr, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawCircle(px, py, pr, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-            accentPaint.setColor(faceColor(r.id));
-            accentPaint.setStrokeWidth(pr * 0.16f);
-            drawDualSymbol(canvas, r.id, px, py, pr);
-            accentPaint.setStrokeWidth(2.5f);
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, glowPaint);
+            return;
         }
+        int tint = faceColor(r.id);
+        buttonPaint.setColor(isDarkMode() ? 0xFF2A2F37 : 0xFFE7EAEE);
+        canvas.drawCircle(px, py, pr, buttonPaint);
+        symbolPaint.setColor(tint);
+        symbolPaint.setStrokeWidth(pr * 0.22f);
+        drawDualSymbol(canvas, r.id, px, py, pr * 0.52f);
+        outlinePaint.setStrokeWidth(2f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(3f);
     }
 
     private int faceColor(String id) {
-        if (id.equals("y")) return (int) 0xFFE60012L;
-        if (id.equals("b")) return (int) 0xFFF3C518L;
-        if (id.equals("a")) return (int) 0xFF00A2E8L;
-        return (int) 0xFF00A651L;
-
+        if (id == null) return (int) 0xFF7D8590L;
+        switch (id) {
+            case "y": return (int) 0xFFE6B422L; // triangle - amber
+            case "b": return (int) 0xFFE0455AL; // circle - red
+            case "a": return (int) 0xFF3FA9F5L; // cross - blue
+            case "x": return (int) 0xFF57C84DL; // square - green
+            default: return (int) 0xFF7D8590L;
+        }
     }
+
     private void drawDualSymbol(Canvas canvas, String id, float px, float py, float pr) {
-        Paint p = accentPaint;
-        float q = pr * 0.45f;
-        if (id.equals("a")) {
-            canvas.drawLine(px - q, py - q, px + q, py + q, p);
-            canvas.drawLine(px - q, py + q, px + q, py - q, p);
-        } else if (id.equals("b")) {
-            canvas.drawCircle(px, py, q, p);
-        } else if (id.equals("x")) {
-            RectF sq = new RectF(px - q, py - q, px + q, py + q);
-            canvas.drawRect(sq, p);
-        } else if (id.equals("y")) {
+        Paint p = symbolPaint;
+        if ("a".equals(id)) {
+            canvas.drawLine(px - pr, py - pr, px + pr, py + pr, p);
+            canvas.drawLine(px - pr, py + pr, px + pr, py - pr, p);
+        } else if ("b".equals(id)) {
+            Paint fill = new Paint(p);
+            fill.setStyle(Paint.Style.STROKE);
+            canvas.drawCircle(px, py, pr, fill);
+        } else if ("x".equals(id)) {
+            Paint fill = new Paint(p);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeWidth(p.getStrokeWidth() * 0.75f);
+            canvas.drawRect(px - pr, py - pr, px + pr, py + pr, fill);
+        } else if ("y".equals(id)) {
+            Paint fill = new Paint(p);
+            fill.setStyle(Paint.Style.STROKE);
+            fill.setStrokeJoin(Paint.Join.ROUND);
             Path t = new Path();
-            t.moveTo(px, py - q);
-            t.lineTo(px + q, py + q);
-            t.lineTo(px - q, py + q);
+            t.moveTo(px, py - pr);
+            t.lineTo(px + pr, py + pr);
+            t.lineTo(px - pr, py + pr);
             t.close();
-            canvas.drawPath(t, p);
+            canvas.drawPath(t, fill);
         }
     }
 
     private void drawBumper(Canvas canvas, float px, float py, float pr, boolean glowMode) {
         Paint p = glowMode ? glowPaint : buttonPaint;
-        RectF b = new RectF(px - pr * 2.0f, py - pr * 0.6f, px + pr * 2.0f, py + pr * 0.6f);
-        canvas.drawRoundRect(b, pr * 0.4f, pr * 0.4f, p);
+        if (!glowMode) {
+            buttonPaint.setColor(isDarkMode() ? 0xFF3A404B : 0xFFC8CED6);
+        }
+        // A bumper is a wide, low pill that wraps the shoulder.
+        scratch.set(px - pr * 2.4f, py - pr * 0.55f, px + pr * 2.4f, py + pr * 0.55f);
+        canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, p);
+        if (!glowMode) {
+            outlinePaint.setStrokeWidth(2f);
+            canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, outlinePaint);
+            outlinePaint.setStrokeWidth(3f);
+            detailPaint.setColor(isDarkMode() ? 0xFF262A32 : 0xFFAEB4BD);
+            scratch.set(px - pr * 1.9f, py + pr * 0.30f, px + pr * 1.9f, py + pr * 0.42f);
+            canvas.drawRoundRect(scratch, pr * 0.06f, pr * 0.06f, detailPaint);
+        }
     }
+
     private void drawTrigger(Canvas canvas, float px, float py, float pr, boolean glowMode) {
         Paint p = glowMode ? glowPaint : buttonPaint;
-        RectF t = new RectF(px - pr * 1.6f, py - pr * 0.5f, px + pr * 1.6f, py + pr * 0.5f);
-        canvas.drawRoundRect(t, pr * 0.5f, pr * 0.5f, p);
+        if (!glowMode) {
+            buttonPaint.setColor(isDarkMode() ? 0xFF333944 : 0xFFBFC5CD);
+        }
+        // Triggers curve back over the shoulder; a short arc reads better than a pill.
+        scratch.set(px - pr * 1.7f, py - pr * 0.95f, px + pr * 1.7f, py + pr * 0.75f);
+        canvas.drawRoundRect(scratch, pr * 0.7f, pr * 0.7f, p);
+        if (!glowMode) {
+            outlinePaint.setStrokeWidth(2f);
+            canvas.drawRoundRect(scratch, pr * 0.7f, pr * 0.7f, outlinePaint);
+            outlinePaint.setStrokeWidth(3f);
+        }
     }
 
     private void drawCenterButton(Canvas canvas, float px, float py, float pr, boolean glowMode) {
         Paint p = glowMode ? glowPaint : buttonPaint;
+        if (!glowMode) {
+            buttonPaint.setColor(isDarkMode() ? 0xFF4A505C : 0xFFCED3DA);
+        }
         canvas.drawCircle(px, py, pr, p);
         if (!glowMode) {
             outlinePaint.setStrokeWidth(2f);
             canvas.drawCircle(px, py, pr, outlinePaint);
             outlinePaint.setStrokeWidth(3f);
-            canvas.drawCircle(px, py, pr * 0.4f, textPaint);
         }
     }
 
     private void drawTouchpad(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        RectF tp = new RectF(px - pr * 2.2f, py - pr * 0.7f, px + pr * 2.2f, py + pr * 0.7f);
-        canvas.drawRoundRect(tp, pr * 0.3f, pr *  0.3f, p);
+        Paint p = glowMode ? glowPaint : detailPaint;
+        if (!glowMode) {
+            detailPaint.setColor(isDarkMode() ? 0xFF1C2027 : 0xFFD3D8DE);
+        }
+        scratch.set(px - pr * 2.2f, py - pr * 0.75f, px + pr * 2.2f, py + pr * 0.75f);
+        canvas.drawRoundRect(scratch, pr * 0.28f, pr * 0.28f, p);
         if (!glowMode) {
             outlinePaint.setStrokeWidth(2f);
-            canvas.drawRoundRect(tp, pr *  0.3f, pr *  0.3f, outlinePaint);
+            canvas.drawRoundRect(scratch, pr * 0.28f, pr * 0.28f, outlinePaint);
             outlinePaint.setStrokeWidth(3f);
-            canvas.drawLine(px - pr * 0.5f, py, px + pr * 0.5f, py, textPaint);
         }
     }
+
     private void drawPsLogo(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : accentPaint;
-        canvas.drawCircle(px, py, pr, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawCircle(px, py, pr, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-            textPaint.setTextSize(pr * 0.7f);
-            canvas.drawText("PS", px, py + pr * 0.1f, textPaint);
+        Paint p = glowMode ? glowPaint : symbolPaint;
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, p);
+            return;
         }
+        buttonPaint.setColor(isDarkMode() ? 0xFF23272F : 0xFFE1E4E9);
+        canvas.drawCircle(px, py, pr, buttonPaint);
+        // Stylised PlayStation mark: a slanted stroke crossed by a horizontal bar.
+        symbolPaint.setColor(accentColor != -1 ? accentColor : 0xFF4A90E2);
+        symbolPaint.setStrokeWidth(pr * 0.20f);
+        canvas.drawLine(px - pr * 0.28f, py + pr * 0.62f, px + pr * 0.38f, py - pr * 0.62f, symbolPaint);
+        canvas.drawLine(px - pr * 0.55f, py + pr * 0.05f, px + pr * 0.62f, py + pr * 0.05f, symbolPaint);
+        outlinePaint.setStrokeWidth(2f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(3f);
     }
 
     public void handleKeyEvent(int keyCode, boolean down) {
@@ -404,16 +576,15 @@ public class ControllerIllustrationView extends View {
         float ly = event.getAxisValue(MotionEvent.AXIS_Y);
         float rx = event.getAxisValue(MotionEvent.AXIS_Z);
         float rz = event.getAxisValue(MotionEvent.AXIS_RZ);
-        if (Math.abs(lx) >  0.35f || Math.abs(ly) >  0.35f) setRegionGlow("ls", true);
-        if (Math.abs(rx) >  0.35f || Math.abs(rz) >  0.35f) setRegionGlow("rs", true);
         float hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X);
         float hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y);
-        if (hatY >  0.4f) setRegionGlow("dp", true);
-        if (hatY < -0.4f) setRegionGlow("dp", true);
-        if (hatX < -0.4f) setRegionGlow("dp", true);
-        if (hatX >  0.4f) setRegionGlow("dp", true);
-        if (Math.abs(lx) >  0.9f || Math.abs(ly) >  0.9f) setRegionGlow("ls", true);
-        if (Math.abs(rx) >  0.9f || Math.abs(rz) >  0.9f) setRegionGlow("rs", true);
+
+        // Motion events stream continuously, so each axis is reported lit or unlit on every
+        // event. Only ever setting the glow left sticks and the d-pad highlighted forever
+        // once they had been touched once.
+        setRegionGlow("ls", Math.abs(lx) > 0.35f || Math.abs(ly) > 0.35f);
+        setRegionGlow("rs", Math.abs(rx) > 0.35f || Math.abs(rz) > 0.35f);
+        setRegionGlow("dp", Math.abs(hatX) > 0.4f || Math.abs(hatY) > 0.4f);
     }
     private String mapKey(int keyCode) {
         switch (keyCode) {

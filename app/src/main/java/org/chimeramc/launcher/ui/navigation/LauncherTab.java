@@ -4,12 +4,11 @@ import android.app.Activity;
 import android.view.KeyEvent;
 
 import org.chimeramc.launcher.ui.activities.AboutActivity;
-import org.chimeramc.launcher.ui.activities.ControllerActivity;
+import org.chimeramc.launcher.ui.activities.CustomizeActivity;
 import org.chimeramc.launcher.ui.activities.InstancesActivity;
 import org.chimeramc.launcher.ui.activities.MainActivity;
 import org.chimeramc.launcher.ui.activities.ModsFullscreenActivity;
 import org.chimeramc.launcher.ui.activities.SettingsActivity;
-import org.chimeramc.launcher.ui.activities.SkinsActivity;
 
 /**
  * The launcher's top-level destinations.
@@ -22,10 +21,8 @@ public enum LauncherTab {
     LAUNCH(MainActivity.class),
     VERSIONS(InstancesActivity.class),
     MODS(ModsFullscreenActivity.class),
-    SETTINGS(SettingsActivity.class),
-    CONTROLLER(ControllerActivity.class),
-    SKINS(SkinsActivity.class),
-    ABOUT(AboutActivity.class);
+    CUSTOMIZE(CustomizeActivity.class),
+    SETTINGS(SettingsActivity.class);
 
     private final Class<? extends Activity> activity;
 

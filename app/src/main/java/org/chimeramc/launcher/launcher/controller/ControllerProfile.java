@@ -20,6 +20,21 @@ public class ControllerProfile {
     private float rightStickSensitivity = DEFAULT_SENSITIVITY;
     private boolean vibrationEnabled = true;
 
+    // Curve shape is persisted as primitives rather than as the curve objects themselves.
+    // Gson deserialises through Unsafe and does not run constructors, so a curve type whose
+    // fields are final would be populated unpredictably, and a profile saved by an older
+    // build has no curve fields at all — which must read back as the identity curve, not
+    // as null.
+    private String leftCurveKind = StickCurve.Kind.LINEAR.name();
+    private float leftCurveExponent = 1f;
+    private String rightCurveKind = StickCurve.Kind.LINEAR.name();
+    private float rightCurveExponent = 1f;
+
+    private float leftTriggerDeadZone = TriggerCurve.DEFAULT_DEAD_ZONE;
+    private float leftTriggerExponent = TriggerCurve.DEFAULT_EXPONENT;
+    private float rightTriggerDeadZone = TriggerCurve.DEFAULT_DEAD_ZONE;
+    private float rightTriggerExponent = TriggerCurve.DEFAULT_EXPONENT;
+
     public ControllerProfile() {
         this("Profile");
     }
@@ -105,6 +120,60 @@ public class ControllerProfile {
 
     }
 
+    public StickCurve getLeftCurve() {
+        return StickCurve.parse(leftCurveKind, leftCurveExponent);
+    }
+
+    public void setLeftCurve(StickCurve curve) {
+        applyCurve(curve, true);
+    }
+
+    public StickCurve getRightCurve() {
+        return StickCurve.parse(rightCurveKind, rightCurveExponent);
+    }
+
+    public void setRightCurve(StickCurve curve) {
+        applyCurve(curve, false);
+    }
+
+    private void applyCurve(StickCurve curve, boolean left) {
+        StickCurve effective = curve == null ? new StickCurve() : curve;
+        if (left) {
+            leftCurveKind = effective.getKind().name();
+            leftCurveExponent = effective.getExponent();
+        } else {
+            rightCurveKind = effective.getKind().name();
+            rightCurveExponent = effective.getExponent();
+        }
+    }
+
+    public TriggerCurve getLeftTriggerCurve() {
+        return new TriggerCurve(leftTriggerDeadZone, leftTriggerExponent);
+    }
+
+    public void setLeftTriggerCurve(TriggerCurve curve) {
+        applyTriggerCurve(curve, true);
+    }
+
+    public TriggerCurve getRightTriggerCurve() {
+        return new TriggerCurve(rightTriggerDeadZone, rightTriggerExponent);
+    }
+
+    public void setRightTriggerCurve(TriggerCurve curve) {
+        applyTriggerCurve(curve, false);
+    }
+
+    private void applyTriggerCurve(TriggerCurve curve, boolean left) {
+        TriggerCurve effective = curve == null ? new TriggerCurve() : curve;
+        if (left) {
+            leftTriggerDeadZone = effective.getDeadZone();
+            leftTriggerExponent = effective.getExponent();
+        } else {
+            rightTriggerDeadZone = effective.getDeadZone();
+            rightTriggerExponent = effective.getExponent();
+        }
+    }
+
     private static float clampDeadZone(float zone) {
         if (Float.isNaN(zone)) return DEFAULT_DEAD_ZONE;
         return Math.max(0f, Math.min(0.9f, zone));
@@ -127,7 +196,14 @@ public class ControllerProfile {
 
         copy.vibrationEnabled = vibrationEnabled;
 
-
+        copy.leftCurveKind = leftCurveKind;
+        copy.leftCurveExponent = leftCurveExponent;
+        copy.rightCurveKind = rightCurveKind;
+        copy.rightCurveExponent = rightCurveExponent;
+        copy.leftTriggerDeadZone = leftTriggerDeadZone;
+        copy.leftTriggerExponent = leftTriggerExponent;
+        copy.rightTriggerDeadZone = rightTriggerDeadZone;
+        copy.rightTriggerExponent = rightTriggerExponent;
 
         copy.buttonRemaps.clear();
         copy.buttonRemaps.putAll(buttonRemaps);

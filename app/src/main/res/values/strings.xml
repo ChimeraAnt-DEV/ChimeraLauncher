@@ -17,6 +17,22 @@
     <string name="manage_mods">Manage Mods</string>
     <string name="no_mods_found">No Mods Found</string>
     <string name="mod_load_order">Load order: %d</string>
+    <string name="mod_load_failed_badge">Failed to load</string>
+    <string name="mod_load_diagnostics_title">Some mods did not load</string>
+    <string name="mod_load_diagnostics_message">%1$d mod(s) failed during the last launch. They stay installed but are not active.</string>
+    <string name="mod_load_diagnostics_dismiss">Dismiss</string>
+    <string name="mod_load_diagnostics_incompatible">Needs a different Minecraft version</string>
+    <string name="mod_load_diagnostics_dlopen">Library could not be opened</string>
+    <string name="mod_load_diagnostics_symbol">Built for a different game build (missing symbol)</string>
+    <string name="mod_load_diagnostics_missing_dependency">A required file or dependency is missing</string>
+    <string name="mod_load_diagnostics_unknown">Reason unknown</string>
+    <string name="mod_name_bullet">• %1$s — %2$s</string>
+    <string name="mod_safe_mode_title">A mod may have crashed the game</string>
+    <string name="mod_safe_mode_message">The last launch stopped while loading mods (%1$s). Disable these %2$d mod(s) so the game can start?\n\n%3$s</string>
+    <string name="mod_safe_mode_disable">Disable them</string>
+    <string name="mod_safe_mode_keep">Keep enabled</string>
+    <string name="mod_safe_mode_disabled">Mods disabled. Turn them back on one at a time in the Mods tab.</string>
+    <string name="mod_safe_mode_recent">recently</string>
     <string name="drag_to_reorder">Drag to reorder</string>
     <string name="mod_reordered">Mod order updated</string>
 
@@ -29,7 +45,7 @@
 
     <!-- Home screen -->
     <string name="home_app_title">Chimera Launcher</string>
-    <string name="home_subtitle">Hybrid Minecraft Engine</string>
+    <string name="home_subtitle">Minecraft: Bedrock Edition launcher</string>
     <string name="home_versions">Versions</string>
     <string name="home_mods">Mods</string>
     <string name="home_content">Content</string>
@@ -93,7 +109,6 @@
     <string name="files_processed">Successfully processed %d mod files</string>
     <string name="user_cancelled">Import cancelled by user</string>
 
-
     <string name="exit">Exit</string>
 
     <string name="overlay_permission_message">Please grant the overlay permission</string>
@@ -129,7 +144,6 @@
     <string name="settings_tab_migration">Migration</string>
     <string name="settings_theme_desc">Choose the application theme</string>
 
-
     <string name="unknown_sources_permission_title">Install Permission</string>
     <string name="unknown_sources_permission_message">To install or update this app, please grant permission to install unknown apps. Click "Grant" to open system settings, enable the permission for this app, and return to continue.</string>
 
@@ -160,7 +174,6 @@
     <string name="dialog_positive_ok">OK</string>
     <string name="delete_account_title">Delete Account</string>
     <string name="delete_account_confirm">Are you sure you want to delete this account?</string>
-
 
     <string name="new_version_found">New version found: %1$s</string>
     <string name="update_question">Do you want to download and install the latest version?</string>
@@ -792,6 +805,16 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="skins_not_applied">Skin pack staged for the current instance — pick it in the in-game wardrobe to wear it now</string>
     <string name="skins_no_version">Select an instance first to apply a skin pack</string>
     <string name="skins_applied">%1$s applied</string>
+    <string name="skins_removed">%1$s removed</string>
+    <string name="skins_not_a_pack">That file has no skin pack manifest.</string>
+    <string name="skins_apply_failed">Could not apply the skin pack: %1$s</string>
+
+    <!-- Performance preset -->
+    <string name="performance_preset_title">Performance preset</string>
+    <string name="performance_preset_battery">Battery</string>
+    <string name="performance_preset_balanced">Balanced</string>
+    <string name="performance_preset_performance">Performance</string>
+    <string name="performance_preset_note">This sets the toggles below. Change any of them individually and it keeps your choice.</string>
     <string name="skins_loading">Scanning skin packs…</string>
     <string name="skins_cape_note">Cape support is not available yet - skin packs apply skins only.</string>
 
@@ -934,6 +957,10 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="nav_settings">Settings</string>
     <string name="nav_controller">Controller</string>
     <string name="nav_skins">Skins</string>
+    <string name="nav_customize">Customize</string>
+    <string name="customize_tab_controller">Controller</string>
+    <string name="customize_tab_skins">Skins</string>
+    <string name="settings_about_open">About Chimera Launcher</string>
     <string name="controller_title">Controller</string>
     <string name="controller_empty_hint">Controller setup is coming soon. Connect a supported gamepad to begin.</string>
     <string name="controller_status_none">No controller detected</string>
@@ -958,6 +985,52 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="controller_editor_vibration">Vibration</string>
     <string name="controller_editor_remap_title">Button remaps</string>
     <string name="controller_editor_remap_hint">Remaps apply to the active profile during gameplay.</string>
+
+    <string name="controller_editor_stick_curve_label">Stick response curve</string>
+    <string name="controller_editor_left_curve">Left stick curve</string>
+    <string name="controller_editor_right_curve">Right stick curve</string>
+    <string name="controller_editor_curve_preset">Curve preset</string>
+    <string name="controller_editor_curve_exponent">Curve strength</string>
+    <string name="controller_editor_curve_kind">Curve shape</string>
+    <string name="controller_editor_curve_custom">Custom</string>
+    <string name="controller_editor_trigger_label">Trigger response</string>
+    <string name="controller_editor_left_trigger">Left trigger</string>
+    <string name="controller_editor_right_trigger">Right trigger</string>
+    <string name="controller_editor_trigger_deadzone">Trigger dead zone</string>
+    <string name="controller_editor_trigger_exponent">Trigger curve strength</string>
+    <string name="controller_editor_trigger_preset">Trigger preset</string>
+    <string name="controller_curve_kind_linear">Linear</string>
+    <string name="controller_curve_kind_exponential">Exponential (precision)</string>
+    <string name="controller_curve_kind_ease_out">Ease-out (boosted)</string>
+    <string name="controller_curve_kind_sigmoid">Sigmoid (S-curve)</string>
+    <string name="controller_preset_linear">Linear</string>
+    <string name="controller_preset_precision">Precision</string>
+    <string name="controller_preset_balanced">Balanced</string>
+    <string name="controller_preset_aggressive">Aggressive</string>
+    <string name="controller_preset_instant">Instant</string>
+    <string name="controller_trigger_preset_linear">Linear</string>
+    <string name="controller_trigger_preset_soft">Soft</string>
+    <string name="controller_trigger_preset_hair">Hair Trigger</string>
+    <string name="controller_trigger_preset_deliberate">Deliberate</string>
+    <string name="controller_editor_preset_applied">Applied preset: %1$s</string>
+    <string name="controller_export_profile">Export profile</string>
+    <string name="controller_import_profile">Import profile</string>
+    <string name="controller_export_success">Profile exported to:\n%1$s</string>
+    <string name="controller_export_failed">Export failed: %1$s</string>
+    <string name="controller_import_success">Imported %1$s</string>
+    <string name="controller_import_partial">Imported %1$s (%2$d entries skipped)</string>
+    <string name="controller_import_failed">Import failed: %1$s</string>
+    <string name="controller_import_empty">This file contains no controller profiles.</string>
+    <string name="controller_import_wrong_format">That file is not a Chimera controller profile export.</string>
+    <string name="controller_import_malformed">That file could not be read as JSON.</string>
+    <string name="controller_import_full">All %1$d profile slots are in use. Delete one first.</string>
+    <string name="controller_bind_instance">Bind to instance</string>
+    <string name="controller_bind_clear">Remove instance binding</string>
+    <string name="controller_bind_none">No instance selected</string>
+    <string name="controller_bind_success">%1$s will use this profile</string>
+    <string name="controller_bind_cleared">%1$s no longer has a bound profile</string>
+    <string name="controller_bind_title">Bind profile to instance</string>
+    <string name="controller_bind_hint">Bind the active profile to a Minecraft instance so that instance always launches with it.</string>
     <string name="controller_save">Save</string>
     <string name="controller_profile_name_prompt">Profile name</string>
     <string name="controller_ok">OK</string>
@@ -981,6 +1054,14 @@ Migration must complete before Chimera Launcher can continue.</string>
 
     <string name="about_page_title">About</string>
     <string name="about_subtitle">Chimera Launcher — A Modern Minecraft Bedrock Launcher</string>
+    <string name="settings_backup_title">Backup &amp; Restore</string>
+    <string name="settings_backup_desc">Export your launcher settings, personalization and controller profiles to a file, or restore them from one.</string>
+    <string name="settings_backup_export">Export</string>
+    <string name="settings_backup_import">Import</string>
+    <string name="settings_backup_note">Account credentials and API keys are never included in the export.</string>
+    <string name="settings_backup_exported">Settings exported.</string>
+    <string name="settings_backup_imported">Settings restored, %1$d controller profiles included.</string>
+    <string name="settings_backup_failed">Backup failed: %1$s</string>
     <string name="about_authors_title">👥 Authors &amp; Maintainers</string>
     <string name="about_author_name">DreamGuXiang</string>
     <string name="about_author_badge">Author</string>
@@ -1163,7 +1244,6 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="more_buttons_no_svg_selected">No SVG selected</string>
     <string name="more_buttons_default_name">Button</string>
 
-
     <!-- Hotbar Slot -->
     <string name="inbuilt_mod_hotbar_slot">Hotbar Slot</string>
     <string name="inbuilt_mod_hotbar_slot_desc">Adds separate 1–9 buttons for selecting hotbar slots</string>
@@ -1208,41 +1288,9 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="microsoft_oauth_error">Sign-in failed: %s</string>
     <string name="microsoft_oauth_cancelled">Sign-in cancelled</string>
     <string name="microsoft_oauth_setup_required">Please register an Azure app and configure client ID in settings</string>
-    
-    <!-- Java Edition Support -->
-    <string name="java_edition_title">Java Edition</string>
-    <string name="java_edition_subtitle">Run Minecraft Java Edition with Fabric/Forge mods</string>
-    <string name="java_edition_not_supported">Java Edition support not available on this device</string>
-    <string name="java_mods_title">Java Mods</string>
-    <string name="fabric_mods">Fabric Mods</string>
-    <string name="forge_mods">Forge Mods</string>
-    <string name="import_java_mod">Import Java Mod (.jar)</string>
-    <string name="java_mod_imported">Imported %s mod: %s</string>
-    <string name="java_mod_import_failed">Failed to import Java mod</string>
-    <string name="launch_java_edition">Launch Java Edition</string>
-    <string name="java_version_label">Java Version</string>
-    <string name="java_memory_label">Memory Allocation</string>
-    
-    <!-- Dual-Engine Mod Browser -->
-    <string name="dual_engine_browser">Mod Browser</string>
-    <string name="browse_java_mods">Browse Java Mods</string>
-    <string name="browse_bedrock_mods">Browse Bedrock Addons</string>
-    <string name="mod_source_curseforge">CurseForge</string>
-    <string name="mod_source_modrinth">Modrinth</string>
-    <string name="mod_loader_fabric">Fabric</string>
-    <string name="mod_loader_forge">Forge</string>
-    <string name="search_mods">Search Mods</string>
-    <string name="featured_mods">Featured Mods</string>
-    <string name="download_mod">Download</string>
-    <string name="mod_downloading">Downloading %s…</string>
-    <string name="mod_download_success">Downloaded: %s</string>
-    <string name="mod_download_failed">Failed to download: %s</string>
-    <string name="renderdragon_shaders">RenderDragon Shaders</string>
-    <string name="native_modules">Native C++ Modules</string>
-    <string name="bedrock_addons">Bedrock Addons</string>
+
     <string name="behavior_packs">Behavior Packs</string>
     <string name="resource_packs">Resource Packs</string>
-    <string name="shader_packs">Shader Packs</string>
 
     <!-- Aim Settings -->
     <string name="inbuilt_mod_aim_settings">Aim Settings</string>
@@ -1277,4 +1325,38 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="latency_boost_desc">Aggressive low-latency sockets: disables Nagle, enables TCP Quick ACK, sizes buffers for gameplay traffic, prefetches DNS, and pauses non-essential background polls while playing</string>
     <string name="input_boost_title">Low Input Delay</string>
     <string name="input_boost_desc">Hyper-responsive input: bypasses intermediate rendering, uses display-aligned frames, and dispatches controller/touch actions on the same frame they arrive</string>
+
+    <!-- Mod hub (Modrinth) -->
+    <string name="mod_hub_title">Mod Hub</string>
+    <string name="mod_hub_subtitle">Browse Modrinth and import what you download</string>
+    <string name="mod_hub_search_hint">Search Modrinth</string>
+    <string name="modrinth_title">Modrinth</string>
+    <string name="modrinth_hub_search_hint">Search Modrinth for projects</string>
+    <string name="modrinth_downloads_format">%s downloads</string>
+    <string name="modrinth_loader">%s</string>
+    <string name="modrinth_updated">Updated %s</string>
+    <string name="modrinth_java_warning_title">Mostly Java Edition</string>
+    <string name="modrinth_java_warning">Modrinth indexes Java Edition mods, modpacks and resource packs. This launcher runs Bedrock Edition, so only some resource packs and add-ons here can actually be installed. Check the file type before importing.</string>
+    <string name="modrinth_type_mod">Mods</string>
+    <string name="modrinth_type_resourcepack">Resource packs</string>
+    <string name="modrinth_type_modpack">Modpacks</string>
+    <string name="modrinth_type_datapack">Data packs</string>
+    <string name="modrinth_versions_title">Versions</string>
+    <string name="modrinth_download_version">Download</string>
+    <string name="modrinth_version_files_hint">%1$s • %2$s</string>
+    <string name="modrinth_no_versions">No downloadable versions found for this project.</string>
+    <string name="modrinth_loading_versions">Loading versions</string>
+
+    <!-- Downloads scanner -->
+    <string name="downloads_title">Downloads</string>
+    <string name="downloads_scan">Scan</string>
+    <string name="downloads_scanning">Scanning your Downloads folder</string>
+    <string name="downloads_empty_title">Nothing to import</string>
+    <string name="downloads_empty_message">No .mcpack, .mcaddon, .mcworld or .zip files were found in your Downloads folder. Download something, then scan again.</string>
+    <string name="downloads_import">Import</string>
+    <string name="downloads_import_all">Import all</string>
+    <string name="downloads_unsupported">Unsupported</string>
+    <string name="downloads_file_details">%1$s • %2$s</string>
+    <string name="downloads_imported_count">Imported %1$d file(s)</string>
+    <string name="downloads_summary">%1$d importable of %2$d found</string>
 </resources>

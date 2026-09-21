@@ -40,6 +40,25 @@ public class FeatureSettings {
         return INSTANCE;
     }
 
+    /**
+     * Re-reads the persisted settings into the singleton.
+     *
+     * Restoring a backup writes the store directly, but the singleton survives for the life of
+     * the process, so without this the current session would keep serving the pre-import values
+     * until the next launch. Callers must hold no references to the old instance.
+     */
+    public static void reload(Context context) {
+        if (context != null) {
+            appContext = context.getApplicationContext();
+        }
+        synchronized (FeatureSettings.class) {
+            INSTANCE = SettingsStorage.load(appContext);
+            if (INSTANCE == null) {
+                INSTANCE = new FeatureSettings();
+            }
+        }
+    }
+
     public boolean isVersionIsolationEnabled() { return versionIsolationEnabled; }
     public void setVersionIsolationEnabled(boolean enabled) { this.versionIsolationEnabled = enabled; autoSave(); }
 

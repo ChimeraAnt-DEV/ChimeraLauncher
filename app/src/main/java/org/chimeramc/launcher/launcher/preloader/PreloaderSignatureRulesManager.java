@@ -31,7 +31,16 @@ public final class PreloaderSignatureRulesManager {
     private static final String PREFS_NAME = "preloader_signature_rules";
     private static final String KEY_LAST_SUCCESSFUL_UPDATE_TIME = "last_successful_update_time";
 
-    private static final String REMOTE_RULES_URL = "https://raw.githubusercontent.com/LiteLDev/LeviLaunchroid/refs/heads/main/resources/preloader/preloader_signature_rules_source.json";
+    /**
+     * Signature rules are fetched from these sources in order. The first source that returns
+     * valid rules wins, so Chimera's own copy is authoritative and Levi's upstream file is
+     * only the fallback for when our host is unreachable. The bundled asset is the last
+     * resort, so an offline launch still has current rules.
+     */
+    private static final String[] REMOTE_RULES_URLS = {
+            "https://raw.githubusercontent.com/ChimeraAnt-DEV/ChimeraLauncher/main/resources/preloader/preloader_signature_rules_source.json",
+            "https://raw.githubusercontent.com/LiteLDev/LeviLaunchroid/refs/heads/main/resources/preloader/preloader_signature_rules_source.json"
+    };
 
     private static final AtomicBoolean refreshRunning = new AtomicBoolean(false);
     private static final OkHttpClient client = buildLatencyTunedClient();
@@ -75,7 +84,12 @@ public final class PreloaderSignatureRulesManager {
     }
 
     public static boolean hasRemoteRulesUrl() {
-        return !isBlank(REMOTE_RULES_URL);
+        for (String url : REMOTE_RULES_URLS) {
+            if (!isBlank(url)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static long getLastSuccessfulUpdateTime(Context context) {
@@ -142,7 +156,7 @@ public final class PreloaderSignatureRulesManager {
     }
 
     private static RefreshResult refreshRemoteRules(Context context) {
-        if (isBlank(REMOTE_RULES_URL)) {
+        if (!hasRemoteRulesUrl()) {
             return new RefreshResult(
                     false,
                     false,
@@ -151,21 +165,30 @@ public final class PreloaderSignatureRulesManager {
             );
         }
 
-        String remoteRules = fetchText(REMOTE_RULES_URL.trim());
+        String remoteRules = null;
+        String failureMessage = "Failed to fetch remote preloader signature rules";
+        for (String url : REMOTE_RULES_URLS) {
+            if (isBlank(url)) {
+                continue;
+            }
+            String candidate = fetchText(url.trim());
+            if (isBlank(candidate)) {
+                continue;
+            }
+            if (!hasValidRules(candidate)) {
+                Log.w(TAG, "Signature rules from " + url + " are invalid, trying next source");
+                failureMessage = "Remote preloader signature rules are invalid";
+                continue;
+            }
+            remoteRules = candidate;
+            break;
+        }
+
         if (isBlank(remoteRules)) {
             return new RefreshResult(
                     false,
                     false,
-                    "Failed to fetch remote preloader signature rules",
-                    getLastSuccessfulUpdateTime(context)
-            );
-        }
-        if (!hasValidRules(remoteRules)) {
-            Log.w(TAG, "Remote preloader signature rules are invalid");
-            return new RefreshResult(
-                    false,
-                    false,
-                    "Remote preloader signature rules are invalid",
+                    failureMessage,
                     getLastSuccessfulUpdateTime(context)
             );
         }

@@ -45,7 +45,7 @@
                 android:layout_marginStart="6dp"
                 android:fontFamily="@font/misans"
                 android:text="@string/app_name"
-                android:textColor="#8BC34A"
+                android:textColor="@color/accent_text"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 
@@ -109,16 +109,16 @@
                     android:background="?attr/selectableItemBackground" />
 
                 <TextView
-                    android:id="@+id/nav_tab_about"
+                    android:id="@+id/nav_tab_customize"
                     android:layout_width="wrap_content"
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:paddingHorizontal="12dp"
                     android:fontFamily="@font/misans"
-                    android:text="@string/nav_about"
+                    android:text="@string/nav_customize"
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp"
-                    android:drawableStart="@drawable/ic_nav_about"
+                    android:drawableStart="@drawable/ic_nav_controller"
                     android:drawablePadding="5dp"
                     android:background="?attr/selectableItemBackground" />
 
@@ -133,34 +133,6 @@
                     android:textColor="@color/text_secondary"
                     android:textSize="13sp"
                     android:drawableStart="@drawable/ic_nav_settings"
-                    android:drawablePadding="5dp"
-                    android:background="?attr/selectableItemBackground" />
-
-                <TextView
-                    android:id="@+id/nav_tab_controller"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="12dp"
-                    android:fontFamily="@font/misans"
-                    android:text="@string/nav_controller"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
-                    android:drawableStart="@drawable/ic_nav_controller"
-                    android:drawablePadding="5dp"
-                    android:background="?attr/selectableItemBackground" />
-
-                <TextView
-                    android:id="@+id/nav_tab_skins"
-                    android:layout_width="wrap_content"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:paddingHorizontal="12dp"
-                    android:fontFamily="@font/misans"
-                    android:text="@string/nav_skins"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="13sp"
-                    android:drawableStart="@drawable/ic_tshirt"
                     android:drawablePadding="5dp"
                     android:background="?attr/selectableItemBackground" />
 

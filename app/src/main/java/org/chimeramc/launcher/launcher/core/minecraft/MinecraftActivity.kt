@@ -24,6 +24,7 @@ import androidx.appcompat.widget.AppCompatEditText
 import com.mojang.minecraftpe.MainActivity
 import org.chimeramc.launcher.core.crash.CrashReporter
 import org.chimeramc.launcher.core.mods.ModManager
+import org.chimeramc.launcher.core.mods.ModSafeMode
 import org.levimc.launcher.core.mods.inbuilt.nativemod.PojavControlsMod
 import org.chimeramc.launcher.core.mods.inbuilt.overlay.InbuiltOverlayManager
 import org.chimeramc.launcher.launcher.controller.ControllerInputProcessor
@@ -139,6 +140,8 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
             return
         }
         trace.mark("Mojang MainActivity super.onCreate finished")
+        ModSafeMode.completeLaunch(this)
+        trace.mark("Mod crash-loop marker cleared")
 
         MinecraftForegroundService.startIfEnabled(this)
 
@@ -150,9 +153,14 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
         try {
             initializePreloaderTextInput()
             PreloaderInput.setActivity(this)
-            ControllerInputProcessor.detectAndLoad(this)
+            val storageProfileId = intent.getStringExtra(MinecraftLauncher.EXTRA_STORAGE_PROFILE_ID)
+            // A per-instance controller binding takes precedence over plain pad detection, so
+            // an instance can bring its own controller setup into the session.
+            if (!ControllerInputProcessor.applyInstanceBinding(this, storageProfileId)) {
+                ControllerInputProcessor.detectAndLoad(this)
+            }
             MinecraftActivityState.onCreated(this)
-            startPlaytimeSession(intent.getStringExtra(MinecraftLauncher.EXTRA_STORAGE_PROFILE_ID))
+            startPlaytimeSession(storageProfileId)
             applyHighRefreshRateMode()
         } catch (throwable: Throwable) {
             trace.error("Post-init hook failed", formatLaunchFailure(throwable))
@@ -452,6 +460,18 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
                         return true
                     }
                 }
+            }
+        }
+
+        // Apply the active profile's response curves to the stick and trigger axes the game
+        // will read. Identity when no profile/curve is active, in which case the same event
+        // instance comes back and there is nothing to recycle.
+        val shaped = ControllerInputProcessor.transformMotionEvent(event)
+        if (shaped !== event) {
+            try {
+                return super.dispatchGenericMotionEvent(shaped)
+            } finally {
+                shaped.recycle()
             }
         }
         return super.dispatchGenericMotionEvent(event)
