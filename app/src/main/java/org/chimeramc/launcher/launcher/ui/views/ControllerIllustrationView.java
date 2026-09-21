@@ -1,11 +1,15 @@
 package org.chimeramc.launcher.ui.views;
 
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.RadialGradient;
 import android.graphics.RectF;
+import android.graphics.Shader;
 import android.util.AttributeSet;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -18,30 +22,49 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.chimeramc.launcher.ui.views.ControllerLayout.Shape;
+
+/**
+ * Shaded top-down illustration of the three supported gamepads, with every button and
+ * stick addressable by id so a physical press can light it up.
+ *
+ * Region coordinates are normalised: 0.5 is the view centre and the span 0.0..1.0 maps to
+ * twice {@link #scale}. The shell paths are expressed against the same scale, so a button
+ * sits inside the body by construction instead of by eyeballed pixel offsets.
+ */
 public class ControllerIllustrationView extends View {
     private ControllerType type = ControllerType.XBOX;
-    private final List<Region> regions = new ArrayList<>();
-    private final Map<String, Region> regionById = new HashMap<>();
+    private final List<ControllerLayout.Spec> regions = new ArrayList<>();
     private final Map<String, Float> glow = new HashMap<>();
-    private final Paint basePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
+    private final Paint shellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint shellDarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint sheenPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint seamPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint wellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint buttonPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint accentPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint buttonDarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint capPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint glowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint bodyPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint wellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint detailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint highlightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint symbolPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint detailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+
     private final RectF scratch = new RectF();
-    private int bodyColor = 0xFF262A32;
-    private int bodyHighlightColor = 0xFF484E5A;
-    private int wellColor = 0xFF14161C;
+    private final Path shellPath = new Path();
+    private final Path chassisPath = new Path();
+
+    private int bodyLight;
+    private int bodyDark;
+    private int wellColor;
     private int accentColor = -1;
+    private boolean dark;
     private float cx;
     private float cy;
-    private float scale;
+    private float scale = 1f;
 
     public ControllerIllustrationView(Context context) {
         super(context);
@@ -54,63 +77,106 @@ public class ControllerIllustrationView extends View {
     }
 
     private void init() {
+        dark = isDarkMode();
         applyThemeColors();
         outlinePaint.setStyle(Paint.Style.STROKE);
-        outlinePaint.setStrokeWidth(3f);
-        accentPaint.setStyle(Paint.Style.STROKE);
-        accentPaint.setStrokeWidth(2.5f);
-        glowPaint.setColor((int) 0xFF4AE0A0L);
-        textPaint.setTextAlign(Paint.Align.CENTER);
-        highlightPaint.setColor(0x38FFFFFF);
+        outlinePaint.setStrokeWidth(2.5f);
         symbolPaint.setStyle(Paint.Style.STROKE);
         symbolPaint.setStrokeCap(Paint.Cap.ROUND);
         symbolPaint.setStrokeJoin(Paint.Join.ROUND);
+        textPaint.setTextAlign(Paint.Align.CENTER);
+        seamPaint.setStyle(Paint.Style.STROKE);
         rebuild();
     }
 
     private boolean isDarkMode() {
-        int nightModeFlags = getContext().getResources().getConfiguration().uiMode
-                & android.content.res.Configuration.UI_MODE_NIGHT_MASK;
-        return nightModeFlags == android.content.res.Configuration.UI_MODE_NIGHT_YES;
+        int flags = getContext().getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK;
+        return flags == Configuration.UI_MODE_NIGHT_YES;
     }
 
     private void applyThemeColors() {
-        if (isDarkMode()) {
-            bodyColor = 0xFF262A32;
-            bodyHighlightColor = 0xFF3A404B;
-            wellColor = 0xFF14161C;
-            outlinePaint.setColor(Color.rgb(96, 104, 118));
-            buttonPaint.setColor(Color.rgb(58, 64, 74));
-            detailPaint.setColor(Color.rgb(30, 34, 42));
-            textPaint.setColor(Color.rgb(210, 218, 228));
+        if (dark) {
+            bodyLight = 0xFF3C424E;
+            bodyDark = 0xFF191D24;
+            wellColor = 0xFF0E1116;
+            outlinePaint.setColor(Color.rgb(92, 100, 114));
+            seamPaint.setColor(0x55FFFFFF);
+            buttonPaint.setColor(Color.rgb(62, 68, 78));
+            buttonDarkPaint.setColor(Color.rgb(38, 43, 51));
+            capPaint.setColor(Color.rgb(74, 81, 93));
+            detailPaint.setColor(Color.rgb(28, 32, 39));
+            textPaint.setColor(Color.rgb(206, 214, 224));
         } else {
-            bodyColor = 0xFFE4E7EC;
-            bodyHighlightColor = 0xFFF2F4F7;
-            wellColor = 0xFFC7CCD3;
-            outlinePaint.setColor(Color.rgb(140, 148, 158));
-            buttonPaint.setColor(Color.rgb(206, 211, 217));
-            detailPaint.setColor(Color.rgb(170, 176, 185));
-            textPaint.setColor(Color.rgb(60, 64, 72));
+            bodyLight = 0xFFFBFCFD;
+            bodyDark = 0xFFC9CFD8;
+            wellColor = 0xFFAEB5BE;
+            outlinePaint.setColor(Color.rgb(148, 155, 165));
+            seamPaint.setColor(0x66FFFFFF);
+            buttonPaint.setColor(Color.rgb(214, 219, 225));
+            buttonDarkPaint.setColor(Color.rgb(178, 184, 192));
+            capPaint.setColor(Color.rgb(232, 235, 239));
+            detailPaint.setColor(Color.rgb(160, 167, 176));
+            textPaint.setColor(Color.rgb(56, 60, 68));
         }
-        basePaint.setColor(bodyColor);
     }
 
+    /**
+     * The view must be redrawn as well as rebuilt. Rebuilding only the region list leaves
+     * the previous controller's shell on screen, which made the manual "Next" button look
+     * like it had done nothing after the first press.
+     */
     public void setType(ControllerType type) {
+        if (type == null) return;
         this.type = type;
         rebuild();
+        invalidate();
+    }
+
+    public ControllerType getType() {
+        return type;
     }
 
     public void setAccentColor(int accentColor) {
         this.accentColor = accentColor;
-
         invalidate();
     }
 
     @Override
-    protected void onConfigurationChanged(android.content.res.Configuration newConfig) {
+    protected void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
+        dark = isDarkMode();
         applyThemeColors();
+        buildShaders();
         invalidate();
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        super.onSizeChanged(w, h, oldw, oldh);
+        scale = Math.min(w, h) * 0.55f;
+        cx = w / 2f;
+        cy = h / 2f;
+        buildShaders();
+    }
+
+    /**
+     * Shell gradients are built once per size/theme change rather than per frame; a
+     * {@code LinearGradient} allocated in {@code onDraw} would churn every frame for a
+     * view that sits on a scrolling screen.
+     */
+    private void buildShaders() {
+        int w = getWidth();
+        int h = getHeight();
+        if (w <= 0 || h <= 0) return;
+        shellPaint.setShader(new LinearGradient(0f, h * 0.10f, 0f, h * 0.92f,
+                bodyLight, bodyDark, Shader.TileMode.CLAMP));
+        shellDarkPaint.setShader(new LinearGradient(0f, h * 0.30f, 0f, h * 0.95f,
+                dark ? 0xFF262B34 : 0xFFC6CCD5,
+                dark ? 0xFF12151A : 0xFF97A0AB,
+                Shader.TileMode.CLAMP));
+        shadowPaint.setShader(new RadialGradient(w / 2f, h * 0.90f, w * 0.52f,
+                new int[]{0x3C000000, 0x00000000}, null, Shader.TileMode.CLAMP));
     }
 
     public void setRegionGlow(String id, boolean on) {
@@ -120,74 +186,7 @@ public class ControllerIllustrationView extends View {
 
     private void rebuild() {
         regions.clear();
-        regionById.clear();
-        if (type == ControllerType.XBOX) {
-            // Real Xbox layout: left stick upper-left, d-pad lower-left, ABXY upper-right,
-            // right stick lower-centre-right.
-            addRegion("ls",  0.320f, 0.400f, 0.052f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.662f, 0.640f, 0.052f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.320f, 0.400f, 0.062f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.662f, 0.640f, 0.062f, "", Shape.STICK_RING);
-            addRegion("dp",  0.278f, 0.665f, 0.046f, "", Shape.DPAD);
-            addRegion("a",  0.702f, 0.400f, 0.045f, "A", Shape.FACE_XBOX);
-            addRegion("b",  0.790f, 0.320f, 0.045f, "B", Shape.FACE_XBOX);
-            addRegion("x",  0.614f, 0.320f, 0.045f, "X", Shape.FACE_XBOX);
-            addRegion("y",  0.702f, 0.240f, 0.045f, "Y", Shape.FACE_XBOX);
-            addRegion("lb",  0.32f, 0.155f, 0.030f, "LB", Shape.BUMPER);
-            addRegion("rb",  0.68f, 0.155f, 0.030f, "RB", Shape.BUMPER);
-            addRegion("lt",  0.19f, 0.145f, 0.032f, "", Shape.TRIGGER);
-            addRegion("rt",  0.81f, 0.145f, 0.032f, "", Shape.TRIGGER);
-            addRegion("menu",  0.575f, 0.430f, 0.022f, "", Shape.CENTER_BUTTON);
-            addRegion("view",  0.425f, 0.430f, 0.022f, "", Shape.CENTER_BUTTON);
-        } else if (type == ControllerType.DS4) {
-
-            addRegion("ls",  0.312f,  0.735f,  0.052f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.688f,  0.735f,  0.052f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.312f,  0.735f,  0.062f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.688f,  0.735f,  0.062f, "", Shape.STICK_RING);
-            addRegion("dp",  0.288f,  0.510f,  0.044f, "", Shape.DPAD);
-            addRegion("a",  0.760f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("b",  0.706f,  0.560f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("x",  0.654f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("y",  0.706f,  0.440f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("lb",  0.33f,  0.295f,  0.030f, "L1", Shape.BUMPER);
-            addRegion("rb",  0.67f,  0.295f,  0.030f, "R1", Shape.BUMPER);
-            addRegion("lt",  0.19f,  0.285f,  0.030f, "", Shape.TRIGGER);
-            addRegion("rt",  0.81f,  0.285f,  0.030f, "", Shape.TRIGGER);
-            addRegion("touch",  0.50f,  0.355f,  0.050f, "", Shape.TOUCHPAD);
-            addRegion("share",  0.415f,  0.450f,  0.019f, "", Shape.CENTER_BUTTON);
-            addRegion("options",  0.585f,  0.450f,  0.019f, "", Shape.CENTER_BUTTON);
-            addRegion("ps",  0.50f,  0.470f,  0.022f, "", Shape.PS_LOGO);
-        } else {
-
-            addRegion("ls",  0.312f,  0.735f,  0.052f, "LS", Shape.CIRCLE);
-            addRegion("rs",  0.688f,  0.735f,  0.052f, "RS", Shape.CIRCLE);
-            addRegion("lsRing",  0.312f,  0.735f,  0.062f, "", Shape.STICK_RING);
-            addRegion("rsRing",  0.688f,  0.735f,  0.062f, "", Shape.STICK_RING);
-            addRegion("dp",  0.288f,  0.510f,  0.044f, "", Shape.DPAD);
-            addRegion("a",  0.760f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("b",  0.706f,  0.560f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("x",  0.654f,  0.500f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("y",  0.706f,  0.440f,  0.041f, "", Shape.FACE_DUAL);
-            addRegion("lb",  0.33f,  0.295f,  0.030f, "L1", Shape.BUMPER);
-            addRegion("rb",  0.67f,  0.295f,  0.030f, "R1", Shape.BUMPER);
-            addRegion("lt",  0.19f,  0.285f,  0.030f, "", Shape.TRIGGER);
-            addRegion("rt",  0.81f,  0.285f,  0.030f, "", Shape.TRIGGER);
-            addRegion("touch",  0.50f,  0.355f,  0.050f, "", Shape.TOUCHPAD);
-            addRegion("share",  0.415f,  0.470f,  0.019f, "", Shape.CENTER_BUTTON);
-            addRegion("options",  0.585f,  0.470f,  0.019f, "", Shape.CENTER_BUTTON);
-            addRegion("ps",  0.50f,  0.470f,  0.026f, "", Shape.PS_LOGO);
-        }
-    }
-    private void addRegion(String id, float x, float y, float radius, String label, Shape shape) {
-        Region region = new Region();
-        region.id = id;
-        region.x = x;
-        region.y = y;
-        region.radius = radius;
-        region.label = label;
-        region.shape = shape;
-        regions.add(region);
+        regions.addAll(ControllerLayout.regions(type));
     }
 
     @Override
@@ -202,262 +201,318 @@ public class ControllerIllustrationView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         if (getWidth() == 0 || getHeight() == 0) return;
-        cx = getWidth() / 2f;
-        cy = getHeight() / 2f;
-        scale = Math.min(getWidth(), getHeight() * 0.45f);
-        drawBody(canvas);
-        for (Region r : regions) drawRegion(canvas, r);
-    }
-    private void drawBody(Canvas canvas) {
+        if (shadowPaint.getShader() == null) buildShaders();
+        drawShadow(canvas);
         if (type == ControllerType.XBOX) {
             drawBodyXbox(canvas);
         } else {
-            drawBodyPlayStation(canvas);
+            drawBodyPlayStation(canvas, type == ControllerType.DUAL_SENSE);
+        }
+        for (ControllerLayout.Spec r : regions) drawRegion(canvas, r);
+    }
+
+    private void drawShadow(Canvas canvas) {
+        scratch.set(cx - scale * 0.98f, cy + scale * 0.62f, cx + scale * 0.98f, cy + scale * 0.94f);
+        canvas.drawOval(scratch, shadowPaint);
+    }
+
+    /**
+     * Xbox silhouette: a wide arched shell whose shoulders drop into two splayed grips,
+     * pinched at a waist between them.
+     */
+    private void drawBodyXbox(Canvas canvas) {
+        float w = scale * 0.60f;
+        float top = cy - scale * 0.72f;
+        float shellH = scale * 1.46f;
+
+        Path p = shellPath;
+        p.reset();
+        p.moveTo(cx - w * 0.86f, top);
+        p.cubicTo(cx - w * 1.12f, top, cx - w * 1.26f, top + shellH * 0.10f, cx - w * 1.24f, top + shellH * 0.30f);
+        p.cubicTo(cx - w * 1.22f, top + shellH * 0.52f, cx - w * 1.18f, top + shellH * 0.72f, cx - w * 1.02f, top + shellH * 0.92f);
+        p.cubicTo(cx - w * 0.92f, top + shellH * 1.02f, cx - w * 0.74f, top + shellH * 1.03f, cx - w * 0.60f, top + shellH * 0.96f);
+        p.cubicTo(cx - w * 0.50f, top + shellH * 0.90f, cx - w * 0.34f, top + shellH * 0.78f, cx - w * 0.26f, top + shellH * 0.70f);
+        p.cubicTo(cx - w * 0.14f, top + shellH * 0.62f, cx + w * 0.14f, top + shellH * 0.62f, cx + w * 0.26f, top + shellH * 0.70f);
+        p.cubicTo(cx + w * 0.34f, top + shellH * 0.78f, cx + w * 0.50f, top + shellH * 0.90f, cx + w * 0.60f, top + shellH * 0.96f);
+        p.cubicTo(cx + w * 0.74f, top + shellH * 1.03f, cx + w * 0.92f, top + shellH * 1.02f, cx + w * 1.02f, top + shellH * 0.92f);
+        p.cubicTo(cx + w * 1.18f, top + shellH * 0.72f, cx + w * 1.22f, top + shellH * 0.52f, cx + w * 1.24f, top + shellH * 0.30f);
+        p.cubicTo(cx + w * 1.26f, top + shellH * 0.10f, cx + w * 1.12f, top, cx + w * 0.86f, top);
+        p.cubicTo(cx + w * 0.40f, top - shellH * 0.045f, cx - w * 0.40f, top - shellH * 0.045f, cx - w * 0.86f, top);
+        p.close();
+
+        canvas.drawPath(p, shellPaint);
+
+        // Top-face sheen and grip seams, clipped so neither leaks past the silhouette.
+        canvas.save();
+        canvas.clipPath(p);
+        sheenPaint.setColor(dark ? 0x1EFFFFFF : 0x7AFFFFFF);
+        scratch.set(cx - w * 1.30f, top - shellH * 0.02f, cx + w * 1.30f, top + shellH * 0.26f);
+        canvas.drawOval(scratch, sheenPaint);
+        seamPaint.setStrokeWidth(2f);
+        for (int side = -1; side <= 1; side += 2) {
+            Path seam = new Path();
+            float sx = cx + side * w * 0.30f;
+            seam.moveTo(sx, top + shellH * 0.62f);
+            seam.cubicTo(sx + side * w * 0.12f, top + shellH * 0.74f,
+                    sx + side * w * 0.30f, top + shellH * 0.86f,
+                    sx + side * w * 0.44f, top + shellH * 0.95f);
+            canvas.drawPath(seam, seamPaint);
+        }
+        canvas.restore();
+
+        canvas.drawPath(p, outlinePaint);
+    }
+
+    /**
+     * DualShock 4 / DualSense silhouette: a symmetric centre shell with a touchpad set
+     * into the top face and two grips curving down and out. The DualSense adds the
+     * two-tone inner chassis, the flanking light bars and the mute bar under the PS
+     * button, which is what makes the two read as different pads at a glance.
+     */
+    private void drawBodyPlayStation(Canvas canvas, boolean dualSense) {
+        float w = scale * 0.58f;
+        float top = cy - scale * 0.70f;
+        float shellH = scale * 1.42f;
+
+        Path p = shellPath;
+        p.reset();
+        p.moveTo(cx - w * 0.62f, top);
+        p.cubicTo(cx - w * 0.95f, top, cx - w * 1.18f, top + shellH * 0.16f, cx - w * 1.20f, top + shellH * 0.42f);
+        p.cubicTo(cx - w * 1.22f, top + shellH * 0.62f, cx - w * 1.14f, top + shellH * 0.84f, cx - w * 0.92f, top + shellH * 0.98f);
+        p.cubicTo(cx - w * 0.74f, top + shellH * 1.04f, cx - w * 0.56f, top + shellH * 1.04f, cx - w * 0.42f, top + shellH * 0.96f);
+        p.cubicTo(cx - w * 0.32f, top + shellH * 0.90f, cx - w * 0.24f, top + shellH * 0.78f, cx - w * 0.16f, top + shellH * 0.66f);
+        p.cubicTo(cx - w * 0.07f, top + shellH * 0.58f, cx + w * 0.07f, top + shellH * 0.58f, cx + w * 0.16f, top + shellH * 0.66f);
+        p.cubicTo(cx + w * 0.24f, top + shellH * 0.78f, cx + w * 0.32f, top + shellH * 0.90f, cx + w * 0.42f, top + shellH * 0.96f);
+        p.cubicTo(cx + w * 0.56f, top + shellH * 1.04f, cx + w * 0.74f, top + shellH * 1.04f, cx + w * 0.92f, top + shellH * 0.98f);
+        p.cubicTo(cx + w * 1.14f, top + shellH * 0.84f, cx + w * 1.22f, top + shellH * 0.62f, cx + w * 1.20f, top + shellH * 0.42f);
+        p.cubicTo(cx + w * 1.18f, top + shellH * 0.16f, cx + w * 0.95f, top, cx + w * 0.62f, top);
+        p.cubicTo(cx + w * 0.30f, top - shellH * 0.05f, cx - w * 0.30f, top - shellH * 0.05f, cx - w * 0.62f, top);
+        p.close();
+
+        canvas.drawPath(p, dualSense ? shellPaint : shellDarkPaint);
+
+        canvas.save();
+        canvas.clipPath(p);
+
+        if (dualSense) {
+            // Dark inner chassis wrapping the sticks; the light outer shell stays visible
+            // around it, which is the DualSense's two-tone look.
+            chassisPath.reset();
+            chassisPath.addRoundRect(new RectF(cx - w * 0.88f, top + shellH * 0.52f,
+                    cx + w * 0.88f, top + shellH * 1.08f), shellH * 0.22f, shellH * 0.22f,
+                    Path.Direction.CW);
+            int save = canvas.save();
+            canvas.clipPath(chassisPath);
+            canvas.drawRect(cx - w * 1.4f, top + shellH * 0.40f,
+                    cx + w * 1.4f, top + shellH * 1.10f, shellDarkPaint);
+            canvas.restoreToCount(save);
+        }
+
+        sheenPaint.setColor(dark ? 0x1EFFFFFF : 0x7AFFFFFF);
+        scratch.set(cx - w * 1.25f, top - shellH * 0.02f, cx + w * 1.25f, top + shellH * 0.22f);
+        canvas.drawOval(scratch, sheenPaint);
+        canvas.restore();
+
+        // Light bar. DualShock 4 carries a single bar above the touchpad; the DualSense
+        // splits it into two strips flanking the pad.
+        glowPaint.setShader(null);
+        glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF3B82F6);
+        glowPaint.setAlpha(dark ? 205 : 235);
+        if (dualSense) {
+            float tx = w * 0.62f;
+            scratch.set(cx - tx - w * 0.10f, top + shellH * 0.16f, cx - tx + w * 0.02f, top + shellH * 0.44f);
+            canvas.drawRoundRect(scratch, w * 0.05f, w * 0.05f, glowPaint);
+            scratch.set(cx + tx - w * 0.02f, top + shellH * 0.16f, cx + tx + w * 0.10f, top + shellH * 0.44f);
+            canvas.drawRoundRect(scratch, w * 0.05f, w * 0.05f, glowPaint);
+        } else {
+            scratch.set(cx - w * 0.44f, top + shellH * 0.075f, cx + w * 0.44f, top + shellH * 0.115f);
+            canvas.drawRoundRect(scratch, shellH * 0.02f, shellH * 0.02f, glowPaint);
+        }
+
+        canvas.drawPath(p, outlinePaint);
+
+        // Grip seam where the outer shell meets the grip mouldings.
+        seamPaint.setStrokeWidth(2f);
+        for (int side = -1; side <= 1; side += 2) {
+            Path seam = new Path();
+            float sx = cx + side * w * 0.34f;
+            seam.moveTo(sx, top + shellH * 0.60f);
+            seam.cubicTo(sx + side * w * 0.20f, top + shellH * 0.74f,
+                    sx + side * w * 0.42f, top + shellH * 0.86f,
+                    sx + side * w * 0.52f, top + shellH * 0.98f);
+            canvas.drawPath(seam, seamPaint);
         }
     }
 
-    /**
-     * Xbox silhouette: a wide arched shell that drops into two angled grips.
-     *
-     * Geometry is expressed against the same {@code scale} the regions use, so buttons sit
-     * inside the shell by construction rather than by eyeballed offsets. The outline is built
-     * from cubic segments so the shoulders read as curved plastic, and a clipped sheen along
-     * the top edge gives it the look of a moulded surface instead of a flat blob.
-     */
-    private void drawBodyXbox(Canvas canvas) {
-        float w = scale * 0.62f;
-        float top = cy - scale * 0.74f;
-        float gripBottom = cy + scale * 0.72f;
-        float shellH = gripBottom - top;
-
-        Path shell = new Path();
-        shell.moveTo(cx - w * 0.80f, top);
-        shell.cubicTo(cx - w * 1.05f, top + shellH * 0.01f,
-                cx - w * 1.30f, top + shellH * 0.22f,
-                cx - w * 1.20f, top + shellH * 0.50f);
-        shell.cubicTo(cx - w * 1.10f, top + shellH * 0.78f,
-                cx - w * 0.92f, top + shellH * 0.98f,
-                cx - w * 0.70f, top + shellH * 1.00f);
-        shell.cubicTo(cx - w * 0.44f, top + shellH * 1.02f,
-                cx - w * 0.40f, top + shellH * 0.80f,
-                cx - w * 0.28f, top + shellH * 0.66f);
-        shell.cubicTo(cx - w * 0.16f, top + shellH * 0.56f,
-                cx + w * 0.16f, top + shellH * 0.56f,
-                cx + w * 0.28f, top + shellH * 0.66f);
-        shell.cubicTo(cx + w * 0.40f, top + shellH * 0.80f,
-                cx + w * 0.44f, top + shellH * 1.02f,
-                cx + w * 0.70f, top + shellH * 1.00f);
-        shell.cubicTo(cx + w * 0.92f, top + shellH * 0.98f,
-                cx + w * 1.10f, top + shellH * 0.78f,
-                cx + w * 1.20f, top + shellH * 0.50f);
-        shell.cubicTo(cx + w * 1.30f, top + shellH * 0.22f,
-                cx + w * 1.05f, top + shellH * 0.01f,
-                cx + w * 0.80f, top);
-        shell.close();
-
-        canvas.drawPath(shell, basePaint);
-        // Clip the sheen to the shell so it never spills past the outline.
-        canvas.save();
-        canvas.clipPath(shell);
-        highlightPaint.setColor(isDarkMode() ? 0x22FFFFFF : 0x66FFFFFF);
-        scratch.set(cx - w * 1.3f, top, cx + w * 1.3f, top + shellH * 0.28f);
-        canvas.drawOval(scratch, highlightPaint);
-        canvas.restore();
-        canvas.drawPath(shell, outlinePaint);
-    }
-
-    /**
-     * DualShock / DualSense silhouette: a rounded centre shell with a touchpad set into the
-     * top face and two symmetric grips curving down, which is what separates it from the
-     * Xbox pad. Geometry is shared with the region space, same as the Xbox body.
-     */
-    private void drawBodyPlayStation(Canvas canvas) {
-        float w = scale * 0.60f;
-        float top = cy - scale * 0.72f;
-        float gripBottom = cy + scale * 0.70f;
-        float shellH = gripBottom - top;
-
-        Path shell = new Path();
-        shell.moveTo(cx - w * 0.55f, top);
-        shell.cubicTo(cx - w * 0.92f, top + shellH * 0.01f,
-                cx - w * 1.22f, top + shellH * 0.26f,
-                cx - w * 1.12f, top + shellH * 0.60f);
-        shell.cubicTo(cx - w * 1.02f, top + shellH * 0.88f,
-                cx - w * 0.86f, top + shellH * 1.06f,
-                cx - w * 0.62f, top + shellH * 1.06f);
-        shell.cubicTo(cx - w * 0.42f, top + shellH * 1.06f,
-                cx - w * 0.38f, top + shellH * 0.82f,
-                cx - w * 0.26f, top + shellH * 0.68f);
-        shell.cubicTo(cx - w * 0.15f, top + shellH * 0.58f,
-                cx + w * 0.15f, top + shellH * 0.58f,
-                cx + w * 0.26f, top + shellH * 0.68f);
-        shell.cubicTo(cx + w * 0.38f, top + shellH * 0.82f,
-                cx + w * 0.42f, top + shellH * 1.06f,
-                cx + w * 0.62f, top + shellH * 1.06f);
-        shell.cubicTo(cx + w * 0.86f, top + shellH * 1.06f,
-                cx + w * 1.02f, top + shellH * 0.88f,
-                cx + w * 1.12f, top + shellH * 0.60f);
-        shell.cubicTo(cx + w * 1.22f, top + shellH * 0.26f,
-                cx + w * 0.92f, top + shellH * 0.01f,
-                cx + w * 0.55f, top);
-        shell.close();
-
-        canvas.drawPath(shell, basePaint);
-
-        canvas.save();
-        canvas.clipPath(shell);
-        highlightPaint.setColor(isDarkMode() ? 0x22FFFFFF : 0x66FFFFFF);
-        scratch.set(cx - w * 1.25f, top, cx + w * 1.25f, top + shellH * 0.24f);
-        canvas.drawOval(scratch, highlightPaint);
-
-        // Signature light bar along the seam between the centre shell and the grips.
-        glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF3B82F6);
-        glowPaint.setAlpha(isDarkMode() ? 90 : 130);
-        scratch.set(cx - w * 1.00f, top + shellH * 0.40f, cx + w * 1.00f, top + shellH * 0.46f);
-        canvas.drawRoundRect(scratch, shellH * 0.03f, shellH * 0.03f, glowPaint);
-        canvas.restore();
-
-        canvas.drawPath(shell, outlinePaint);
-    }
-
-    private void drawRegion(Canvas canvas, Region r) {
-        // Region coordinates are normalised across the view: 0.5 is centre and the span
-        // between 0.0 and 1.0 maps to twice the scale. The offset must stay inside the
-        // parentheses, otherwise every button is drawn at centre minus scale instead of
-        // spread around the centre, which piles the whole layout into the left half.
-        float px = cx + (r.x - 0.5f) * 2f * scale;
-        float py = cy + (r.y - 0.5f) * 2f * scale;
+    private void drawRegion(Canvas canvas, ControllerLayout.Spec r) {
+        // The normalised-to-centre conversion lives in ControllerLayout so the tests and
+        // the drawing cannot disagree about it.
+        float px = cx + ControllerLayout.regionDx(r) * scale;
+        float py = cy + ControllerLayout.regionDy(r) * scale;
         float pr = r.radius * 2f * scale;
         Float strength = glow.get(r.id);
         float g = strength == null ? 0f : strength;
-        if (g >  0.05f) {
-            glowPaint.setColor(accentColor != -1 ? accentColor : (int) 0xFF4AE0A0L);
+        if (g > 0.05f) {
+            glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF4AE0A0);
             glowPaint.setAlpha((int) (150 * g));
-            drawShape(canvas, r, px, py, pr * (1f +  0.3f * g), true);
+            drawShape(canvas, r, px, py, pr * (1f + 0.3f * g), true);
         }
         drawShape(canvas, r, px, py, pr, false);
         if (r.label != null && !r.label.isEmpty()) {
-            textPaint.setTextSize(pr * 0.55f);
-            float ty = py - (textPaint.getFontMetrics().ascent + textPaint.getFontMetrics().descent / 2f);
-            canvas.drawText(r.label, px, ty, textPaint);
-        }
-    }
-    private void drawShape(Canvas canvas, Region r, float px, float py, float pr, boolean glowMode) {
-        switch (r.shape) {
-            case CIRCLE: drawStick(canvas, px, py, pr, glowMode); break;
-            case STICK_RING: drawRing(canvas, px, py, pr, glowMode); break;
-            case DPAD: drawDPad(canvas, px, py, pr, glowMode); break;
-            case FACE_XBOX: drawFaceXbox(canvas, r, px, py, pr, glowMode); break;
-            case FACE_DUAL: drawFaceDual(canvas, r, px, py, pr, glowMode); break;
-            case BUMPER: drawBumper(canvas, px, py, pr, glowMode); break;
-            case TRIGGER: drawTrigger(canvas, px, py, pr, glowMode); break;
-            case CENTER_BUTTON: drawCenterButton(canvas, px, py, pr, glowMode); break;
-            case TOUCHPAD: drawTouchpad(canvas, px, py, pr, glowMode); break;
-            case PS_LOGO: drawPsLogo(canvas, px, py, pr, glowMode); break;
+            textPaint.setTextSize(pr * 0.42f);
+            textPaint.setAlpha(170);
+            Paint.FontMetrics fm = textPaint.getFontMetrics();
+            canvas.drawText(r.label, px, py - (fm.ascent + fm.descent) / 2f, textPaint);
+            textPaint.setAlpha(255);
         }
     }
 
+    private void drawShape(Canvas canvas, ControllerLayout.Spec r, float px, float py, float pr, boolean glowMode) {
+        // The glow pass writes to glowPaint, which share shape code paths with the normal
+        // pass. Its shader is cleared on every entry so a shader set by the shell cannot
+        // bleed into a button glow.
+        if (glowMode) glowPaint.setShader(null);
+        switch (r.shape) {
+            case STICK -> drawStick(canvas, px, py, pr, glowMode);
+            case STICK_RING -> drawRing(canvas, px, py, pr, glowMode);
+            case DPAD -> drawDPad(canvas, px, py, pr, glowMode);
+            case FACE_XBOX -> drawFaceXbox(canvas, r, px, py, pr, glowMode);
+            case FACE_DUAL -> drawFaceDual(canvas, r, px, py, pr, glowMode);
+            case BUMPER -> drawBumper(canvas, px, py, pr, glowMode);
+            case TRIGGER -> drawTrigger(canvas, px, py, pr, glowMode);
+            case CENTER_BUTTON -> drawCenterButton(canvas, px, py, pr, glowMode);
+            case TOUCHPAD -> drawTouchpad(canvas, px, py, pr, glowMode);
+            case PS_LOGO -> drawPsLogo(canvas, px, py, pr, glowMode);
+            case GUIDE -> drawGuide(canvas, px, py, pr, glowMode);
+            case MUTE -> drawMute(canvas, px, py, pr, glowMode);
+        }
+    }
+
+    /**
+     * A stick is a recessed well containing a concave knurled cap. The well's inner
+     * shadow and the cap's off-centre highlight are what stop it reading as a flat disc.
+     */
     private void drawStick(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        // A real stick sits in a recessed well; the well is what makes it read as a stick
-        // rather than a flat disc.
+        float well = pr * 1.26f;
         wellPaint.setColor(wellColor);
-        canvas.drawCircle(px, py, pr * 1.22f, wellPaint);
+        canvas.drawCircle(px, py, well, wellPaint);
         if (glowMode) {
             canvas.drawCircle(px, py, pr, glowPaint);
             return;
         }
-        Paint ring = new Paint(Paint.ANTI_ALIAS_FLAG);
-        ring.setStyle(Paint.Style.STROKE);
-        ring.setStrokeWidth(2f);
-        ring.setColor(outlinePaint.getColor());
-        canvas.drawCircle(px, py, pr * 1.22f, ring);
+        outlinePaint.setStrokeWidth(1.8f);
+        canvas.drawCircle(px, py, well, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
 
-        // Concave cap: a base disc, a darker rim, then an off-centre highlight.
-        buttonPaint.setColor(isDarkMode() ? 0xFF4A505C : 0xFFCDD2D9);
-        canvas.drawCircle(px, py, pr, buttonPaint);
-        buttonPaint.setColor(isDarkMode() ? 0xFF2E333D : 0xFFB4BAC3);
-        canvas.drawCircle(px, py, pr * 0.86f, buttonPaint);
-        highlightPaint.setColor(isDarkMode() ? 0x33FFFFFF : 0x99FFFFFF);
-        canvas.drawCircle(px - pr * 0.22f, py - pr * 0.26f, pr * 0.42f, highlightPaint);
+        // Inner shadow arc across the top inside wall sells the depth of the recess.
+        Paint shade = new Paint(Paint.ANTI_ALIAS_FLAG);
+        shade.setStyle(Paint.Style.STROKE);
+        shade.setStrokeWidth(pr * 0.22f);
+        shade.setColor(dark ? 0x88000000 : 0x33000000);
+        canvas.drawArc(new RectF(px - well, py - well, px + well, py + well), 200f, 140f, false, shade);
+
+        capPaint.setColor(dark ? 0xFF4E5560 : 0xFFE3E6EA);
+        canvas.drawCircle(px, py, pr, capPaint);
+        buttonDarkPaint.setColor(dark ? 0xFF2C313A : 0xFFB2B8C1);
+        canvas.drawCircle(px, py, pr * 0.84f, buttonDarkPaint);
+
+        // Grip knurl: a ring of short ticks around the cap edge.
+        Paint knurl = new Paint(Paint.ANTI_ALIAS_FLAG);
+        knurl.setStyle(Paint.Style.STROKE);
+        knurl.setStrokeWidth(pr * 0.08f);
+        knurl.setColor(dark ? 0x2EFFFFFF : 0x55FFFFFF);
+        for (int i = 0; i < 24; i++) {
+            double a = Math.toRadians(i * 15);
+            canvas.drawLine(px + (float) Math.cos(a) * pr * 0.80f, py + (float) Math.sin(a) * pr * 0.80f,
+                    px + (float) Math.cos(a) * pr * 0.96f, py + (float) Math.sin(a) * pr * 0.96f, knurl);
+        }
+        highlightPaint.setColor(dark ? 0x33FFFFFF : 0xA6FFFFFF);
+        canvas.drawCircle(px - pr * 0.24f, py - pr * 0.28f, pr * 0.40f, highlightPaint);
     }
 
     private void drawRing(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        // Decorative outer ring for stick wells; only drawn as a glow halo.
         if (!glowMode) return;
+        glowPaint.setShader(null);
         glowPaint.setStyle(Paint.Style.STROKE);
-        glowPaint.setStrokeWidth(pr * 0.18f);
+        glowPaint.setStrokeWidth(pr * 0.16f);
         canvas.drawCircle(px, py, pr, glowPaint);
         glowPaint.setStyle(Paint.Style.FILL);
     }
 
+    /** D-pad as two crossing bars so the centre reads as a pivot rather than a blob. */
     private void drawDPad(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        if (!glowMode) {
-            buttonPaint.setColor(isDarkMode() ? 0xFF3C424C : 0xFFC2C8D0);
-        }
-        float arm = pr * 0.92f;
-        float half = pr * 0.30f;
         Path cross = new Path();
-        cross.addRoundRect(new RectF(px - half, py - arm, px + half, py + arm), pr * 0.10f, pr * 0.10f,
-                Path.Direction.CW);
-        cross.addRoundRect(new RectF(px - arm, py - half, px + arm, py + half), pr * 0.10f, pr * 0.10f,
-                Path.Direction.CW);
-        canvas.drawPath(cross, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawPath(cross, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-            // Centre dimple.
-            detailPaint.setColor(isDarkMode() ? 0xFF262A32 : 0xFFAEB4BD);
-            canvas.drawCircle(px, py, pr * 0.16f, detailPaint);
+        float arm = pr * 0.94f;
+        float half = pr * 0.30f;
+        float rad = pr * 0.11f;
+        cross.addRoundRect(new RectF(px - half, py - arm, px + half, py + arm), rad, rad, Path.Direction.CW);
+        cross.addRoundRect(new RectF(px - arm, py - half, px + arm, py + half), rad, rad, Path.Direction.CW);
+
+        if (glowMode) {
+            canvas.drawPath(cross, glowPaint);
+            return;
+        }
+        buttonPaint.setColor(dark ? 0xFF40464F : 0xFFC4CAD2);
+        canvas.drawPath(cross, buttonPaint);
+        outlinePaint.setStrokeWidth(1.8f);
+        canvas.drawPath(cross, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
+
+        detailPaint.setColor(dark ? 0xFF20242B : 0xFFA6ACB5);
+        canvas.drawCircle(px, py, pr * 0.17f, detailPaint);
+        float d = pr * 0.58f;
+        highlightPaint.setColor(dark ? 0x22FFFFFF : 0x66FFFFFF);
+        for (int i = 0; i < 4; i++) {
+            double a = Math.toRadians(45 + i * 90);
+            canvas.drawCircle(px + (float) Math.cos(a) * d, py + (float) Math.sin(a) * d,
+                    pr * 0.13f, highlightPaint);
         }
     }
 
-    private void drawFaceXbox(Canvas canvas, Region r, float px, float py, float pr, boolean glowMode) {
+    private void drawFaceXbox(Canvas canvas, ControllerLayout.Spec r, float px, float py, float pr, boolean glowMode) {
         if (glowMode) {
             canvas.drawCircle(px, py, pr, glowPaint);
             return;
         }
-        // Xbox face buttons are coloured letters on dark caps.
-        int tint = faceColor(r.id);
-        buttonPaint.setColor(isDarkMode() ? 0xFF23272F : 0xFFE1E4E9);
+        buttonPaint.setColor(dark ? 0xFF23272F : 0xFFE4E7EB);
         canvas.drawCircle(px, py, pr, buttonPaint);
+        outlinePaint.setStrokeWidth(1.8f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
+
         Paint letter = new Paint(Paint.ANTI_ALIAS_FLAG);
-        letter.setColor(tint);
+        letter.setColor(faceColor(r.id));
         letter.setTextAlign(Paint.Align.CENTER);
         letter.setFakeBoldText(true);
-        letter.setTextSize(pr * 1.15f);
+        letter.setTextSize(pr * 1.20f);
         Paint.FontMetrics fm = letter.getFontMetrics();
         canvas.drawText(r.label, px, py - (fm.ascent + fm.descent) / 2f, letter);
-        outlinePaint.setStrokeWidth(2f);
-        canvas.drawCircle(px, py, pr, outlinePaint);
-        outlinePaint.setStrokeWidth(3f);
     }
 
-    private void drawFaceDual(Canvas canvas, Region r, float px, float py, float pr, boolean glowMode) {
+    private void drawFaceDual(Canvas canvas, ControllerLayout.Spec r, float px, float py, float pr, boolean glowMode) {
         if (glowMode) {
             canvas.drawCircle(px, py, pr, glowPaint);
             return;
         }
-        int tint = faceColor(r.id);
-        buttonPaint.setColor(isDarkMode() ? 0xFF2A2F37 : 0xFFE7EAEE);
-        canvas.drawCircle(px, py, pr, buttonPaint);
-        symbolPaint.setColor(tint);
-        symbolPaint.setStrokeWidth(pr * 0.22f);
-        drawDualSymbol(canvas, r.id, px, py, pr * 0.52f);
-        outlinePaint.setStrokeWidth(2f);
+        buttonDarkPaint.setColor(dark ? 0xFF2A2F37 : 0xFFE9ECEF);
+        canvas.drawCircle(px, py, pr, buttonDarkPaint);
+        outlinePaint.setStrokeWidth(1.8f);
         canvas.drawCircle(px, py, pr, outlinePaint);
-        outlinePaint.setStrokeWidth(3f);
+        outlinePaint.setStrokeWidth(2.5f);
+
+        symbolPaint.setColor(faceColor(r.id));
+        symbolPaint.setStrokeWidth(pr * 0.22f);
+        drawDualSymbol(canvas, r.id, px, py, pr * 0.50f);
     }
 
     private int faceColor(String id) {
-        if (id == null) return (int) 0xFF7D8590L;
+        if (id == null) return 0xFF7D8590;
         switch (id) {
-            case "y": return (int) 0xFFE6B422L; // triangle - amber
-            case "b": return (int) 0xFFE0455AL; // circle - red
-            case "a": return (int) 0xFF3FA9F5L; // cross - blue
-            case "x": return (int) 0xFF57C84DL; // square - green
-            default: return (int) 0xFF7D8590L;
+            case "y": return 0xFF2FBF71;   // triangle - green
+            case "b": return 0xFFE0455A;   // circle - red
+            case "a": return 0xFF3FA9F5;   // cross - blue
+            case "x": return 0xFFE45FA8;   // square - pink
+            default: return 0xFF7D8590;
         }
     }
 
@@ -467,107 +522,144 @@ public class ControllerIllustrationView extends View {
             canvas.drawLine(px - pr, py - pr, px + pr, py + pr, p);
             canvas.drawLine(px - pr, py + pr, px + pr, py - pr, p);
         } else if ("b".equals(id)) {
-            Paint fill = new Paint(p);
-            fill.setStyle(Paint.Style.STROKE);
-            canvas.drawCircle(px, py, pr, fill);
+            canvas.drawCircle(px, py, pr, p);
         } else if ("x".equals(id)) {
-            Paint fill = new Paint(p);
-            fill.setStyle(Paint.Style.STROKE);
-            fill.setStrokeWidth(p.getStrokeWidth() * 0.75f);
-            canvas.drawRect(px - pr, py - pr, px + pr, py + pr, fill);
+            canvas.drawRect(px - pr * 0.88f, py - pr * 0.88f, px + pr * 0.88f, py + pr * 0.88f, p);
         } else if ("y".equals(id)) {
-            Paint fill = new Paint(p);
-            fill.setStyle(Paint.Style.STROKE);
-            fill.setStrokeJoin(Paint.Join.ROUND);
             Path t = new Path();
             t.moveTo(px, py - pr);
-            t.lineTo(px + pr, py + pr);
-            t.lineTo(px - pr, py + pr);
+            t.lineTo(px + pr * 0.94f, py + pr * 0.72f);
+            t.lineTo(px - pr * 0.94f, py + pr * 0.72f);
             t.close();
-            canvas.drawPath(t, fill);
+            canvas.drawPath(t, p);
         }
     }
 
     private void drawBumper(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        if (!glowMode) {
-            buttonPaint.setColor(isDarkMode() ? 0xFF3A404B : 0xFFC8CED6);
+        scratch.set(px - pr * 2.3f, py - pr * 0.52f, px + pr * 2.3f, py + pr * 0.52f);
+        if (glowMode) {
+            canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, glowPaint);
+            return;
         }
-        // A bumper is a wide, low pill that wraps the shoulder.
-        scratch.set(px - pr * 2.4f, py - pr * 0.55f, px + pr * 2.4f, py + pr * 0.55f);
-        canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-            detailPaint.setColor(isDarkMode() ? 0xFF262A32 : 0xFFAEB4BD);
-            scratch.set(px - pr * 1.9f, py + pr * 0.30f, px + pr * 1.9f, py + pr * 0.42f);
-            canvas.drawRoundRect(scratch, pr * 0.06f, pr * 0.06f, detailPaint);
-        }
+        buttonPaint.setColor(dark ? 0xFF3E444F : 0xFFCCD2D9);
+        canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, buttonPaint);
+        outlinePaint.setStrokeWidth(1.8f);
+        canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
+        detailPaint.setColor(dark ? 0xFF252A32 : 0xFFAAB0B9);
+        scratch.set(px - pr * 1.75f, py + pr * 0.24f, px + pr * 1.75f, py + pr * 0.34f);
+        canvas.drawRoundRect(scratch, pr * 0.05f, pr * 0.05f, detailPaint);
     }
 
+    /**
+     * Triggers sit behind the bumpers and curve back over the shoulder.
+     *
+     * The arc deliberately extends past the shell and is clipped to it, so the trigger reads
+     * as emerging from behind the body the way a real one does. A trigger fully inside the
+     * silhouette looks like a flat pill stuck to the face, and on the Xbox, whose shoulders
+     * angle steeply, it cannot fit inside at all without shrinking past legibility.
+     */
     private void drawTrigger(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        if (!glowMode) {
-            buttonPaint.setColor(isDarkMode() ? 0xFF333944 : 0xFFBFC5CD);
+        Path t = new Path();
+        t.moveTo(px - pr * 1.9f, py + pr * 0.62f);
+        t.cubicTo(px - pr * 1.9f, py - pr * 0.85f,
+                px + pr * 1.9f, py - pr * 0.85f,
+                px + pr * 1.9f, py + pr * 0.62f);
+        t.close();
+        int save = canvas.save();
+        canvas.clipPath(shellPath);
+        if (glowMode) {
+            canvas.drawPath(t, glowPaint);
+        } else {
+            buttonDarkPaint.setColor(dark ? 0xFF333944 : 0xFFBFC5CD);
+            canvas.drawPath(t, buttonDarkPaint);
+            outlinePaint.setStrokeWidth(1.8f);
+            canvas.drawPath(t, outlinePaint);
+            outlinePaint.setStrokeWidth(2.5f);
         }
-        // Triggers curve back over the shoulder; a short arc reads better than a pill.
-        scratch.set(px - pr * 1.7f, py - pr * 0.95f, px + pr * 1.7f, py + pr * 0.75f);
-        canvas.drawRoundRect(scratch, pr * 0.7f, pr * 0.7f, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawRoundRect(scratch, pr * 0.7f, pr * 0.7f, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-        }
+        canvas.restoreToCount(save);
     }
 
     private void drawCenterButton(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : buttonPaint;
-        if (!glowMode) {
-            buttonPaint.setColor(isDarkMode() ? 0xFF4A505C : 0xFFCED3DA);
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, glowPaint);
+            return;
         }
-        canvas.drawCircle(px, py, pr, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawCircle(px, py, pr, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-        }
+        capPaint.setColor(dark ? 0xFF4A505C : 0xFFD2D7DD);
+        canvas.drawCircle(px, py, pr, capPaint);
+        outlinePaint.setStrokeWidth(1.6f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
     }
 
+    /** Touchpad: a raised glass panel with a hairline border and a top-edge catchlight. */
     private void drawTouchpad(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : detailPaint;
-        if (!glowMode) {
-            detailPaint.setColor(isDarkMode() ? 0xFF1C2027 : 0xFFD3D8DE);
+        scratch.set(px - pr * 2.15f, py - pr * 0.78f, px + pr * 2.15f, py + pr * 0.78f);
+        if (glowMode) {
+            canvas.drawRoundRect(scratch, pr * 0.26f, pr * 0.26f, glowPaint);
+            return;
         }
-        scratch.set(px - pr * 2.2f, py - pr * 0.75f, px + pr * 2.2f, py + pr * 0.75f);
-        canvas.drawRoundRect(scratch, pr * 0.28f, pr * 0.28f, p);
-        if (!glowMode) {
-            outlinePaint.setStrokeWidth(2f);
-            canvas.drawRoundRect(scratch, pr * 0.28f, pr * 0.28f, outlinePaint);
-            outlinePaint.setStrokeWidth(3f);
-        }
+        detailPaint.setColor(dark ? 0xFF1B1F26 : 0xFFD6DBE1);
+        canvas.drawRoundRect(scratch, pr * 0.26f, pr * 0.26f, detailPaint);
+        outlinePaint.setStrokeWidth(1.6f);
+        canvas.drawRoundRect(scratch, pr * 0.26f, pr * 0.26f, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
+        highlightPaint.setColor(dark ? 0x18FFFFFF : 0x55FFFFFF);
+        scratch.set(px - pr * 1.95f, py - pr * 0.62f, px + pr * 1.95f, py - pr * 0.10f);
+        canvas.drawRoundRect(scratch, pr * 0.12f, pr * 0.12f, highlightPaint);
     }
 
     private void drawPsLogo(Canvas canvas, float px, float py, float pr, boolean glowMode) {
-        Paint p = glowMode ? glowPaint : symbolPaint;
         if (glowMode) {
-            canvas.drawCircle(px, py, pr, p);
+            canvas.drawCircle(px, py, pr, glowPaint);
             return;
         }
-        buttonPaint.setColor(isDarkMode() ? 0xFF23272F : 0xFFE1E4E9);
-        canvas.drawCircle(px, py, pr, buttonPaint);
-        // Stylised PlayStation mark: a slanted stroke crossed by a horizontal bar.
+        capPaint.setColor(dark ? 0xFF23272F : 0xFFE4E7EB);
+        canvas.drawCircle(px, py, pr, capPaint);
         symbolPaint.setColor(accentColor != -1 ? accentColor : 0xFF4A90E2);
         symbolPaint.setStrokeWidth(pr * 0.20f);
-        canvas.drawLine(px - pr * 0.28f, py + pr * 0.62f, px + pr * 0.38f, py - pr * 0.62f, symbolPaint);
-        canvas.drawLine(px - pr * 0.55f, py + pr * 0.05f, px + pr * 0.62f, py + pr * 0.05f, symbolPaint);
-        outlinePaint.setStrokeWidth(2f);
+        canvas.drawLine(px - pr * 0.24f, py + pr * 0.58f, px + pr * 0.34f, py - pr * 0.58f, symbolPaint);
+        canvas.drawLine(px - pr * 0.52f, py + pr * 0.02f, px + pr * 0.58f, py + pr * 0.02f, symbolPaint);
+        canvas.drawLine(px + pr * 0.30f, py - pr * 0.52f, px + pr * 0.56f, py - pr * 0.16f, symbolPaint);
+        outlinePaint.setStrokeWidth(1.6f);
         canvas.drawCircle(px, py, pr, outlinePaint);
-        outlinePaint.setStrokeWidth(3f);
+        outlinePaint.setStrokeWidth(2.5f);
+    }
+
+    private void drawGuide(Canvas canvas, float px, float py, float pr, boolean glowMode) {
+        if (glowMode) {
+            canvas.drawCircle(px, py, pr, glowPaint);
+            return;
+        }
+        capPaint.setColor(dark ? 0xFF23272F : 0xFFE4E7EB);
+        canvas.drawCircle(px, py, pr, capPaint);
+        outlinePaint.setStrokeWidth(1.6f);
+        canvas.drawCircle(px, py, pr, outlinePaint);
+        outlinePaint.setStrokeWidth(2.5f);
+
+        // Guide glyph: two opposed arcs, which is how the Xbox mark reads at this size.
+        Paint g = new Paint(Paint.ANTI_ALIAS_FLAG);
+        g.setStyle(Paint.Style.STROKE);
+        g.setStrokeCap(Paint.Cap.ROUND);
+        g.setStrokeWidth(pr * 0.20f);
+        g.setColor(accentColor != -1 ? accentColor : 0xFF57C84D);
+        RectF arc = new RectF(px - pr * 0.60f, py - pr * 0.60f, px + pr * 0.60f, py + pr * 0.60f);
+        canvas.drawArc(arc, 130f, 130f, false, g);
+        canvas.drawArc(arc, 310f, 130f, false, g);
+    }
+
+    private void drawMute(Canvas canvas, float px, float py, float pr, boolean glowMode) {
+        scratch.set(px - pr * 2.4f, py - pr * 0.55f, px + pr * 2.4f, py + pr * 0.55f);
+        if (glowMode) {
+            canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, glowPaint);
+            return;
+        }
+        detailPaint.setColor(dark ? 0xFF262A32 : 0xFFC3C9D1);
+        canvas.drawRoundRect(scratch, pr * 0.5f, pr * 0.5f, detailPaint);
     }
 
     public void handleKeyEvent(int keyCode, boolean down) {
-        String id = mapKey(keyCode);
+        String id = regionForKey(keyCode);
         if (id != null) setRegionGlow(id, down);
     }
 
@@ -579,14 +671,21 @@ public class ControllerIllustrationView extends View {
         float hatX = event.getAxisValue(MotionEvent.AXIS_HAT_X);
         float hatY = event.getAxisValue(MotionEvent.AXIS_HAT_Y);
 
-        // Motion events stream continuously, so each axis is reported lit or unlit on every
-        // event. Only ever setting the glow left sticks and the d-pad highlighted forever
-        // once they had been touched once.
+        // Motion events stream continuously, so every axis is reported lit *or* unlit on
+        // each event. Only ever setting the glow left sticks and the d-pad highlighted
+        // forever once they had been touched.
         setRegionGlow("ls", Math.abs(lx) > 0.35f || Math.abs(ly) > 0.35f);
         setRegionGlow("rs", Math.abs(rx) > 0.35f || Math.abs(rz) > 0.35f);
         setRegionGlow("dp", Math.abs(hatX) > 0.4f || Math.abs(hatY) > 0.4f);
+        setRegionGlow("lt", event.getAxisValue(MotionEvent.AXIS_LTRIGGER) > 0.25f);
+        setRegionGlow("rt", event.getAxisValue(MotionEvent.AXIS_RTRIGGER) > 0.25f);
     }
-    private String mapKey(int keyCode) {
+
+    /**
+     * Map a physical key to a region id. Select and Mode resolve differently per pad
+     * because the same key code means View/Share and Guide/PS respectively.
+     */
+    private String regionForKey(int keyCode) {
         switch (keyCode) {
             case KeyEvent.KEYCODE_BUTTON_A: return "a";
             case KeyEvent.KEYCODE_BUTTON_B: return "b";
@@ -594,25 +693,21 @@ public class ControllerIllustrationView extends View {
             case KeyEvent.KEYCODE_BUTTON_Y: return "y";
             case KeyEvent.KEYCODE_BUTTON_L1: return "lb";
             case KeyEvent.KEYCODE_BUTTON_R1: return "rb";
+            case KeyEvent.KEYCODE_BUTTON_L2: return "lt";
+            case KeyEvent.KEYCODE_BUTTON_R2: return "rt";
             case KeyEvent.KEYCODE_BUTTON_THUMBL: return "ls";
             case KeyEvent.KEYCODE_BUTTON_THUMBR: return "rs";
-            case KeyEvent.KEYCODE_DPAD_UP: return "dp";
-            case KeyEvent.KEYCODE_DPAD_DOWN: return "dp";
-            case KeyEvent.KEYCODE_DPAD_LEFT: return "dp";
+            case KeyEvent.KEYCODE_BUTTON_START: return "options";
+            case KeyEvent.KEYCODE_BUTTON_SELECT:
+                return type == ControllerType.XBOX ? "view" : "share";
+            case KeyEvent.KEYCODE_BUTTON_MODE:
+                return type == ControllerType.XBOX ? "guide" : "ps";
+            case KeyEvent.KEYCODE_DPAD_UP:
+            case KeyEvent.KEYCODE_DPAD_DOWN:
+            case KeyEvent.KEYCODE_DPAD_LEFT:
             case KeyEvent.KEYCODE_DPAD_RIGHT: return "dp";
             default: return null;
         }
     }
 
-    private enum Shape {
-        CIRCLE, STICK_RING, DPAD, FACE_XBOX, FACE_DUAL, BUMPER, TRIGGER, CENTER_BUTTON, TOUCHPAD, PS_LOGO;
-    }
-    private static final class Region {
-        String id;
-        float x;
-        float y;
-        float radius;
-        String label;
-        Shape shape;
-    }
 }
