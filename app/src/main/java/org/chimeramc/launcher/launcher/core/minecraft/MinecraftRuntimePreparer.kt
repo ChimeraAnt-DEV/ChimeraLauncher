@@ -5,8 +5,10 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.Build
 import org.chimeramc.launcher.core.mods.Mod
+import org.chimeramc.launcher.core.mods.ModLoadDiagnostics
 import org.chimeramc.launcher.core.mods.ModManager
 import org.chimeramc.launcher.core.mods.ModNativeLoader
+import org.chimeramc.launcher.core.mods.ModSafeMode
 import org.chimeramc.launcher.core.minecraft.MinecraftLauncher
 import org.chimeramc.launcher.core.versions.GameVersion
 import io.bambosan.mbloader.launcherUtils.LibBindings
@@ -343,6 +345,8 @@ val modsDir = modManager.currentVersion?.modsDir?.absolutePath
         val modLoadLabels = java.util.IdentityHashMap<Mod, String>()
         val skippedIncompatibleMods = mutableListOf<String>()
         val loadedModIds = linkedSetOf<String>()
+        val failedModRecords = mutableListOf<ModLoadDiagnostics.Record>()
+        ModSafeMode.beginLaunch(context, modManager.mods.filter { it.isEnabled }.map { it.id })
         ModNativeLoader.loadEnabledSoMods(
             modManager,
             cacheDir,
@@ -366,6 +370,7 @@ val modsDir = modManager.currentVersion?.modsDir?.absolutePath
                 override fun onModLoadFinished(mod: Mod) {
                     val label = modLoadLabels.remove(mod)?.let { "$it " }.orEmpty()
                     loadedModIds.add(mod.id)
+                    ModSafeMode.markModLoaded(context, mod.id)
                     listener.onLog("Loaded mod: $label${mod.displayName}")
                     trace.mark("Native mod load finished", mod.displayName)
                 }
@@ -373,11 +378,31 @@ val modsDir = modManager.currentVersion?.modsDir?.absolutePath
                 override fun onModLoadSkipped(mod: Mod, minecraftVersion: String) {
                     val label = modLoadLabels.remove(mod)?.let { "$it " }.orEmpty()
                     skippedIncompatibleMods.add(mod.displayName)
+                    failedModRecords.add(
+                        ModLoadDiagnostics.Record(
+                            mod.id,
+                            mod.displayName,
+                            mod.version ?: "",
+                            "Built for a different Minecraft version (this instance runs $minecraftVersion)",
+                            ModLoadDiagnostics.KIND_INCOMPATIBLE,
+                            System.currentTimeMillis()
+                        )
+                    )
                     listener.onLog("Skipped incompatible mod ${label}${mod.displayName} for Minecraft $minecraftVersion")
                     trace.warning("Native mod skipped as incompatible", "${mod.displayName}: $minecraftVersion")
                 }
 
                 override fun onModLoadFailed(mod: Mod, error: Throwable) {
+                    failedModRecords.add(
+                        ModLoadDiagnostics.Record(
+                            mod.id,
+                            mod.displayName,
+                            mod.version ?: "",
+                            ModLoadDiagnostics.Classifier.describe(error),
+                            ModLoadDiagnostics.Classifier.kindOf(error),
+                            System.currentTimeMillis()
+                        )
+                    )
                     trace.warning("Native mod load failed", "${mod.displayName}: ${error.message ?: error.javaClass.simpleName}")
                     listener.onLog("Failed to load mod ${mod.displayName}: ${error.message ?: error.javaClass.simpleName}")
                 }
@@ -390,6 +415,10 @@ val modsDir = modManager.currentVersion?.modsDir?.absolutePath
         )
         listener.onProgress(96, "Native mods ready")
         listener.onLog("Native mods ready")
+        ModLoadDiagnostics.record(context, failedModRecords)
+        if (failedModRecords.isNotEmpty()) {
+            trace.warning("Native mod failures recorded", "${failedModRecords.size} mod(s) failed to load")
+        }
         trace.mark("Native mod loading finished")
         return NativeModLoadResult(skippedIncompatibleMods, loadedModIds)
     }

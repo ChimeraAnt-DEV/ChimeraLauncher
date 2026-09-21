@@ -149,6 +149,83 @@
                     android:orientation="vertical"
                     android:visibility="visible">
 
+                    <!-- One choice instead of four toggles. It writes through the individual
+                         settings below, so those stay authoritative and in sync. -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="14dp"
+                        android:background="@drawable/card_background"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/performance_preset_title"
+                            android:fontFamily="@font/misans"
+                            android:textColor="@color/on_surface"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/performance_preset_description"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:fontFamily="@font/misans"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/performance_preset_group"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/performance_preset_battery"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="40dp"
+                                android:text="@string/performance_preset_battery"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/performance_preset_balanced"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="40dp"
+                                android:text="@string/performance_preset_balanced"
+                                android:textSize="12sp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/performance_preset_performance"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="40dp"
+                                android:text="@string/performance_preset_performance"
+                                android:textSize="12sp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:fontFamily="@font/misans"
+                            android:text="@string/performance_preset_note"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -1530,6 +1607,89 @@
                             android:focusable="true"
                             app:tint="@color/text_secondary" />
                     </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:background="@drawable/card_background"
+                        android:orientation="vertical"
+                        android:padding="16dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_backup_title"
+                            android:fontFamily="@font/misans"
+                            android:textColor="@color/on_surface"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/settings_backup_desc"
+                            android:fontFamily="@font/misans"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/settings_export_backup"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="44dp"
+                                android:fontFamily="@font/misans"
+                                android:text="@string/settings_backup_export"
+                                android:textSize="13sp"
+                                android:textAllCaps="false"
+                                android:textColor="@color/primary" />
+
+                            <Button
+                                android:id="@+id/settings_import_backup"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:layout_marginStart="8dp"
+                                android:minHeight="44dp"
+                                android:fontFamily="@font/misans"
+                                android:text="@string/settings_backup_import"
+                                android:textSize="13sp"
+                                android:textAllCaps="false"
+                                android:textColor="@color/primary" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:text="@string/settings_backup_note"
+                            android:fontFamily="@font/misans"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="11sp" />
+                    </LinearLayout>
+
+                    <Button
+                        android:id="@+id/settings_open_about"
+                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:minHeight="44dp"
+                        android:fontFamily="@font/misans"
+                        android:text="@string/settings_about_open"
+                        android:textSize="13sp"
+                        android:textAllCaps="false"
+                        android:textColor="@color/primary" />
                 </LinearLayout>
 
                 <LinearLayout

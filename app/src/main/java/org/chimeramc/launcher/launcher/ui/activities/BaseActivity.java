@@ -212,8 +212,7 @@ public class BaseActivity extends AppCompatActivity {
     private void setupBaseNavBar() {
         int[] tabIds ={
             R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
-            R.id.nav_tab_about, R.id.nav_tab_settings, R.id.nav_tab_controller,
-            R.id.nav_tab_skins
+            R.id.nav_tab_customize, R.id.nav_tab_settings
         };
 
         PersonalizationManager pm = new PersonalizationManager(this);
@@ -293,24 +292,14 @@ public class BaseActivity extends AppCompatActivity {
                 switchNavTab(new Intent(this, ModsFullscreenActivity.class));
             }
         });
-        findViewById(R.id.nav_tab_about).setOnClickListener(v -> {
-            if (!(this instanceof AboutActivity)) {
-                switchNavTab(new Intent(this, AboutActivity.class));
+        findViewById(R.id.nav_tab_customize).setOnClickListener(v -> {
+            if (!(this instanceof CustomizeActivity)) {
+                switchNavTab(new Intent(this, CustomizeActivity.class));
             }
         });
         findViewById(R.id.nav_tab_settings).setOnClickListener(v -> {
             if (!(this instanceof SettingsActivity)) {
                 switchNavTab(new Intent(this, SettingsActivity.class));
-            }
-        });
-        findViewById(R.id.nav_tab_controller).setOnClickListener(v -> {
-            if (!(this instanceof ControllerActivity)) {
-                switchNavTab(new Intent(this, ControllerActivity.class));
-            }
-        });
-        findViewById(R.id.nav_tab_skins).setOnClickListener(v -> {
-            if (!(this instanceof SkinsActivity)) {
-                switchNavTab(new Intent(this, SkinsActivity.class));
             }
         });
 
@@ -435,8 +424,7 @@ public class BaseActivity extends AppCompatActivity {
         if (!navBarInjected) return;
         int[] tabIds ={
             R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
-            R.id.nav_tab_about, R.id.nav_tab_settings, R.id.nav_tab_controller,
-            R.id.nav_tab_skins
+            R.id.nav_tab_customize, R.id.nav_tab_settings
         };
 
         PersonalizationManager pm = new PersonalizationManager(this);

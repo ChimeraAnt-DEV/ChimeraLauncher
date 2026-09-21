@@ -34,14 +34,14 @@ Chimera Launcher enables you to import your official Minecraft APK and run it di
 - **Multi-Version & Instance Management** – Manage multiple Minecraft versions independently,with complete isolation between configurations,game data,and worlds
 - **Built-In Mod Manager** – Toggle installed mods on/off,a native"mod menu" switch,and per-mod configuration from inside the launcher
 
-- **Mod Sourcing** – Import mods from **CurseForge**(user-provided API key)and **Modrinth**(open API), install `.mcpack`/`.mcaddon` files,or pick local files
+- **Mod Sourcing** – Import mods from **CurseForge**(user-provided API key)and install `.mcpack`/`.mcaddon` files,or pick local files. A **Mod Hub** also browses
+  the **Modrinth** index and scans local Downloads, but Modrinth hosts Java Edition content that this launcher cannot install, so it is browse-only and says so
 
 - **Multiple Xbox Account Management** – Add,and switch multiple Microsoft/Xbox accounts in the launcher,with in-app MSAL login,and device-code flows,so the game always launches with the expected identity
 - **Controller Support & Input Mapping** – Up to 5 profiles per controller type(Xbox,DualShock 4,DualSense,with button remapping,stick dead-zone tuning,sensitivity,and vibration toggle,applied live to gameplay
 - **Content Management & Skin Packs** – Import,export,and back up worlds,resource packs,skin packs,and launcher data from one place,plus skin-pack management outside the game**
 - **Custom Flat Worlds** – Craft preset or fully customized superflat worlds before the game even opens**
 - **Options Editing & Quick Launch** – Edit per-version `options.txt`-style settings,and use Minecraft URI quick-launch actions to open screens,connect to servers,add servers,join Realms,load worlds,or run commands**
-- **Java Edition Support (Experimental)** – Launch Java Edition with a user-provided runtime via `JavaEditionModManager`
 - **News, Updates,& Crash Reporting** – In-app news feed with notifications,a crash-reporting screen surfacing logs,and automated release-content tooling(`docs/RELEASE_CONTENT.md`
 - **Personalization & Polish** – User-configurable accent color,glass-card/compact-mode theming,animations,empty states,and a one-tap"last played" home hero card**
 

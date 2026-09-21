@@ -713,9 +713,9 @@ import okhttp3.OkHttpClient;
                     android.graphics.Color.argb(51, android.graphics.Color.red(accent), android.graphics.Color.green(accent), android.graphics.Color.blue(accent)));
             binding.manageModsButton.setBackground(gd);
 
-            if (binding.minecraftTitleText != null) {
-                pm.applySolidAccentText(binding.minecraftTitleText, accent);
-            }
+            // The branding title sits on the fixed dark header gradient (primary_dark →
+            // accent_purple in BOTH themes), so its colour must stay light. Applying the raw
+            // accent here made a dark preset (indigo/green) read as near-black on the header.
         }
 
         viewModel.getModsLiveData().observe(this, this::updateModsUI);
@@ -1190,7 +1190,6 @@ import okhttp3.OkHttpClient;
 
         int[] cardIds = {
                 R.id.last_played_card,
-                R.id.quick_launch_card,
                 R.id.quick_versions_card,
                 R.id.quick_mods_card,
                 R.id.quick_content_card
@@ -1390,13 +1389,7 @@ import okhttp3.OkHttpClient;
         refreshLastPlayedCard();
         startHeroCardPulse();
 
-        // Quick Launch Card
-        View quickLaunchCard = findViewById(R.id.quick_launch_card);
-        if (quickLaunchCard != null) {
-            quickLaunchCard.setOnClickListener(v -> launchGame());
-            DynamicAnim.applyPressScale(quickLaunchCard);
-        }
-
+        // Quick Launch Card was removed: the hero card and PLAY MINECRAFT already launch.
         // Quick Versions Card
         View quickVersionsCard = findViewById(R.id.quick_versions_card);
         if (quickVersionsCard != null) {
@@ -1554,9 +1547,11 @@ import okhttp3.OkHttpClient;
 
     private void initMiscellaneousSection() {
         binding.miscCurseforgeRow.setOnClickListener(v -> startActivity(new Intent(this, CurseForgeActivity.class)));
+        binding.miscModHubRow.setOnClickListener(v -> startActivity(new Intent(this, ModHubActivity.class)));
         binding.miscAccountsRow.setOnClickListener(v -> startActivity(new Intent(this, AccountsActivity.class)));
         binding.miscQuickLaunchRow.setOnClickListener(v -> startActivity(new Intent(this, QuickLaunchActivity.class)));
         DynamicAnim.applyPressScale(binding.miscCurseforgeRow);
+        DynamicAnim.applyPressScale(binding.miscModHubRow);
         DynamicAnim.applyPressScale(binding.miscAccountsRow);
         DynamicAnim.applyPressScale(binding.miscQuickLaunchRow);
     }
@@ -1873,27 +1868,20 @@ import okhttp3.OkHttpClient;
     private void refreshLastPlayedCard() {
         GameVersion selectedVersion = versionManager != null ? versionManager.getSelectedVersion() : null;
         int installedCount =0;
-        int activeModsCount =0;
         if (versionManager != null) {
             List<org.chimeramc.launcher.core.versions.GameVersion> installed = versionManager.getInstalledVersions();
             List<org.chimeramc.launcher.core.versions.GameVersion> custom = versionManager.getCustomVersions();
             installedCount = (installed != null ? installed.size() : 0) + (custom != null ? custom.size() : 0);
         }
-        if (viewModel != null) {
-            java.util.List<org.chimeramc.launcher.core.mods.Mod> mods = viewModel.getModsLiveData().getValue();
-            if (mods != null) {
-                for (org.chimeramc.launcher.core.mods.Mod mod : mods) {
-                    if (mod.isEnabled()) activeModsCount++;
-                }
-            }
-        }
         TextView instancesStat = findViewById(R.id.last_played_instances_stat);
         if (instancesStat != null) {
             setAnimatedStatText(instancesStat, getString(R.string.stat_instances_count, installedCount));
         }
-        TextView modsStat = findViewById(R.id.last_played_mods_stat);
-        if (modsStat != null) {
-            setAnimatedStatText(modsStat, getString(R.string.stat_mods_count, activeModsCount));
+        // The mods count comes from the live mod list, not from a count captured here: the list
+        // loads asynchronously per instance, so reading it at bind time would report the previous
+        // instance (usually zero). updateModsUI recomputes it whenever the list changes.
+        if (viewModel != null) {
+            refreshActiveModsStat(viewModel.getModsLiveData().getValue());
         }
         TextView playtimeStat = findViewById(R.id.last_played_time_stat);
         if (playtimeStat != null) {
@@ -1935,12 +1923,20 @@ import okhttp3.OkHttpClient;
 
     private void updateLastPlayedName(String instanceName, GameVersion selectedVersion) {
         TextView heroName = findViewById(R.id.last_played_name);
+        String name = TextUtils.isEmpty(instanceName) ? getString(R.string.not_found_version) : instanceName;
         if (heroName != null) {
-            heroName.setText(TextUtils.isEmpty(instanceName) ? getString(R.string.not_found_version) : instanceName);
+            heroName.setText(name);
         }
         TextView heroVersion = findViewById(R.id.last_played_version);
         if (heroVersion != null) {
-            heroVersion.setText(selectedVersion != null ? getInstanceVersionText(selectedVersion) : "");
+            String versionText = selectedVersion != null ? getInstanceVersionText(selectedVersion) : "";
+            // Instances are commonly named after their version, so the same "26.51" would appear
+            // twice. The name is the identity; only show the version line when it adds anything.
+            if (versionText != null && versionText.equals(name)) {
+                versionText = "";
+            }
+            heroVersion.setText(versionText);
+            heroVersion.setVisibility(TextUtils.isEmpty(versionText) ? View.GONE : View.VISIBLE);
         }
         TextView abiBadge = findViewById(R.id.last_played_abi_badge);
         if (abiBadge != null) {
@@ -2059,7 +2055,15 @@ import okhttp3.OkHttpClient;
     }
 
     private void updateModsUI(List<Mod> mods) {
-        if (binding == null || modsListContainer == null) return;
+        if (binding == null) return;
+
+        // The per-instance "N active" stat is derived from this same list. Mod discovery runs
+        // off the UI thread and the version is bound after the live data is observed, so the
+        // count read at bind time is usually the pre-load value (zero). Recompute it here so
+        // the hero card reflects the instance that is actually selected.
+        refreshActiveModsStat(mods);
+
+        if (modsListContainer == null) return;
         modsListContainer.removeAllViews();
 
         // Add enabled external mods
@@ -2070,8 +2074,12 @@ import okhttp3.OkHttpClient;
                 }
             }
         }
+    }
 
-
+    private void refreshActiveModsStat(List<Mod> mods) {
+        TextView modsStat = findViewById(R.id.last_played_mods_stat);
+        if (modsStat == null) return;
+        setAnimatedStatText(modsStat, getString(R.string.stat_mods_count, Mod.countEnabled(mods)));
     }
 
     private void addModNameEntry(String name) {

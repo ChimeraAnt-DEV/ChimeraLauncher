@@ -73,8 +73,9 @@ public class AboutActivity extends BaseActivity {
     }
 
     private void setupNavBar() {
-        setActiveNavTab(R.id.nav_tab_about);
-        findViewById(R.id.nav_tab_about).setOnClickListener(v -> {});
+        // About is reached from Settings, so the Settings tab stays highlighted while it is on
+        // screen; there is no About tab any more.
+        setActiveNavTab(R.id.nav_tab_settings);
     }
 
     private void loadAvatars() {

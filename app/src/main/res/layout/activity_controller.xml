@@ -252,6 +252,98 @@
                 android:clickable="true"
                 android:focusable="true" />
 
+                </LinearLayout>
+
+        <!-- Import/export and per-instance binding live on their own row so the profile row
+             above does not have to squeeze seven actions into one line on a phone. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/controller_profile_export"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:gravity="center"
+                android:fontFamily="@font/misans"
+                android:text="@string/controller_export_profile"
+                android:textSize="12sp"
+                android:textColor="@color/on_surface"
+                android:background="@drawable/bg_filter_chip"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/controller_profile_import"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:fontFamily="@font/misans"
+                android:text="@string/controller_import_profile"
+                android:textSize="12sp"
+                android:textColor="@color/on_surface"
+                android:background="@drawable/bg_filter_chip"
+                android:clickable="true"
+                android:focusable="true" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/controller_bind_hint"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:fontFamily="@font/misans"
+            android:text="@string/controller_bind_hint"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/controller_bind_instance"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                android:gravity="center"
+                android:fontFamily="@font/misans"
+                android:text="@string/controller_bind_instance"
+                android:textSize="12sp"
+                android:textColor="@color/on_surface"
+                android:background="@drawable/bg_filter_chip"
+                android:clickable="true"
+                android:focusable="true" />
+
+            <TextView
+                android:id="@+id/controller_bind_clear"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:minHeight="36dp"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:fontFamily="@font/misans"
+                android:text="@string/controller_bind_clear"
+                android:textSize="12sp"
+                android:textColor="@color/on_surface"
+                android:background="@drawable/bg_filter_chip"
+                android:clickable="true"
+                android:focusable="true" />
+
         </LinearLayout>
 
     </LinearLayout>

@@ -7,8 +7,8 @@ import com.google.gson.Gson;
 import com.google.gson.JsonSyntaxException;
 
 public class SettingsStorage {
-    private static final String SP_NAME = "feature_settings";
-    private static final String KEY_SETTINGS_JSON = "settings_json";
+    public static final String SP_NAME = "feature_settings";
+    public static final String KEY_SETTINGS_JSON = "settings_json";
     private static final Gson gson = new Gson();
 
     public static void save(Context context, FeatureSettings settings) {
