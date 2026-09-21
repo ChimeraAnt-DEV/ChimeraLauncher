@@ -613,11 +613,14 @@ public class ControllerSettingsFragment extends Fragment {
         // adjacent kind/exponent controls, so the editor never shows a preset name next to
         // numbers that disagree with it.
         Runnable pushToPreview = () -> {
+            // The adapters hold display strings, not enum values, so the selection must be read
+            // back by position. Casting getSelectedItem() to the enum throws ClassCastException
+            // the first time a spinner fires, which is during the dialog's initial layout.
             working.setLeftCurve(new StickCurve(
-                    (StickCurve.Kind) leftStickKind.getSelectedItem(),
+                    StickCurve.Kind.values()[leftStickKind.getSelectedItemPosition()],
                     exponentFrom(leftStickExp, StickCurve.MIN_EXPONENT, StickCurve.MAX_EXPONENT)));
             working.setRightCurve(new StickCurve(
-                    (StickCurve.Kind) rightStickKind.getSelectedItem(),
+                    StickCurve.Kind.values()[rightStickKind.getSelectedItemPosition()],
                     exponentFrom(rightStickExp, StickCurve.MIN_EXPONENT, StickCurve.MAX_EXPONENT)));
             working.setLeftTriggerCurve(new TriggerCurve(
                     deadZoneFrom(leftTriggerDz),
