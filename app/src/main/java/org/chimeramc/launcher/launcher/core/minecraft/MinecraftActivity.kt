@@ -28,6 +28,7 @@ import org.chimeramc.launcher.core.mods.ModSafeMode
 import org.levimc.launcher.core.mods.inbuilt.nativemod.PojavControlsMod
 import org.chimeramc.launcher.core.mods.inbuilt.overlay.InbuiltOverlayManager
 import org.chimeramc.launcher.launcher.controller.ControllerInputProcessor
+import org.chimeramc.launcher.settings.PerformancePresetManager
 import org.chimeramc.launcher.util.DisplayModePreference
 import org.chimeramc.launcher.preloader.PreloaderInput
 import org.chimeramc.pojavcontrols.PojavControls
@@ -172,6 +173,11 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
      * Asks the window manager to run this window on a high-refresh display mode so the game
      * can render past the panel's default rate.
      *
+     * Only the Performance preset asks for this. Balanced deliberately leaves the panel alone,
+     * and Battery must not raise the rate at all, so an unconditional request would both
+     * contradict the preset the user picked and switch a 120Hz panel out from under someone
+     * who never asked for it.
+     *
      * Only a mode that keeps the resolution already in use is selected. On many panels the
      * fast modes are lower resolution, and picking the fastest mode outright would trade a
      * sharper picture for frames without saying so. If no same-resolution fast mode exists
@@ -179,6 +185,7 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
      */
     private fun applyHighRefreshRateMode() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return
+        if (!PerformancePresetManager.shouldRequestHighRefresh(this)) return
         try {
             val current = display?.mode ?: return
             val modes = display?.supportedModes?.map {

@@ -69,6 +69,12 @@
   - Game-session quiet zone: `setGameSessionActive(true)` (MinecraftActivity session start) makes `isGameSessionActive()` true; NewsRepository.refreshIfStale / GithubReleaseUpdater / LauncherNewsMessagingService then serve cached data instead of polling while a session runs. Airtime contention is real added latency on mobile.
 - Java-only sockets: `features` flag lives in FeatureSettings (`isReduceNetworkLatencyEnabled`) — see `app/src/main/java/org/chimeramc/launcher/launcher/settings/FeatureSettings.java`.
 
+## Performance preset (org.chimeramc.launcher.launcher.settings.PerformancePresetManager)
+- Settings → Basic offers one Battery/Balanced/Performance choice that coordinates four previously separate switches. It is a **thin coordinator, not a new source of truth**: every value is written through the existing `FeatureSettings` setters so the per-toggle Basic screen stays in sync. Applying the same preset twice is idempotent.
+- **`PerformancePresetManager.wantsHighRefreshMode`/`displayModeFor` must stay on the launch path.** They were written but never called, so `MinecraftActivity.applyHighRefreshRateMode()` requested a high-refresh mode on *every* launch — including under Battery and Balanced, which the class docs promise will leave the panel alone. The gate is now `PerformancePresetManager.shouldRequestHighRefresh(this)` (never throws; an unreadable pref reads as Balanced). `PerformancePresetManagerTest` pins it. The selection itself only ever picks a **same-resolution** fast mode, because on many panels the fast modes are lower resolution and "unlocking 120Hz" would silently trade sharpness for frames.
+- `ThermalGovernor` is deliberately **not** a preset-controlled value — it is a reactive hardware reading (`severity()`) that gates speculative/background work, reached indirectly via `setReduceNetworkLatencyEnabled` → `prefetchDnsOnBackground` → `shouldPauseSpeculativeWork()`. Do not add a "set thermal level" API; there is nothing to set.
+- The FPS overlay is an inbuilt mod (`FpsDisplayOverlay` via `ModIds.FPS_DISPLAY` + `InbuiltOverlayManager`), not a second readout the preset owns. Don't add a duplicate.
+
 ## 32-bit vs 64-bit instances (single arm64 build; dual-ABI versions run on it)
 - The APK ships `arm64-v8a` only (`ndk abiFilters`), so Android fixes the process to 64-bit at install time. `GamePackageManager.abiCompatibility()` reports `INCOMPATIBLE` only when *none* of the ABIs a version's APK ships match the process, and `MinecraftRuntimePreparer` then fails the launch preflight with `abiMismatchMessage()`.
 - **Most Bedrock versions run fine on this one build.** Their APK ships both `arm64-v8a` and `armeabi-v7a`, and the process picks the arm64 half. A version is only genuinely unlaunchable if its APK contains no arm64 libraries at all.
@@ -140,3 +146,39 @@
   - Controller response: `./gradlew :app:testDebugUnitTest` covers the math. On device, with Low Input Delay ON the stick should reach full look output with less physical travel, and a resting drifting stick must still read as centred (no slow camera creep).
   - Font scale: set display font size to largest; no button label may be clipped in any activity (fixed `layout_height` on a text view is the cause).
   - Touch feedback: in ModsFullscreen, drag-to-reorder via the handle must still work — `applyPressScale` replacing that handle's `OnTouchListener` is the regression to watch for. Scrolling a list must not leave rows stuck at the pressed scale.
+
+## Recovering the build toolchain in a fresh container
+A recreated dev container can come up with the source tree and previous build outputs intact but the JDK, Android SDK and `~/.gradle` cache all gone (`/opt/android-sdk` missing, no `java` on `PATH`). The repo's `local.properties` is gitignored, so it points at a path that no longer exists. Nothing in the project is broken in that state; the toolchain just needs reinstalling. `apt-get` will not work (no root), so install under a writable prefix and point `local.properties` at it:
+
+```
+# JDK 21 (Temurin, matches the toolchain named above)
+mkdir -p /workspace/tools && cd /workspace/tools
+curl -sL -o jdk21.tar.gz "https://api.adoptium.net/v3/binary/latest/21/ga/linux/x64/jdk/hotspot/normal/eclipse"
+tar xzf jdk21.tar.gz && export JAVA_HOME=/workspace/tools/jdk-21.0.12.1+1
+
+# Android cmdline-tools, then the packages the build actually needs
+mkdir -p /workspace/android-sdk/cmdline-tools && cd /workspace/android-sdk/cmdline-tools
+curl -sL -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+python3 -c "import zipfile;zipfile.ZipFile('/tmp/cmdtools.zip').extractall('.')" && mv cmdline-tools latest
+chmod -R +x /workspace/android-sdk/cmdline-tools/latest/bin
+yes | latest/bin/sdkmanager --sdk_root=/workspace/android-sdk --licenses
+nohup latest/bin/sdkmanager --sdk_root=/workspace/android-sdk \
+  "platform-tools" "platforms;android-36" "platforms;android-35" \
+  "build-tools;36.0.0" "build-tools;35.0.0" "ndk;28.2.13676358" "cmake;3.22.1" \
+  > /tmp/sdk.log 2>&1 &
+
+printf 'sdk.dir=/workspace/android-sdk\n' > /workspace/project/ChimeraLauncher/local.properties
+```
+
+Notes: `unzip` is not installed — extract with `python3 -c "import zipfile..."` instead. The zip contains a `cmdline-tools/` directory that must be renamed to `latest` or `sdkmanager` refuses to run. `sdkmanager` runs long; start it with `nohup ... &` and poll `/tmp/sdk.log` (a foreground command with a large timeout is rejected). Cmdline-tools land non-executable, hence the `chmod`. Budget ~3 GB for the SDK plus ~200 MB for the JDK.
+
+## Controller illustrations (ControllerIllustrationView + ControllerLayout)
+- **`setType()` must call `invalidate()`, not just `rebuild()`.** Clearing and repopulating the region list does not repaint, so the previous pad's shell stayed on screen and the manual "Next" button looked dead after the first press. That was the "only Xbox renders" bug.
+- **The view owns no geometry.** `ControllerLayout` holds the shell Bezier segments and the region table, in two different but load-bearing conventions: the shell is centre-relative in *scale units*, regions are normalised 0..1 and converted through `regionDx`/`regionDy`. The view draws what the layout returns. Moving geometry back into the view puts it out of unit-test reach again.
+- **`ControllerLayoutTest` is the regression gate, and it exists because these bugs are invisible on a headless build machine.** It asserts every region draws inside its shell, that no two controls overlap, that the Xbox map stays asymmetric while the PlayStation maps mirror, and that the DualSense alone gains the mute bar. It has already caught three real defects: an off-shell Xbox `x`/`menu` overlap, DS4 bumpers poking through the shoulder, and triggers that were never going to fit. Run `:app:testDebugUnitTest` after touching any coordinate.
+- Rounded regions (bumper, trigger, touchpad, mute) are *not* circles — `Spec.halfWidth()`/`halfHeight()` carry their real draw extents. Testing them as circles reports false containment failures and hides genuine ones.
+- **Triggers are deliberately clipped to the shell.** `drawTrigger` clips to `shellPath`, so the arc can extend past the silhouette and read as emerging from behind the body. On the Xbox, whose shoulders angle steeply, a fully-contained trigger cannot fit without shrinking past legibility. That is why the test exempts `TRIGGER` from containment and only checks it stays within reach.
+- Overlap detection uses centre distance for round controls (diagonal ABXY neighbours trip an axis-aligned gap test) and skips a bumper against the trigger beside it, since those are stacked at different depths on the shoulder and are meant to touch.
+- `handleMotionEvent` must report every axis lit *or* unlit on each event. Only ever setting the glow left sticks and the d-pad highlighted forever once touched.
+- `drawRegion` offsets must stay inside the parentheses: `cx + (r.x - 0.5f) * 2f * scale`. Written as `cx + r.x - 0.5f * 2f * scale` every control lands at centre-minus-scale and the layout piles into the left half.
+- Shell gradients are built in `buildShaders()` on size/theme change, never per frame.

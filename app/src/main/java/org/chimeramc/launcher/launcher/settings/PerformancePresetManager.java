@@ -91,6 +91,21 @@ public final class PerformancePresetManager {
     }
 
     /**
+     * Whether the stored preset wants a high-refresh display mode.
+     *
+     * The launch path needs this without already holding the resolved preset, and it must
+     * never throw: a missing or unreadable preference reads as Balanced, which leaves the
+     * panel alone rather than switching it on a guess.
+     */
+    public static boolean shouldRequestHighRefresh(Context context) {
+        try {
+            return wantsHighRefreshMode(current(context));
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    /**
      * The mode id to request for this preset, or {@link DisplayModePreference#NO_MODE}.
      *
      * Kept separate from {@link DisplayModePreference} so the preset decision ("should we try
