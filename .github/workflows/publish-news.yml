@@ -96,8 +96,8 @@ jobs:
               item = json.load(source)
           data = {
               "news_id": item["id"],
-              "title": item["title"],
-              "summary": item["summary"],
+              "title": "New Version Available",
+              "summary": "Please check https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases to download!",
               "published_at": item["publishedAt"],
               "url": item.get("url", ""),
           }
