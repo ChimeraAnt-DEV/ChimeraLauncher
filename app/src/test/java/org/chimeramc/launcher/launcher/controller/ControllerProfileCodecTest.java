@@ -33,6 +33,9 @@ public class ControllerProfileCodecTest {
         profile.setRightCurve(StickCurve.Preset.PRECISION.toCurve());
         profile.setLeftTriggerCurve(new TriggerCurve(0.1f, 0.75f));
         profile.setRightTriggerCurve(new TriggerCurve(0.02f, 2.2f));
+        profile.setAntiDriftEnabled(true);
+        profile.setLeftStickNoiseFloor(0.07f);
+        profile.setRightStickNoiseFloor(0.045f);
         profile.setRemap(KeyEvent.KEYCODE_BUTTON_A, KeyEvent.KEYCODE_BUTTON_B);
         return profile;
     }
@@ -62,6 +65,9 @@ public class ControllerProfileCodecTest {
         assertEquals(StickCurve.Preset.PRECISION, first.getRightCurve().matchingPreset());
         assertEquals(0.1f, first.getLeftTriggerCurve().getDeadZone(), 1e-4f);
         assertEquals(2.2f, first.getRightTriggerCurve().getExponent(), 1e-4f);
+        assertTrue("anti-drift must survive an export/import", first.isAntiDriftEnabled());
+        assertEquals(0.07f, first.getLeftStickNoiseFloor(), 1e-4f);
+        assertEquals(0.045f, first.getRightStickNoiseFloor(), 1e-4f);
         assertEquals(Integer.valueOf(KeyEvent.KEYCODE_BUTTON_B), first.getButtonRemaps().get(KeyEvent.KEYCODE_BUTTON_A));
     }
 

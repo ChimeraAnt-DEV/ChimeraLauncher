@@ -30,6 +30,38 @@ public final class ControllerInputProcessor {
     private static volatile ControllerType activeType;
 
     /**
+     * Hysteresis gates for the two sticks, published together with the response.
+     *
+     * These hold per-stick run state and advance once per event, so they cannot live in the
+     * immutable {@link ControllerResponse}. They are only read and written from the UI thread
+     * inside {@code dispatchGenericMotionEvent}, which is why they are plain fields rather than
+     * something synchronised: a lock here would be taken on every controller event on the
+     * input-to-photon path.
+     */
+    private static final StickDriftGate leftDriftGate = new StickDriftGate();
+    private static final StickDriftGate rightDriftGate = new StickDriftGate();
+
+    /** Scratch for pair shaping, reused so the hot path does not allocate. One per stick. */
+    private static final float[] leftPairScratch = new float[2];
+    private static final float[] rightPairScratch = new float[2];
+
+    /**
+     * Analogue axes the dead zone must never swallow. Trigger and hat axes are the ones a pad
+     * actually reports alongside the sticks; scroll is here because discarding a scroll event
+     * would break overlay menu scrolling.
+     */
+    private static final int[] NON_STICK_AXES = {
+            MotionEvent.AXIS_LTRIGGER,
+            MotionEvent.AXIS_RTRIGGER,
+            MotionEvent.AXIS_BRAKE,
+            MotionEvent.AXIS_GAS,
+            MotionEvent.AXIS_HAT_X,
+            MotionEvent.AXIS_HAT_Y,
+            MotionEvent.AXIS_VSCROLL,
+            MotionEvent.AXIS_HSCROLL,
+    };
+
+    /**
      * Dead zone used when Low Input Delay is on. The profile's own dead zone is still the
      * floor; this only tightens the default so drifting sticks do not cancel it out.
      */
@@ -44,6 +76,10 @@ public final class ControllerInputProcessor {
 
     public static void setActiveProfile(ControllerType type, ControllerProfile profile, boolean lowInputDelay) {
         activeType = type;
+        // A partial run belongs to the profile that was active when it started. Carrying it
+        // into a different profile could let a suppressed crossing count toward the new one.
+        leftDriftGate.reset();
+        rightDriftGate.reset();
         if (profile == null) {
             active = null;
             return;
@@ -191,6 +227,25 @@ public final class ControllerInputProcessor {
         int pointerCount = event.getPointerCount();
         if (pointerCount <= 0) return event;
 
+        // With anti-drift on, the stick axes are shaped as two pairs so the dead-zone decision
+        // can use the combined magnitude. The gate is consulted for the same timestamp it saw
+        // during the dead-zone check, so a stick that was held back reads back as held back
+        // here rather than being let through by the rewrite. Restricted to single-pointer
+        // events: getAxisValue reports pointer 0, so pair shaping would be wrong for a
+        // multi-touch event, and advancing the gates for one would be misleading.
+        boolean antiDrift = response.isAntiDriftEnabled() && pointerCount == 1;
+        float[] leftPair = null;
+        float[] rightPair = null;
+        if (antiDrift) {
+            float x = event.getAxisValue(MotionEvent.AXIS_X);
+            float y = event.getAxisValue(MotionEvent.AXIS_Y);
+            float z = event.getAxisValue(MotionEvent.AXIS_Z);
+            float rz = event.getAxisValue(MotionEvent.AXIS_RZ);
+            long time = event.getEventTime();
+            leftPair = shapePair(response, leftDriftGate, true, x, y, time, leftPairScratch);
+            rightPair = shapePair(response, rightDriftGate, false, z, rz, time, rightPairScratch);
+        }
+
         // Read through PointerCoords rather than MotionEvent.getAxisValue(axis, pointerIndex),
         // which only exists from API 29; this project supports API 28.
         boolean changed = false;
@@ -201,7 +256,22 @@ public final class ControllerInputProcessor {
             for (int a = 0; a < TRANSFORM_AXES.length; a++) {
                 int axis = TRANSFORM_AXES[a];
                 float original = scratch.getAxisValue(axis);
-                float updated = response.adjustAxisOrTrigger(axis, original);
+                float updated;
+                if (antiDrift && leftPair != null) {
+                    if (axis == MotionEvent.AXIS_X) {
+                        updated = leftPair[0];
+                    } else if (axis == MotionEvent.AXIS_Y) {
+                        updated = leftPair[1];
+                    } else if (axis == MotionEvent.AXIS_Z) {
+                        updated = rightPair[0];
+                    } else if (axis == MotionEvent.AXIS_RZ) {
+                        updated = rightPair[1];
+                    } else {
+                        updated = response.adjustAxisOrTrigger(axis, original);
+                    }
+                } else {
+                    updated = response.adjustAxisOrTrigger(axis, original);
+                }
                 rewritten[p][a] = updated;
                 if (updated != original) {
                     changed = true;
@@ -261,8 +331,17 @@ public final class ControllerInputProcessor {
 
     /**
      * Whether the event's stick axes are all inside the dead zone, meaning the game should
-     * not see the event at all. Uses the precomputed per-axis dead zone directly instead of
-     * re-running the full curve for every axis.
+     * not see the event at all.
+     *
+     * With anti-drift off this stays on the precomputed per-axis dead zone, which is cheap and
+     * is the historical behaviour. With it on the decision moves to the combined magnitude
+     * plus the hysteresis gate, because a per-axis test cannot see a stick resting off-centre
+     * on one axis — that axis alone sits just over the threshold and the pair reads as a small
+     * constant push.
+     *
+     * Only ever reports true when a stick axis actually carries movement. Returning true for an
+     * all-zero event would swallow controller button presses, which also arrive through
+     * {@code dispatchGenericMotionEvent} with no stick deflection.
      */
     public static boolean isWithinDeadZone(MotionEvent event) {
         ControllerResponse response = active;
@@ -274,19 +353,97 @@ public final class ControllerInputProcessor {
                 && (sources & InputDevice.SOURCE_GAMEPAD) != InputDevice.SOURCE_GAMEPAD) {
             return false;
         }
-        // Only report "within dead zone" when an axis actually carries movement that the
-        // dead zone flattens. Returning true for an all-zero event would swallow controller
-        // button presses, which also arrive through dispatchGenericMotionEvent with no stick
-        // deflection.
+        // Only an event whose *entire* content is suppressed stick movement may be swallowed.
+        // A pad reports every axis in one event, so a constant drift offset would otherwise ride
+        // along with an analogue trigger pull and the swallow would discard the pull — breaking
+        // triggers on exactly the drifting pads this filter is meant to help.
+        if (hasNonStickContent(event)) {
+            return false;
+        }
+        if (response.isAntiDriftEnabled() && event.getPointerCount() == 1) {
+            return isDriftSuppressed(response, event);
+        }
         return isFlattened(response, event, MotionEvent.AXIS_X)
                 || isFlattened(response, event, MotionEvent.AXIS_Y)
                 || isFlattened(response, event, MotionEvent.AXIS_Z)
                 || isFlattened(response, event, MotionEvent.AXIS_RZ);
     }
 
+    /**
+     * True when the event carries input the dead zone has no business discarding: triggers, the
+     * D-pad hat, scroll, or any other analogue control a pad might expose.
+     */
+    private static boolean hasNonStickContent(MotionEvent event) {
+        for (int i = 0; i < NON_STICK_AXES.length; i++) {
+            if (event.getAxisValue(NON_STICK_AXES[i]) != 0f) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * The anti-drift verdict for one event: true when every deflected stick is still being held
+     * back, so the event carries nothing the game should act on.
+     *
+     * The gates are advanced here rather than in the transform step because this is the first
+     * thing the dispatch path calls, and a crossing that gets swallowed must still count toward
+     * the run that eventually lets movement through.
+     */
+    private static boolean isDriftSuppressed(ControllerResponse response, MotionEvent event) {
+        float x = event.getAxisValue(MotionEvent.AXIS_X);
+        float y = event.getAxisValue(MotionEvent.AXIS_Y);
+        float z = event.getAxisValue(MotionEvent.AXIS_Z);
+        float rz = event.getAxisValue(MotionEvent.AXIS_RZ);
+        if (x == 0f && y == 0f && z == 0f && rz == 0f) {
+            return false;
+        }
+        long time = event.getEventTime();
+        boolean leftAllowed = allowed(leftDriftGate, response, true, x, y, time);
+        boolean rightAllowed = allowed(rightDriftGate, response, false, z, rz, time);
+        return !leftAllowed && !rightAllowed;
+    }
+
+    private static boolean allowed(StickDriftGate gate, ControllerResponse response,
+                                   boolean left, float x, float y, long time) {
+        if (x == 0f && y == 0f) {
+            // Nothing deflected on this stick: no run to keep, and nothing to let through.
+            gate.reset();
+            return false;
+        }
+        float magnitude = (float) Math.sqrt(x * x + y * y);
+        return gate.allow(magnitude, response.driftThreshold(left), time);
+    }
+
     private static boolean isFlattened(ControllerResponse response, MotionEvent event, int axis) {
         float value = event.getAxisValue(axis);
         return value != 0f && !response.isOutsideDeadZone(axis, value);
+    }
+
+    /**
+     * Shapes one stick pair, honouring the hysteresis gate.
+     *
+     * A stick the gate is still holding back is reported as centred rather than shaped, so a
+     * wobbling stick cannot leak a small push just because it nominally cleared the dead zone.
+     * The gate is consulted at the event's own timestamp, which is what lets the dead-zone
+     * check and this rewrite agree about a single event without double-counting it.
+     */
+    private static float[] shapePair(ControllerResponse response, StickDriftGate gate,
+                                     boolean left, float x, float y, long time, float[] out) {
+        if (x == 0f && y == 0f) {
+            gate.reset();
+            out[0] = 0f;
+            out[1] = 0f;
+            return out;
+        }
+        float magnitude = (float) Math.sqrt(x * x + y * y);
+        if (!gate.allow(magnitude, response.driftThreshold(left), time)) {
+            out[0] = 0f;
+            out[1] = 0f;
+            return out;
+        }
+        response.adjustStickPair(left, x, y, magnitude, out);
+        return out;
     }
 
     public static int processKeyEvent(int keyCode) {

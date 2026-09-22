@@ -35,6 +35,13 @@ public class ControllerProfile {
     private float rightTriggerDeadZone = TriggerCurve.DEFAULT_DEAD_ZONE;
     private float rightTriggerExponent = TriggerCurve.DEFAULT_EXPONENT;
 
+    // Anti-drift is opt-in, so switching it on cannot silently change how an existing profile
+    // feels. The noise floors are measured per stick by StickCalibration; 0 means "never
+    // calibrated", which leaves the profile's own dead zone in charge.
+    private boolean antiDriftEnabled = false;
+    private float leftStickNoiseFloor = 0f;
+    private float rightStickNoiseFloor = 0f;
+
     public ControllerProfile() {
         this("Profile");
     }
@@ -179,6 +186,36 @@ public class ControllerProfile {
         return Math.max(0f, Math.min(0.9f, zone));
     }
 
+    public boolean isAntiDriftEnabled() {
+        return antiDriftEnabled;
+    }
+
+    public void setAntiDriftEnabled(boolean enabled) {
+        antiDriftEnabled = enabled;
+    }
+
+    /** Measured resting magnitude of the left stick, or 0 when it was never calibrated. */
+    public float getLeftStickNoiseFloor() {
+        return leftStickNoiseFloor;
+    }
+
+    public float getRightStickNoiseFloor() {
+        return rightStickNoiseFloor;
+    }
+
+    public void setLeftStickNoiseFloor(float floor) {
+        leftStickNoiseFloor = clampNoiseFloor(floor);
+    }
+
+    public void setRightStickNoiseFloor(float floor) {
+        rightStickNoiseFloor = clampNoiseFloor(floor);
+    }
+
+    private static float clampNoiseFloor(float floor) {
+        if (Float.isNaN(floor) || floor <= 0f) return 0f;
+        return Math.min(1f, floor);
+    }
+
     private static float clampSensitivity(float sensitivity) {
         if (Float.isNaN(sensitivity)) return DEFAULT_SENSITIVITY;
         return Math.max(MIN_SENSITIVITY, Math.min(MAX_SENSITIVITY, sensitivity));
@@ -204,6 +241,10 @@ public class ControllerProfile {
         copy.leftTriggerExponent = leftTriggerExponent;
         copy.rightTriggerDeadZone = rightTriggerDeadZone;
         copy.rightTriggerExponent = rightTriggerExponent;
+
+        copy.antiDriftEnabled = antiDriftEnabled;
+        copy.leftStickNoiseFloor = leftStickNoiseFloor;
+        copy.rightStickNoiseFloor = rightStickNoiseFloor;
 
         copy.buttonRemaps.clear();
         copy.buttonRemaps.putAll(buttonRemaps);
