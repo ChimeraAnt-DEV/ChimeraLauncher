@@ -31,6 +31,8 @@ import org.chimeramc.launcher.launcher.controller.ControllerProfile;
 import org.chimeramc.launcher.launcher.controller.ControllerProfileCodec;
 import org.chimeramc.launcher.launcher.controller.ControllerProfileManager;
 import org.chimeramc.launcher.launcher.controller.ControllerType;
+import org.chimeramc.launcher.launcher.controller.StickCalibration;
+import org.chimeramc.launcher.launcher.controller.StickCalibrationSession;
 import org.chimeramc.launcher.launcher.controller.StickCurve;
 import org.chimeramc.launcher.launcher.controller.TriggerCurve;
 import org.chimeramc.launcher.ui.dialogs.CustomAlertDialog;
@@ -64,6 +66,12 @@ public class ControllerSettingsFragment extends Fragment {
     private InputManager inputManager;
     private ActivityResultLauncher<String> exportProfileLauncher;
     private ActivityResultLauncher<String[]> importProfileLauncher;
+
+    private android.widget.Switch antiDriftSwitch;
+    private TextView antiDriftStatus;
+    private TextView calibrateButton;
+    private final StickCalibrationSession calibration = new StickCalibrationSession();
+    private int lastCalibrationProgress = -1;
     private final InputManager.InputDeviceListener deviceListener = new InputManager.InputDeviceListener() {
         @Override
         public void onInputDeviceAdded(int deviceId) {
@@ -227,6 +235,12 @@ public class ControllerSettingsFragment extends Fragment {
         view.findViewById(R.id.controller_bind_instance).setOnClickListener(v -> bindToInstance());
         view.findViewById(R.id.controller_bind_clear).setOnClickListener(v -> clearInstanceBinding());
 
+        antiDriftSwitch = view.findViewById(R.id.controller_antidrift_switch);
+        antiDriftStatus = view.findViewById(R.id.controller_antidrift_status);
+        calibrateButton = view.findViewById(R.id.controller_calibrate);
+        antiDriftSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> onAntiDriftToggled(isChecked));
+        calibrateButton.setOnClickListener(v -> startCalibration());
+
         inputManager = (InputManager) requireContext().getSystemService(android.content.Context.INPUT_SERVICE);
         if (inputManager != null) {
             inputManager.registerInputDeviceListener(deviceListener, null);
@@ -247,6 +261,10 @@ public class ControllerSettingsFragment extends Fragment {
         statusText = null;
         illustrationLabel = null;
         profileChips = null;
+        antiDriftSwitch = null;
+        antiDriftStatus = null;
+        calibrateButton = null;
+        calibration.cancel();
         super.onDestroyView();
     }
 
@@ -262,9 +280,48 @@ public class ControllerSettingsFragment extends Fragment {
     }
 
     public void handleHardwareMotion(MotionEvent event) {
-        if (illustration != null
-                && (event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK) {
+        boolean joystick = (event.getSource() & InputDevice.SOURCE_JOYSTICK) == InputDevice.SOURCE_JOYSTICK;
+        if (!joystick) {
+            return;
+        }
+        // Calibration runs before the illustration so the sampling sees every frame the pad
+        // reports, including the ones the illustration would ignore.
+        if (calibration.isActive()) {
+            feedCalibration(event);
+        }
+        if (illustration != null) {
             illustration.handleMotionEvent(event);
+        }
+    }
+
+    /**
+     * Feeds one frame to the calibration run and updates the readout.
+     *
+     * The measurement is written into the active profile and the processor is refreshed as soon
+     * as the run completes, so the pad being held still picks up its new threshold immediately —
+     * calibrating and then having to reopen the screen to feel the effect would look broken.
+     */
+    private void feedCalibration(MotionEvent event) {
+        boolean complete = calibration.sample(
+                event.getAxisValue(MotionEvent.AXIS_X),
+                event.getAxisValue(MotionEvent.AXIS_Y),
+                event.getAxisValue(MotionEvent.AXIS_Z),
+                event.getAxisValue(MotionEvent.AXIS_RZ));
+        if (complete) {
+            finishCalibration();
+            return;
+        }
+        // Repainting on every frame would be wasteful; one update per sample is enough to show
+        // progress and is what makes the run feel responsive.
+        if (antiDriftStatus == null) return;
+        if (calibration.wasLastSampleRejected()) {
+            antiDriftStatus.setText(R.string.controller_calibrate_moved);
+            return;
+        }
+        if (calibration.samplesTaken() != lastCalibrationProgress) {
+            lastCalibrationProgress = calibration.samplesTaken();
+            antiDriftStatus.setText(getString(R.string.controller_calibrate_progress,
+                    calibration.samplesTaken(), StickCalibration.SAMPLE_TARGET));
         }
     }
 
@@ -365,6 +422,105 @@ public class ControllerSettingsFragment extends Fragment {
         }
         ControllerProfile activeProfile = profileManager.getActiveProfile(currentType);
         ControllerInputProcessor.setActiveProfile(currentType, activeProfile);
+        refreshAntiDriftUi(activeProfile);
+    }
+
+    // --- Anti stick drift ------------------------------------------------------------------
+
+    /**
+     * Mirrors the active profile's anti-drift state into the switch and the readout.
+     *
+     * Called wherever the active profile can change, so the switch never shows a state that
+     * belongs to a different profile.
+     */
+    private void refreshAntiDriftUi(ControllerProfile profile) {
+        if (antiDriftSwitch == null || antiDriftStatus == null) return;
+        boolean enabled = profile != null && profile.isAntiDriftEnabled();
+        // Detach first: setChecked from here would otherwise re-enter the toggle handler and
+        // write the value straight back to storage on every refresh.
+        antiDriftSwitch.setOnCheckedChangeListener(null);
+        antiDriftSwitch.setChecked(enabled);
+        antiDriftSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> onAntiDriftToggled(isChecked));
+
+        if (profile == null) {
+            antiDriftStatus.setText(R.string.controller_antidrift_status_off);
+            return;
+        }
+        boolean calibrated = StickCalibration.isCalibrated(profile.getLeftStickNoiseFloor())
+                || StickCalibration.isCalibrated(profile.getRightStickNoiseFloor());
+        if (!enabled) {
+            antiDriftStatus.setText(R.string.controller_antidrift_status_off);
+        } else if (calibrated) {
+            antiDriftStatus.setText(getString(R.string.controller_antidrift_status_calibrated,
+                    formatFloor(profile.getLeftStickNoiseFloor()),
+                    formatFloor(profile.getRightStickNoiseFloor())));
+        } else {
+            antiDriftStatus.setText(R.string.controller_antidrift_status_uncalibrated);
+        }
+        if (calibrateButton != null) {
+            calibrateButton.setEnabled(enabled);
+            calibrateButton.setAlpha(enabled ? 1f : 0.5f);
+        }
+    }
+
+    private static String formatFloor(float floor) {
+        return String.format(java.util.Locale.US, "%.3f", floor);
+    }
+
+    private void onAntiDriftToggled(boolean enabled) {
+        ControllerProfile active = profileManager.getActiveProfile(currentType);
+        if (active == null) return;
+        active.setAntiDriftEnabled(enabled);
+        persistActiveProfile(active);
+        refreshAntiDriftUi(active);
+    }
+
+    private void startCalibration() {
+        ControllerProfile active = profileManager.getActiveProfile(currentType);
+        if (active == null) return;
+        if (!active.isAntiDriftEnabled()) {
+            Toast.makeText(requireContext(), R.string.controller_calibrate_needs_toggle, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (findConnectedController() == null) {
+            Toast.makeText(requireContext(), R.string.controller_calibrate_no_controller, Toast.LENGTH_SHORT).show();
+            return;
+        }
+        calibration.start();
+        lastCalibrationProgress = -1;
+        org.chimeramc.launcher.ui.animation.UiTouchFeedback.selection(requireContext());
+        if (antiDriftStatus != null) {
+            antiDriftStatus.setText(R.string.controller_calibrate_prompt);
+        }
+        if (calibrateButton != null) {
+            calibrateButton.setText(R.string.controller_calibrate_prompt);
+        }
+    }
+
+    private void finishCalibration() {
+        ControllerProfile active = profileManager.getActiveProfile(currentType);
+        if (active == null) return;
+        active.setLeftStickNoiseFloor(calibration.leftFloor());
+        active.setRightStickNoiseFloor(calibration.rightFloor());
+        persistActiveProfile(active);
+        if (calibrateButton != null) {
+            calibrateButton.setText(R.string.controller_calibrate);
+        }
+        refreshAntiDriftUi(active);
+        Toast.makeText(requireContext(), getString(R.string.controller_calibrate_done,
+                formatFloor(active.getLeftStickNoiseFloor()),
+                formatFloor(active.getRightStickNoiseFloor())), Toast.LENGTH_LONG).show();
+    }
+
+    /** Writes the active profile back to its slot and pushes it into the live input path. */
+    private void persistActiveProfile(ControllerProfile profile) {
+        int slot = profileManager.getActiveSlot(currentType);
+        List<ControllerProfile> profiles = profileManager.getProfiles(currentType);
+        if (slot >= 0 && slot < profiles.size()) {
+            profiles.set(slot, profile);
+            profileManager.saveProfiles(currentType, profiles);
+        }
+        ControllerInputProcessor.setActiveProfile(currentType, profile);
     }
 
     private void selectProfile(int slot) {
@@ -545,6 +701,12 @@ public class ControllerSettingsFragment extends Fragment {
         content.addView(label(getString(R.string.controller_editor_vibration)));
         content.addView(vibration);
 
+        android.widget.Switch antiDrift = new android.widget.Switch(requireContext());
+        antiDrift.setChecked(working.isAntiDriftEnabled());
+        content.addView(label(getString(R.string.controller_antidrift_title)));
+        content.addView(subLabel(getString(R.string.controller_antidrift_summary)));
+        content.addView(antiDrift);
+
         content.addView(label(getString(R.string.controller_editor_stick_curve_label)));
         CurvePreviewView preview = new CurvePreviewView(requireContext());
         preview.setAccentColor(new PersonalizationManager(requireContext()).getAccentColor());
@@ -662,6 +824,7 @@ public class ControllerSettingsFragment extends Fragment {
                     working.setLeftStickSensitivity(0.25f + leftSens.getProgress() / 100f * 2.75f);
                     working.setRightStickSensitivity(0.25f + rightSens.getProgress() / 100f * 2.75f);
                     working.setVibrationEnabled(vibration.isChecked());
+                    working.setAntiDriftEnabled(antiDrift.isChecked());
                     int active = profileManager.getActiveSlot(currentType);
                     List<ControllerProfile> profiles = profileManager.getProfiles(currentType);
                     profiles.set(active, working);

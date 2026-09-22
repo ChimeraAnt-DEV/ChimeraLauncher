@@ -306,6 +306,73 @@
             android:textColor="@color/text_secondary"
             android:textSize="11sp" />
 
+        <!-- Anti-drift lives on this screen rather than inside the editor dialog: calibration
+             samples live motion events, and a modal dialog would cover the pad and block them. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/misans"
+                    android:text="@string/controller_antidrift_title"
+                    android:textColor="@color/on_surface"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:fontFamily="@font/misans"
+                    android:text="@string/controller_antidrift_summary"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="11sp" />
+            </LinearLayout>
+
+            <android.widget.Switch
+                android:id="@+id/controller_antidrift_switch"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp" />
+
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/controller_calibrate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="36dp"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:fontFamily="@font/misans"
+            android:text="@string/controller_calibrate"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:textColor="@color/on_surface"
+            android:background="@drawable/bg_filter_chip"
+            android:clickable="true"
+            android:focusable="true" />
+
+        <TextView
+            android:id="@+id/controller_antidrift_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:fontFamily="@font/misans"
+            android:textColor="@color/text_secondary"
+            android:textSize="11sp" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

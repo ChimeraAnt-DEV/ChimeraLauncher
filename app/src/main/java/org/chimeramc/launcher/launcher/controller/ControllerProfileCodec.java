@@ -148,6 +148,11 @@ public final class ControllerProfileCodec {
         clean.setRightCurve(raw.getRightCurve());
         clean.setLeftTriggerCurve(raw.getLeftTriggerCurve());
         clean.setRightTriggerCurve(raw.getRightTriggerCurve());
+        // Anti-drift survives a round trip, including the measured floors, so re-importing a
+        // profile on the same pad does not force the user to calibrate again.
+        clean.setAntiDriftEnabled(raw.isAntiDriftEnabled());
+        clean.setLeftStickNoiseFloor(raw.getLeftStickNoiseFloor());
+        clean.setRightStickNoiseFloor(raw.getRightStickNoiseFloor());
         // Remaps go through setRemap so a null map or an out-of-range key cannot survive.
         java.util.Map<Integer, Integer> remaps = raw.getButtonRemaps();
         if (remaps != null) {

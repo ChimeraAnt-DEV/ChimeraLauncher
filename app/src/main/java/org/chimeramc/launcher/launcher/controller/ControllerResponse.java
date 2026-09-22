@@ -56,6 +56,9 @@ public final class ControllerResponse {
     private final float[] rightStickCurve;
     private final TriggerCurve leftTrigger;
     private final TriggerCurve rightTrigger;
+    private final boolean antiDriftEnabled;
+    private final float leftDriftThreshold;
+    private final float rightDriftThreshold;
 
     public ControllerResponse(ControllerProfile profile, boolean snappy) {
         this.leftDeadZone = clamp(profile == null ? ControllerProfile.DEFAULT_DEAD_ZONE : profile.getLeftDeadZone());
@@ -66,6 +69,17 @@ public final class ControllerResponse {
         this.leftSensitivity = profile == null ? ControllerProfile.DEFAULT_SENSITIVITY : profile.getLeftStickSensitivity();
         this.rightSensitivity = profile == null ? ControllerProfile.DEFAULT_SENSITIVITY : profile.getRightStickSensitivity();
         this.remapTable = buildRemapTable(profile);
+        this.antiDriftEnabled = profile != null && profile.isAntiDriftEnabled();
+        // Widen the dead zone to this pad's measured resting noise. Only when the toggle is on:
+        // with it off the profile's own dead zone is exactly what the user chose.
+        this.leftDriftThreshold = antiDriftEnabled
+                ? StickCalibration.effectiveDeadZone(this.leftDeadZone,
+                        profile.getLeftStickNoiseFloor())
+                : this.leftDeadZone;
+        this.rightDriftThreshold = antiDriftEnabled
+                ? StickCalibration.effectiveDeadZone(this.rightDeadZone,
+                        profile.getRightStickNoiseFloor())
+                : this.rightDeadZone;
 
         StickCurve leftCurve = profile == null ? null : profile.getLeftCurve();
         StickCurve rightCurve = profile == null ? null : profile.getRightCurve();
@@ -190,6 +204,84 @@ public final class ControllerResponse {
     }
 
     /**
+     * Applies dead zone, response curve and sensitivity to a stick pair at once.
+     *
+     * This is the radial (combined-magnitude) path, and it is what the anti-drift toggle
+     * relies on. The single-axis {@link #adjustAxis} test compares each axis against the dead
+     * zone independently, which cannot see a stick that rests slightly off-centre on one axis:
+     * that axis alone sits just above the threshold while the other is at zero, so the pair
+     * reads as a small constant diagonal push — ghost drift the player sees as a camera that
+     * creeps on its own.
+     *
+     * Measuring {@code sqrt(x*x + y*y)} against the threshold and rescaling both axes together
+     * fixes that, because a stick merely resting off-centre has a small magnitude no matter
+     * which axes the offset lands on. It also makes the dead zone a circle rather than a
+     * square, so diagonal travel is no longer flattened more aggressively than axial travel.
+     *
+     * The axes are returned through {@code out} to keep this allocation-free on the input path.
+     *
+     * @param left  true for the left stick, false for the right
+     * @param x     x-axis value (AXIS_X for left, AXIS_Z for right)
+     * @param y     y-axis value (AXIS_Y for left, AXIS_RZ for right)
+     * @param out   receives the shaped x at index 0 and y at index 1
+     * @return true when either axis changed
+     */
+    public boolean adjustStickPair(boolean left, float x, float y, float[] out) {
+        return adjustStickPair(left, x, y, (float) Math.sqrt(x * x + y * y), out);
+    }
+
+    /**
+     * Pair shaping with the magnitude already computed.
+     *
+     * The caller needs the magnitude anyway to consult its drift gate, so taking it here keeps
+     * the hot path to one {@code sqrt} per stick per event instead of two.
+     */
+    public boolean adjustStickPair(boolean left, float x, float y, float magnitude, float[] out) {
+        final float threshold = left ? leftDriftThreshold : rightDriftThreshold;
+        final float invRange = left ? leftInvRange : rightInvRange;
+        final float sensitivity = left ? leftSensitivity : rightSensitivity;
+        final float[] curve = left ? leftStickCurve : rightStickCurve;
+
+        if (magnitude <= threshold) {
+            out[0] = 0f;
+            out[1] = 0f;
+            return x != 0f || y != 0f;
+        }
+
+        float normalised = (magnitude - threshold) * invRange;
+        if (normalised > 1f) normalised = 1f;
+        normalised = evaluate(curve, normalised);
+
+        float shaped = normalised * sensitivity;
+        if (shaped > 1f) shaped = 1f;
+        if (shaped < DRIFT_EPSILON) {
+            out[0] = 0f;
+            out[1] = 0f;
+            return x != 0f || y != 0f;
+        }
+
+        // Scale the original vector by the shaped-to-raw ratio so the direction the player is
+        // pushing is preserved exactly; only the length changes. Dividing by the magnitude
+        // would do the same arithmetic with more operations and a division.
+        float scale = shaped / magnitude;
+        float outX = x * scale;
+        float outY = y * scale;
+        out[0] = outX;
+        out[1] = outY;
+        return outX != x || outY != y;
+    }
+
+    /** The anti-drift threshold in force for one stick, as a magnitude. */
+    public float driftThreshold(boolean left) {
+        return left ? leftDriftThreshold : rightDriftThreshold;
+    }
+
+    /** Whether the anti-drift filter is on for this response. */
+    public boolean isAntiDriftEnabled() {
+        return antiDriftEnabled;
+    }
+
+    /**
      * Applies the profile's trigger curve to one analogue trigger axis.
      *
      * Unlike the stick path this never redistributes through a dead-zone divisor, and a value
@@ -241,5 +333,19 @@ public final class ControllerResponse {
         final float deadZone = left ? leftDeadZone : rightDeadZone;
         final float magnitude = value < 0f ? -value : value;
         return magnitude > deadZone;
+    }
+
+    /**
+     * Radial counterpart to {@link #isOutsideDeadZone}: true when the stick pair's combined
+     * magnitude clears the threshold.
+     *
+     * This is the test that catches diagonal rest drift. Checking one axis at a time reports
+     * "outside" for an axis sitting just over the threshold even when the pair's magnitude
+     * says the stick is at rest, which is why the per-axis form alone cannot gate the anti-drift
+     * path.
+     */
+    public boolean isPairOutsideThreshold(boolean left, float x, float y) {
+        final float threshold = left ? leftDriftThreshold : rightDriftThreshold;
+        return (float) Math.sqrt(x * x + y * y) > threshold;
     }
 }
