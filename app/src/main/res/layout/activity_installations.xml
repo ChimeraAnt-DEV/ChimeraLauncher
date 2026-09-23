@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background">
@@ -68,7 +69,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:fontFamily="@font/misans"
-            android:text="@string/installations_source_warning"
+            tools:text="Packages are downloaded from mcpedl.org, a third-party mirror."
             android:textColor="@color/text_secondary"
             android:textSize="11sp"
             android:background="@drawable/bg_alpha_chip"

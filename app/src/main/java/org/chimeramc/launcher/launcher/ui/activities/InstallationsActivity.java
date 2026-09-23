@@ -1,6 +1,5 @@
 package org.chimeramc.launcher.ui.activities;
 
-import android.annotation.SuppressLint;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
@@ -14,11 +13,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.chimeramc.launcher.R;
-import org.chimeramc.launcher.core.monster.MonsterMcpeClient;
-import org.chimeramc.launcher.core.monster.MonsterMcpeSession;
-import org.chimeramc.launcher.core.monster.MonsterMcpeParser;
-import org.chimeramc.launcher.core.monster.MonsterMcpeParser.MonsterDownload;
-import org.chimeramc.launcher.core.monster.MonsterMcpeParser.MonsterVersion;
+import org.chimeramc.launcher.core.installer.BedrockSource;
+import org.chimeramc.launcher.core.installer.BedrockSource.ResolvedDownload;
+import org.chimeramc.launcher.core.installer.BedrockSource.Version;
+import org.chimeramc.launcher.core.installer.BrowserFallback;
+import org.chimeramc.launcher.core.installer.PackageSourceClient;
+import org.chimeramc.launcher.core.installer.SourceRegistry;
 import org.chimeramc.launcher.core.versions.GameVersion;
 import org.chimeramc.launcher.core.versions.VersionManager;
 import org.chimeramc.launcher.ui.adapter.InstallationAdapter;
@@ -36,16 +36,16 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * Lists the Bedrock versions Monster MCPE publishes and installs a chosen one as an isolated
- * instance.
+ * Lists the Bedrock versions a package source publishes and installs a chosen one as an
+ * isolated instance.
  *
  * The flow is deliberately: resolve the download link, save the package into the app's
  * private {@code Downloaded_APKs} folder, import from that file, and only delete it once the
  * import reported success. A failed import therefore leaves the package in place so "Retry
  * Import" can run the pipeline again without re-downloading several hundred megabytes.
  *
- * The package source is a third-party mirror, not Mojang, so the screen says so and the
- * user confirms before anything is fetched.
+ * Which mirror is used comes from {@link SourceRegistry}, so this screen names no source:
+ * the host in the warning text and every URL are read from the active {@link BedrockSource}.
  */
 public class InstallationsActivity extends BaseActivity {
 
@@ -59,23 +59,25 @@ public class InstallationsActivity extends BaseActivity {
     private TextView emptyTitle;
     private TextView emptyMessage;
     private TextView refreshButton;
+    private TextView sourceWarning;
     private TextView stagedSummary;
     private TextView stagedRetry;
     private TextView stagedClear;
     private View stagedContainer;
 
     private InstallationAdapter adapter;
-    private MonsterMcpeClient client;
-    private MonsterMcpeSession session;
+    private PackageSourceClient client;
+    private BrowserFallback fallback;
     private WebView browser;
     private FrameLayout browserContainer;
     private TextView browserHint;
     private DownloadedApksStore store;
     private ApkImportManager importManager;
     private VersionManager versionManager;
+    private BedrockSource source;
 
-    private final List<MonsterVersion> versions = new ArrayList<>();
-    private final Map<String, MonsterDownload> resolvedDownloads = new HashMap<>();
+    private final List<Version> versions = new ArrayList<>();
+    private final Map<String, ResolvedDownload> resolvedDownloads = new HashMap<>();
 
     /** The version currently downloading or importing, so a retry targets the same instance. */
     private String pendingVersionName;
@@ -95,7 +97,8 @@ public class InstallationsActivity extends BaseActivity {
             if (path != null) pendingFile = new File(path);
         }
 
-        client = MonsterMcpeClient.getInstance(this);
+        source = SourceRegistry.active();
+        client = PackageSourceClient.getInstance();
         store = new DownloadedApksStore(this);
         versionManager = VersionManager.get(this);
         importManager = new ApkImportManager(this, null);
@@ -103,7 +106,7 @@ public class InstallationsActivity extends BaseActivity {
         importManager.setOnImportFailedListener(this::onImportFailed);
 
         bindViews();
-        session = new MonsterMcpeSession(browser);
+        fallback = new BrowserFallback(browser);
         setupRecycler();
         refreshStagedPackages();
         loadVersions();
@@ -124,6 +127,7 @@ public class InstallationsActivity extends BaseActivity {
         emptyTitle = findViewById(R.id.installations_empty_title);
         emptyMessage = findViewById(R.id.installations_empty_message);
         refreshButton = findViewById(R.id.installations_refresh);
+        sourceWarning = findViewById(R.id.installations_source_warning);
         stagedContainer = findViewById(R.id.installations_staged_container);
         stagedSummary = findViewById(R.id.installations_staged_summary);
         stagedRetry = findViewById(R.id.installations_staged_retry);
@@ -133,6 +137,7 @@ public class InstallationsActivity extends BaseActivity {
         browserHint = findViewById(R.id.installations_browser_hint);
         findViewById(R.id.installations_browser_cancel).setOnClickListener(v -> cancelBrowserCheck());
 
+        sourceWarning.setText(getString(R.string.installations_source_warning, source.displayHost()));
         refreshButton.setOnClickListener(v -> loadVersions());
         stagedRetry.setOnClickListener(v -> retryStagedImport());
         stagedClear.setOnClickListener(v -> confirmClearStaged());
@@ -142,10 +147,10 @@ public class InstallationsActivity extends BaseActivity {
     }
 
     /**
-     * Shows the WebView so the user can clear Monster MCPE's browser check.
+     * Shows the WebView so the user can clear a browser check.
      *
-     * The check needs a real browser engine, so it cannot be done headlessly; the session
-     * keeps polling in the background and the flow continues once it clears.
+     * Only reached when a plain request was refused; the browser keeps polling in the
+     * background and the flow continues once the check clears.
      */
     private void showBrowser(int hintRes) {
         browserHint.setText(hintRes);
@@ -165,7 +170,7 @@ public class InstallationsActivity extends BaseActivity {
      */
     private void cancelBrowserCheck() {
         hideBrowser();
-        if (session != null) session.release();
+        if (fallback != null) fallback.release();
         showLoading(false);
         showEmpty(getString(R.string.installations_error_title),
                 getString(R.string.installations_challenge_cancelled));
@@ -173,7 +178,7 @@ public class InstallationsActivity extends BaseActivity {
 
     @Override
     protected void onDestroy() {
-        if (session != null) session.release();
+        if (fallback != null) fallback.release();
         if (browser != null) browser.destroy();
         super.onDestroy();
     }
@@ -187,9 +192,9 @@ public class InstallationsActivity extends BaseActivity {
 
     private void loadVersions() {
         showLoading(true);
-        client.fetchVersions(session, new MonsterMcpeClient.ListingCallback() {
+        client.fetchVersions(source, fallback, new PackageSourceClient.ListingCallback() {
             @Override
-            public void onSuccess(List<MonsterVersion> fetched) {
+            public void onSuccess(List<Version> fetched) {
                 if (isFinishing() || isDestroyed()) return;
                 showLoading(false);
                 hideBrowser();
@@ -219,7 +224,7 @@ public class InstallationsActivity extends BaseActivity {
 
     /** Flags the rows whose version already exists as an instance. */
     private void markInstalledVersions() {
-        for (MonsterVersion version : versions) {
+        for (Version version : versions) {
             adapter.markInstalled(version.versionCode, isInstalled(version.versionCode));
         }
     }
@@ -239,7 +244,7 @@ public class InstallationsActivity extends BaseActivity {
         return false;
     }
 
-    private void confirmAndDownload(MonsterVersion version) {
+    private void confirmAndDownload(Version version) {
         if (version == null) return;
         if (adapter.stateOf(version.pageUrl) == InstallationAdapter.State.DOWNLOADING) {
             Toast.makeText(this, R.string.installations_download_in_progress, Toast.LENGTH_SHORT).show();
@@ -255,61 +260,66 @@ public class InstallationsActivity extends BaseActivity {
                 .show();
     }
 
-    private void resolveAndDownload(MonsterVersion version) {
+    private void resolveAndDownload(Version version) {
         adapter.setState(version.pageUrl, InstallationAdapter.State.DOWNLOADING);
         adapter.setProgress(version.pageUrl, 0);
 
-        MonsterDownload cached = resolvedDownloads.get(version.pageUrl);
+        ResolvedDownload cached = resolvedDownloads.get(version.pageUrl);
         if (cached != null) {
             startDownload(version, cached);
             return;
         }
 
-        client.fetchDownloadLink(session, version.pageUrl, new MonsterMcpeClient.DownloadLinkCallback() {
-            @Override
-            public void onSuccess(MonsterDownload download) {
-                if (isFinishing() || isDestroyed()) return;
-                resolvedDownloads.put(version.pageUrl, download);
-                startDownload(version, download);
-            }
+        client.resolveDownload(source, fallback, version.pageUrl,
+                new PackageSourceClient.DownloadLinkCallback() {
+                    @Override
+                    public void onSuccess(ResolvedDownload download) {
+                        if (isFinishing() || isDestroyed()) return;
+                        resolvedDownloads.put(version.pageUrl, download);
+                        startDownload(version, download);
+                    }
 
-            @Override
-            public void onChallenge() {
-                // The session keeps polling, so clearing the check resumes this same request.
-                showBrowser(R.string.installations_challenge_hint);
-            }
+                    @Override
+                    public void onChallenge() {
+                        // The browser keeps polling, so clearing the check resumes this request.
+                        showBrowser(R.string.installations_challenge_hint);
+                    }
 
-            @Override
-            public void onError(Throwable error) {
-                if (isFinishing() || isDestroyed()) return;
-                adapter.setError(version.pageUrl, describe(error));
-            }
-        });
+                    @Override
+                    public void onError(Throwable error) {
+                        if (isFinishing() || isDestroyed()) return;
+                        adapter.setError(version.pageUrl, describe(error));
+                    }
+                });
     }
 
-    private void startDownload(MonsterVersion version, MonsterDownload download) {
-        File destination = store.newFile(download.fileName);
+    private void startDownload(Version version, ResolvedDownload download) {
         pendingVersionName = uniqueVersionName(versionNameFor(version));
         pendingPageUrl = version.pageUrl;
-        pendingFile = destination;
 
-        client.downloadPackage(download.url, destination,
-                session.cookiesFor(MonsterMcpeParser.LISTING_URL), session.userAgent(),
+        client.downloadPackage(source, fallback, download, name -> {
+                    // The real name is only known once the response headers arrive, so the
+                    // destination is chosen here rather than before the request.
+                    File destination = store.newFile(name);
+                    pendingFile = destination;
+                    return destination;
+                },
                 percent -> adapter.setProgress(version.pageUrl, percent),
-                new MonsterMcpeClient.FileDownloadCallback() {
+                new PackageSourceClient.FileDownloadCallback() {
                     @Override
-                    public void onSuccess() {
+                    public void onSuccess(File file) {
                         if (isFinishing() || isDestroyed()) return;
+                        pendingFile = file;
                         adapter.setState(version.pageUrl, InstallationAdapter.State.IMPORTING);
                         refreshStagedPackages();
-                        importManager.importUri(Uri.fromFile(destination), pendingVersionName);
+                        importManager.importUri(Uri.fromFile(file), pendingVersionName);
                     }
 
                     @Override
                     public void onError(Throwable error) {
                         if (isFinishing() || isDestroyed()) return;
                         // A partial file would be imported as a corrupt package, so drop it.
-                        store.delete(destination);
+                        if (pendingFile != null) store.delete(pendingFile);
                         pendingFile = null;
                         pendingPageUrl = null;
                         adapter.setError(version.pageUrl, describe(error));
@@ -368,7 +378,7 @@ public class InstallationsActivity extends BaseActivity {
 
         pendingFile = file;
         if (pendingVersionName == null || pendingVersionName.isEmpty()) {
-            pendingVersionName = MonsterMcpeParser.versionNameFrom(file.getName());
+            pendingVersionName = BedrockSource.versionNameFrom(file.getName());
         }
         String pageUrl = pendingPageUrl != null ? pendingPageUrl : pageUrlFor(file.getName());
         pendingPageUrl = pageUrl;
@@ -380,9 +390,9 @@ public class InstallationsActivity extends BaseActivity {
 
     /** Finds the row whose version code appears in a staged file's name. */
     private String pageUrlFor(String fileName) {
-        String code = MonsterMcpeParser.versionNameFrom(fileName);
+        String code = BedrockSource.versionNameFrom(fileName);
         if (code == null || "unknown".equals(code)) return null;
-        for (MonsterVersion version : versions) {
+        for (Version version : versions) {
             if (code.equals(version.versionCode)) return version.pageUrl;
         }
         return null;
@@ -451,12 +461,12 @@ public class InstallationsActivity extends BaseActivity {
         return name + "_" + System.currentTimeMillis();
     }
 
-    private static String versionNameFor(MonsterVersion version) {
+    private static String versionNameFor(Version version) {
         String code = version.versionCode;
         if (code == null || code.isEmpty()) {
-            code = MonsterMcpeParser.stripTags(version.title);
+            code = BedrockSource.stripTags(version.title);
         }
-        return MonsterMcpeParser.versionNameFrom(code);
+        return BedrockSource.versionNameFrom(code);
     }
 
     private String describe(Throwable error) {
