@@ -211,8 +211,8 @@ public class BaseActivity extends AppCompatActivity {
 
     private void setupBaseNavBar() {
         int[] tabIds ={
-            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
-            R.id.nav_tab_customize, R.id.nav_tab_settings
+            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_installations,
+            R.id.nav_tab_mods, R.id.nav_tab_customize, R.id.nav_tab_settings
         };
 
         PersonalizationManager pm = new PersonalizationManager(this);
@@ -285,6 +285,11 @@ public class BaseActivity extends AppCompatActivity {
         findViewById(R.id.nav_tab_instances).setOnClickListener(v -> {
             if (!(this instanceof InstancesActivity)) {
                 switchNavTab(new Intent(this, InstancesActivity.class));
+            }
+        });
+        findViewById(R.id.nav_tab_installations).setOnClickListener(v -> {
+            if (!(this instanceof InstallationsActivity)) {
+                switchNavTab(new Intent(this, InstallationsActivity.class));
             }
         });
         findViewById(R.id.nav_tab_mods).setOnClickListener(v -> {
@@ -423,8 +428,8 @@ public class BaseActivity extends AppCompatActivity {
         protected void setActiveNavTab(int activeTabId) {
         if (!navBarInjected) return;
         int[] tabIds ={
-            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_mods,
-            R.id.nav_tab_customize, R.id.nav_tab_settings
+            R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_installations,
+            R.id.nav_tab_mods, R.id.nav_tab_customize, R.id.nav_tab_settings
         };
 
         PersonalizationManager pm = new PersonalizationManager(this);

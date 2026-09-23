@@ -3,6 +3,7 @@ package org.chimeramc.launcher.ui.navigation;
 import android.app.Activity;
 import android.view.KeyEvent;
 
+import org.chimeramc.launcher.ui.activities.InstallationsActivity;
 import org.chimeramc.launcher.ui.activities.AboutActivity;
 import org.chimeramc.launcher.ui.activities.CustomizeActivity;
 import org.chimeramc.launcher.ui.activities.InstancesActivity;
@@ -20,6 +21,7 @@ import org.chimeramc.launcher.ui.activities.SettingsActivity;
 public enum LauncherTab {
     LAUNCH(MainActivity.class),
     VERSIONS(InstancesActivity.class),
+    INSTALLATIONS(InstallationsActivity.class),
     MODS(ModsFullscreenActivity.class),
     CUSTOMIZE(CustomizeActivity.class),
     SETTINGS(SettingsActivity.class);
