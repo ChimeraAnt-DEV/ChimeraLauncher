@@ -2097,7 +2097,7 @@ import okhttp3.OkHttpClient;
 
     private void setupNavBar() {
         setActiveNavTab(R.id.nav_tab_launch);
-        findViewById(R.id.nav_item_launch).setOnClickListener(v -> {});
+        findViewById(R.id.nav_tab_launch).setOnClickListener(v -> {});
     }
 
     @Override
