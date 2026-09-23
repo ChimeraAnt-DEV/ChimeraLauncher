@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.view.KeyEvent;
 
+import org.chimeramc.launcher.ui.activities.InstallationsActivity;
 import org.chimeramc.launcher.ui.activities.CustomizeActivity;
 import org.chimeramc.launcher.ui.activities.InstancesActivity;
 import org.chimeramc.launcher.ui.activities.MainActivity;
@@ -21,18 +22,20 @@ public class LauncherTabTest {
         LauncherTab[] tabs = LauncherTab.values();
         assertSame(LauncherTab.LAUNCH, tabs[0]);
         assertSame(LauncherTab.VERSIONS, tabs[1]);
-        assertSame(LauncherTab.MODS, tabs[2]);
-        assertSame(LauncherTab.CUSTOMIZE, tabs[3]);
-        assertSame(LauncherTab.SETTINGS, tabs[4]);
-        // Five tabs are what fits a phone next to the news bell and account avatar; About
+        assertSame(LauncherTab.INSTALLATIONS, tabs[2]);
+        assertSame(LauncherTab.MODS, tabs[3]);
+        assertSame(LauncherTab.CUSTOMIZE, tabs[4]);
+        assertSame(LauncherTab.SETTINGS, tabs[5]);
+        // Six tabs is what fits a phone next to the news bell and account avatar; About
         // lives inside Settings and Controller/Skins inside Customize.
-        assertEquals(5, tabs.length);
+        assertEquals(6, tabs.length);
     }
 
     @Test
     public void tabsMapToTheirActivities() {
         assertSame(MainActivity.class, LauncherTab.LAUNCH.activity());
         assertSame(InstancesActivity.class, LauncherTab.VERSIONS.activity());
+        assertSame(InstallationsActivity.class, LauncherTab.INSTALLATIONS.activity());
         assertSame(ModsFullscreenActivity.class, LauncherTab.MODS.activity());
         assertSame(CustomizeActivity.class, LauncherTab.CUSTOMIZE.activity());
     }
@@ -41,6 +44,7 @@ public class LauncherTabTest {
     public void forActivityResolvesKnownTabs() {
         assertSame(LauncherTab.LAUNCH, LauncherTab.forActivity(MainActivity.class));
         assertSame(LauncherTab.VERSIONS, LauncherTab.forActivity(InstancesActivity.class));
+        assertSame(LauncherTab.INSTALLATIONS, LauncherTab.forActivity(InstallationsActivity.class));
         assertNull(LauncherTab.forActivity(String.class));
     }
 

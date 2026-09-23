@@ -97,7 +97,7 @@ public class ApkInstaller {
                     boolean foundBaseApk = false;
                     File splitsDir = new File(baseDir, "splits");
 
-                    try (InputStream rawInput = context.getContentResolver().openInputStream(apkOrApksUri)) {
+                    try (InputStream rawInput = openInput(apkOrApksUri)) {
                         if (rawInput == null) {
                             postError("Open apks failed");
                             return;
@@ -155,7 +155,7 @@ public class ApkInstaller {
                     }
                 } else {
                     File dstApkFile = new File(baseDir, APK_FILE_NAME);
-                    try (InputStream is = context.getContentResolver().openInputStream(apkOrApksUri);
+                    try (InputStream is = openInput(apkOrApksUri);
                          OutputStream os = new FileOutputStream(dstApkFile)) {
                         if (is == null) {
                             postError("Open apk failed");
@@ -315,7 +315,28 @@ public class ApkInstaller {
         return "unknown_version";
     }
 
+    /**
+     * Opens a package from either a {@code content://} picker URI or a plain file path.
+     *
+     * Downloads staged in the app's private folder are ordinary files, and a
+     * {@code file://} URI opened through the resolver works on some OEM builds and throws on
+     * others, so the scheme is checked explicitly rather than relying on that.
+     */
+    private InputStream openInput(Uri uri) throws IOException {
+        if (uri == null) return null;
+        if ("file".equals(uri.getScheme())) {
+            String path = uri.getPath();
+            if (path == null) return null;
+            return new FileInputStream(path);
+        }
+        return context.getContentResolver().openInputStream(uri);
+    }
+
     private String getFileName(Uri uri) {
+        if ("file".equals(uri.getScheme())) {
+            String path = uri.getPath();
+            return path == null ? null : new File(path).getName();
+        }
         Cursor cursor = context.getContentResolver().query(uri, null, null, null, null);
         String result = null;
         if (cursor != null) {

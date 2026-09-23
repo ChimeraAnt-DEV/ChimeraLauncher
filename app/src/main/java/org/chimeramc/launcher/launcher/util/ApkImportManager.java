@@ -23,9 +23,20 @@ public class ApkImportManager {
     private final MainViewModel viewModel;
     private final InstallProgressDialog progressDialog;
     private OnImportCompleteListener importCompleteListener;
+    private OnImportFailedListener importFailedListener;
 
     public interface OnImportCompleteListener {
         void onImportComplete();
+    }
+
+    /**
+     * Reports a failed import so a caller can offer a retry.
+     *
+     * The version name is echoed back because the caller that owns the staged package needs
+     * it to import the same file again without asking the user to pick it.
+     */
+    public interface OnImportFailedListener {
+        void onImportFailed(String errorMessage, String versionName);
     }
 
     public ApkImportManager(Activity activity, MainViewModel viewModel) {
@@ -36,6 +47,55 @@ public class ApkImportManager {
 
     public void setOnImportCompleteListener(OnImportCompleteListener listener) {
         this.importCompleteListener = listener;
+    }
+
+    public void setOnImportFailedListener(OnImportFailedListener listener) {
+        this.importFailedListener = listener;
+    }
+
+    /** Imports [apkUri] directly, using [versionName] instead of asking for it. */
+    public void importUri(Uri apkUri, String versionName) {
+        if (apkUri == null) return;
+        showProgress();
+        ApkInstaller installer = new ApkInstaller(activity, Executors.newSingleThreadExecutor(), new ApkInstaller.InstallCallback() {
+            @Override
+            public void onProgress(int progress) {
+                activity.runOnUiThread(() -> progressDialog.setProgress(progress));
+            }
+
+            @Override
+            public void onSuccess(String installedVersionName) {
+                activity.runOnUiThread(() -> {
+                    dismissProgress();
+                    if (activity.isFinishing() || activity.isDestroyed()) return;
+                    Toast.makeText(
+                            activity,
+                            activity.getString(R.string.install_done, installedVersionName),
+                            Toast.LENGTH_LONG
+                    ).show();
+                    VersionManager.get(activity).loadAllVersions();
+                    if (importCompleteListener != null) {
+                        importCompleteListener.onImportComplete();
+                    }
+                });
+            }
+
+            @Override
+            public void onError(String errorMsg) {
+                activity.runOnUiThread(() -> {
+                    dismissProgress();
+                    if (activity.isFinishing() || activity.isDestroyed()) return;
+                    // With a listener the caller owns the failure UI (it can offer a retry),
+                    // so a toast here would only duplicate the message.
+                    if (importFailedListener == null) {
+                        Toast.makeText(activity, errorMsg, Toast.LENGTH_LONG).show();
+                    } else {
+                        importFailedListener.onImportFailed(errorMsg, versionName);
+                    }
+                });
+            }
+        });
+        installer.install(apkUri, versionName);
     }
 
     public void handleApkImportResult(Intent data) {
