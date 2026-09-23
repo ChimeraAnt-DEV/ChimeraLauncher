@@ -1,55 +1,55 @@
-<?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="primary">#4AE0A0</color>
-    <color name="on_primary">#000000</color>
+    <color name="primary">#A88CFF</color>
+    <color name="on_primary">#1A0B40</color>
 
-    <color name="secondary">#00FFFF</color>
-    <color name="on_secondary">#000000</color>
+    <color name="secondary">#E070C0</color>
+    <color name="on_secondary">#2A0A24</color>
 
-    <color name="primary_container">#1A3A2A</color>
-    <color name="on_primary_container">#4AE0A0</color>
+    <color name="primary_container">#2A1A5E</color>
+    <color name="on_primary_container">#D8CBFF</color>
 
-    <color name="tertiary">#81D4FA</color>
-    <color name="on_tertiary">#000000</color>
+    <color name="tertiary">#FFB870</color>
+    <color name="on_tertiary">#2A1600</color>
 
     <color name="error">#FF6B6B</color>
     <color name="on_error">#000000</color>
 
-    <color name="background">#000000</color>
-    <color name="surface">#0A0A0A</color>
-    <color name="surface_variant">#1A1A1A</color>
+    <color name="background">#0B0A14</color>
+    <color name="surface">#141220</color>
+    <color name="surface_variant">#1E1B2E</color>
     <color name="on_background">#FFFFFF</color>
     <color name="on_surface">#FFFFFF</color>
-    <color name="on_surface_variant">#A5D6A7</color>
+    <color name="on_surface_variant">#C3B8E8</color>
 
-    <color name="outline">#2C2C2E</color>
-    <color name="divider">#333333</color>
+    <color name="outline">#2C2C3E</color>
+    <color name="card_border">#33FFFFFF</color>
+    <color name="divider">#33304A</color>
 
     <color name="white">#FFFFFF</color>
     <color name="scrim">#99000000</color>
 
-    <color name="glow_green">#4AE0A0</color>
-    <color name="glow_cyan">#00FFFF</color>
+    <color name="glow_violet">#A88CFF</color>
+    <color name="glow_magenta">#E070C0</color>
 
     <color name="abi_label_text">#FFFFFF</color>
-    <color name="accent_text">#4AE0A0</color>
+    <color name="accent_text">#A88CFF</color>
 
     <color name="text_primary">#FFFFFF</color>
-    <color name="text_secondary">#AAAAAA</color>
+    <color name="text_secondary">#A79FC4</color>
     <color name="qa_icon_color">#FFFFFF</color>
 
-    <!-- Gradient accent palette (dark theme: keep accents bright, black on_primary text stays readable) -->
-    <color name="grad_hero_start">#3ECF9E</color>
-    <color name="grad_hero_end">#2BB4A8</color>
-    <color name="grad_launch_start">#34C486</color>
-    <color name="grad_launch_end">#26A69A</color>
-    <color name="grad_versions_start">#3342A5F5</color>
-    <color name="grad_versions_end">#1442A5F5</color>
-    <color name="grad_mods_start">#337C4DFF</color>
-    <color name="grad_mods_end">#147C4DFF</color>
-    <color name="grad_content_start">#3300ACC1</color>
-    <color name="grad_content_end">#1400ACC1</color>
-    <color name="grad_pulse_glow">#444AE0A0</color>
+    <!-- Gradient accent palette (dark theme: keep accents bright) -->
+    <color name="grad_hero_start">#5A2BD0</color>
+    <color name="grad_hero_end">#9E3A92</color>
+    <color name="grad_launch_start">#6D4AFF</color>
+    <color name="grad_launch_end">#A82E9E</color>
+    <color name="grad_versions_start">#339070FF</color>
+    <color name="grad_versions_end">#149070FF</color>
+    <color name="grad_mods_start">#33D070C0</color>
+    <color name="grad_mods_end">#14D070C0</color>
+    <color name="grad_content_start">#336080FF</color>
+    <color name="grad_content_end">#146080FF</color>
+    <color name="grad_pulse_glow">#44A88CFF</color>
 
     <!-- Glass surfaces: light-mode white translucency reads as fog on a black backdrop, so
          dark mode uses a subtler lift with a brighter hairline border. -->
@@ -57,12 +57,12 @@
     <color name="glass_background_elevated">#4DFFFFFF</color>
     <color name="glass_border">#33FFFFFF</color>
 
-    <!-- Header gradient stays dark indigo→purple here, so its text stays light. -->
+    <!-- Header gradient stays dark violet to magenta here, so its text stays light. -->
     <color name="on_header_gradient">#FFFFFF</color>
-    <color name="on_header_gradient_secondary">#DCE3F5</color>
+    <color name="on_header_gradient_secondary">#DCD3F5</color>
 
-    <!-- Hero gradient is bright teal in night mode, so card text must be dark for contrast. -->
-    <color name="on_hero_card">#08231A</color>
-    <color name="on_hero_card_secondary">#123A2B</color>
+    <!-- Hero gradient stays deep violet to plum in night mode too, so card text stays light. -->
+    <color name="on_hero_card">#FFFFFF</color>
+    <color name="on_hero_card_secondary">#E3D8FF</color>
 
 </resources>

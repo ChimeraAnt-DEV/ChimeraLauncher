@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Deprecated alias: kept so existing layouts keep working. Points at the shared card
-     tokens (@drawable/chimera_card); do not add new references, use Widget.Chimera.Card. -->
+<!--
+    The one card surface. Every card in the launcher (hero, quick actions, settings rows,
+    list items) points here via @style/Widget.Chimera.Card, so changes to radius or border
+    are made once. Do not hand-roll another rounded rect.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <corners android:radius="@dimen/chimera_card_radius" />

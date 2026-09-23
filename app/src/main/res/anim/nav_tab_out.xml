@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Fade-through, outgoing half. Slightly shorter than the incoming animation so the two
+    overlap and the result reads as one motion rather than a blink.
+-->
 <set xmlns:android="http://schemas.android.com/apk/res/android"
-    android:duration="150"
+    android:duration="160"
     android:interpolator="@android:anim/accelerate_interpolator">
     <alpha
         android:fromAlpha="1.0"
         android:toAlpha="0.0" />
+    <scale
+        android:fromXScale="1.0"
+        android:toXScale="0.94"
+        android:fromYScale="1.0"
+        android:toYScale="0.94"
+        android:pivotX="50%"
+        android:pivotY="50%" />
 </set>

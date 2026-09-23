@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Static fallback for the splash logo halo (accent-tinted at runtime). -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="oval">
     <gradient
         android:type="radial"
         android:gradientRadius="90dp"
-        android:startColor="#2000FF88"
-        android:centerColor="#1000CC66"
+        android:startColor="@color/brand_primary_13"
+        android:centerColor="@color/brand_primary_6"
         android:endColor="#00000000" />
     <size
         android:width="180dp"

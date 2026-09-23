@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shared layout tokens. Cards, the nav rail and content padding all read from here so a
+    single value change keeps every screen in step. Screens must not hardcode their own
+    corner radius or gutter — that is what made the app read as assembled rather than
+    designed.
+-->
+<resources>
+    <!-- Card geometry -->
+    <dimen name="chimera_card_radius">14dp</dimen>
+    <dimen name="chimera_card_radius_small">10dp</dimen>
+    <dimen name="chimera_card_border_width">1dp</dimen>
+    <dimen name="chimera_card_elevation">2dp</dimen>
+    <dimen name="chimera_card_elevation_glow">6dp</dimen>
+    <dimen name="chimera_card_padding">16dp</dimen>
+    <dimen name="chimera_card_padding_compact">12dp</dimen>
+
+    <!-- Screen rhythm -->
+    <dimen name="chimera_screen_padding">16dp</dimen>
+    <dimen name="chimera_card_gutter">8dp</dimen>
+
+    <!-- Navigation rail -->
+    <dimen name="chimera_rail_width">76dp</dimen>
+    <dimen name="chimera_rail_item_height">60dp</dimen>
+    <dimen name="chimera_rail_indicator_width">4dp</dimen>
+    <dimen name="chimera_rail_indicator_inset">10dp</dimen>
+</resources>

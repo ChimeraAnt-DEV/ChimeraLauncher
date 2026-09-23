@@ -960,14 +960,22 @@ public class SettingsActivity extends BaseActivity {
             navSignInBtn.setTextColor(Color.WHITE);
         }
         
-        int[] navTabIds = {R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_customize, R.id.nav_tab_settings};
-        for (int id : navTabIds) {
-            TextView navTab = findViewById(id);
-            if (navTab != null && id == R.id.nav_tab_settings && accent != 0) {
-                navTab.setTextColor(accent);
-                navTab.setTypeface(navTab.getTypeface(), android.graphics.Typeface.BOLD);
-                androidx.core.widget.TextViewCompat.setCompoundDrawableTintList(navTab, ColorStateList.valueOf(accent));
-            }
+        // The rail's own marker for "this is Settings": accent indicator + tinted icon/label.
+        // BaseActivity.setActiveNavTab already ran; this only re-applies a freshly chosen
+        // accent without waiting for an activity restart.
+        View settingsIndicator = findViewById(R.id.nav_indicator_settings);
+        if (settingsIndicator != null && accent != 0) {
+            settingsIndicator.setBackgroundColor(accent);
+            settingsIndicator.setVisibility(View.VISIBLE);
+        }
+        ImageView settingsIcon = findViewById(R.id.nav_tab_settings);
+        if (settingsIcon != null && accent != 0) {
+            settingsIcon.setImageTintList(ColorStateList.valueOf(accent));
+        }
+        TextView settingsLabel = findViewById(R.id.nav_label_settings);
+        if (settingsLabel != null && accent != 0) {
+            settingsLabel.setTextColor(accent);
+            settingsLabel.setTypeface(settingsLabel.getTypeface(), android.graphics.Typeface.BOLD);
         }
     }
 
@@ -1365,7 +1373,7 @@ public class SettingsActivity extends BaseActivity {
 
     private void setupNavBar() {
         setActiveNavTab(R.id.nav_tab_settings);
-        findViewById(R.id.nav_tab_settings).setOnClickListener(v -> {});
+        findViewById(R.id.nav_item_settings).setOnClickListener(v -> {});
     }
 
     private String formatBytes(long bytes) {

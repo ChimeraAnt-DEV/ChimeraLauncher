@@ -813,7 +813,7 @@ public class InstancesActivity extends BaseActivity {
 
     private void setupNavBar() {
         setActiveNavTab(R.id.nav_tab_instances);
-        findViewById(R.id.nav_tab_instances).setOnClickListener(v -> {});
+        findViewById(R.id.nav_item_instances).setOnClickListener(v -> {});
     }
 
     @Override
@@ -1004,7 +1004,7 @@ public class InstancesActivity extends BaseActivity {
                 boolean is32Bit = "armeabi-v7a".equals(abi) || "x86".equals(abi);
                 vh.abiBadge.setText(holder.itemView.getContext().getString(
                         is32Bit ? R.string.abi_32_bit : R.string.abi_64_bit));
-                vh.abiBadge.setTextColor(is32Bit ? 0xFFF6A821 : 0xFF4AE0A0);
+                vh.abiBadge.setTextColor(is32Bit ? 0xFFF6A821 : 0xFF6236E8);
                 vh.abiBadge.setVisibility(View.VISIBLE);
             } else {
                 vh.abiBadge.setVisibility(View.GONE);

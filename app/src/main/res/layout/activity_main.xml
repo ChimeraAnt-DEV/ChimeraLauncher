@@ -247,7 +247,7 @@
                                 android:gravity="center"
                                 android:background="@drawable/bg_alpha_chip"
                                 android:fontFamily="@font/misans"
-                                android:textColor="#4AE0A0"
+                                android:textColor="@color/primary"
                                 android:textSize="9sp"
                                 android:textStyle="bold"
                                 android:visibility="gone" />
@@ -443,7 +443,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_plugin"
-                        app:tint="@color/accent_purple" />
+                        app:tint="@color/accent_violet" />
 
                     <TextView
                         android:layout_width="wrap_content"
@@ -474,7 +474,7 @@
                         android:layout_width="28dp"
                         android:layout_height="28dp"
                         android:src="@drawable/ic_content"
-                        app:tint="@color/accent_blue" />
+                        app:tint="@color/accent_sky" />
 
                     <TextView
                         android:layout_width="wrap_content"

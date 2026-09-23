@@ -52,7 +52,7 @@ import java.util.WeakHashMap;
 
 final class RuntimeConfigView {
     private static final WeakHashMap<ViewGroup, RuntimeConfigView> ACTIVE = new WeakHashMap<>();
-    private static final int ACCENT = 0xFF4AE0A0;
+    private static final int ACCENT = 0xFF6236E8;
     private static final int TEXT_PRIMARY = 0xFFF1F4F6;
     private static final int TEXT_SECONDARY = 0xFFA8B0B8;
     private static final int CARD = 0xFF202428;
@@ -1036,7 +1036,7 @@ final class RuntimeConfigView {
     private void tintSwitch(Switch control) {
         int[][] states = {{android.R.attr.state_checked}, {}};
         control.setThumbTintList(new ColorStateList(states, new int[]{ACCENT, 0xFFA8B0B8}));
-        control.setTrackTintList(new ColorStateList(states, new int[]{0x884AE0A0, 0xFF343A40}));
+        control.setTrackTintList(new ColorStateList(states, new int[]{0x886236E8, 0xFF343A40}));
     }
 
     private void setEnabledRecursive(View view, boolean enabled) {

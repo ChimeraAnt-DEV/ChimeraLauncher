@@ -16,17 +16,17 @@ import org.chimeramc.launcher.util.PersonalizationManager;
 final class ModMenuTheme {
 
     /** Fallback accent, matching the launcher's default primary. */
-    static final int DEFAULT_ACCENT = 0xFF4AE0A0;
+    static final int DEFAULT_ACCENT = 0xFF6236E8;
 
     private static final int[] GROUP_PALETTE = {
-            0xFF4AE0A0, // mint
-            0xFF5AA9F0, // sky
-            0xFFB98CF0, // violet
-            0xFFF0A85A, // amber
-            0xFFF07A9B, // rose
-            0xFF6FD9C8, // teal
-            0xFFE0C24A, // gold
-            0xFF8FD05A  // lime
+            0xFF6236E8, // brand violet
+            0xFF6D4AFF, // indigo
+            0xFFA82E9E, // magenta
+            0xFFB4690E, // amber
+            0xFFE070C0, // pink
+            0xFF4A7CFF, // sky
+            0xFF8E2E82, // plum
+            0xFF3F2B8C  // deep violet
     };
 
     private final int accent;

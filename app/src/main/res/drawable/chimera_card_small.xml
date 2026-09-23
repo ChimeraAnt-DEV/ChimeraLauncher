@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Deprecated alias: kept so existing layouts keep working. Points at the shared card
-     tokens (@drawable/chimera_card); do not add new references, use Widget.Chimera.Card. -->
+<!--
+    The one card surface, sized for the smaller inline chips/rows. Same fill and border as
+    @drawable/chimera_card, only a tighter radius; keep both in step via the shared tokens.
+-->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <corners android:radius="@dimen/chimera_card_radius" />
+    <corners android:radius="@dimen/chimera_card_radius_small" />
     <solid android:color="@color/surface" />
     <stroke
         android:width="@dimen/chimera_card_border_width"
