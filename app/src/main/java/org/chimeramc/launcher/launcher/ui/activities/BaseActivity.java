@@ -19,10 +19,10 @@ import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import androidx.core.widget.TextViewCompat;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -129,10 +129,8 @@ public class BaseActivity extends AppCompatActivity {
             return;
         }
 
-        // The rail sits to the START of the content, so the wrapper is horizontal and the
-        // content takes the remaining width.
         LinearLayout wrapper = new LinearLayout(this);
-        wrapper.setOrientation(LinearLayout.HORIZONTAL);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
         wrapper.setLayoutParams(new ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -142,12 +140,12 @@ public class BaseActivity extends AppCompatActivity {
         wrapper.addView(navBar);
 
         LinearLayout.LayoutParams contentParams = new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.MATCH_PARENT, 1f);
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f);
         contentView.setLayoutParams(contentParams);
         wrapper.addView(contentView);
 
         contentView.setAlpha(0f);
-        contentView.setTranslationX(8f * getResources().getDisplayMetrics().density);
+        contentView.setTranslationY(8f * getResources().getDisplayMetrics().density);
 
         super.setContentView(wrapper);
         navBarInjected = true;
@@ -157,7 +155,7 @@ public class BaseActivity extends AppCompatActivity {
 
         contentView.post(() -> {
             DynamicAnim.springAlphaTo(contentView, 1f).start();
-            DynamicAnim.springTranslationXTo(contentView, 0f).start();
+            DynamicAnim.springTranslationYTo(contentView, 0f).start();
         });
     }
 
@@ -211,50 +209,28 @@ public class BaseActivity extends AppCompatActivity {
         return super.dispatchKeyEvent(event);
     }
 
-    /** Rail entries, in declaration order. Order matches LauncherTab and nav_bar.xml. */
+    /** Top-bar tabs, in declaration order. Order matches LauncherTab and nav_bar.xml. */
     private static final int[] NAV_TAB_IDS = {
             R.id.nav_tab_launch, R.id.nav_tab_instances, R.id.nav_tab_installations,
             R.id.nav_tab_mods, R.id.nav_tab_customize, R.id.nav_tab_settings
     };
 
-    /** Parallel to {@link #NAV_TAB_IDS}: the tappable row for each tab. */
-    private static final int[] NAV_ITEM_IDS = {
-            R.id.nav_item_launch, R.id.nav_item_instances, R.id.nav_item_installations,
-            R.id.nav_item_mods, R.id.nav_item_customize, R.id.nav_item_settings
-    };
-
-    /** Parallel to {@link #NAV_TAB_IDS}: the label beside each icon. */
-    private static final int[] NAV_LABEL_IDS = {
-            R.id.nav_label_launch, R.id.nav_label_instances, R.id.nav_label_installations,
-            R.id.nav_label_mods, R.id.nav_label_customize, R.id.nav_label_settings
-    };
-
-    /** Parallel to {@link #NAV_TAB_IDS}: the accent indicator pinned to the rail edge. */
-    private static final int[] NAV_INDICATOR_IDS = {
-            R.id.nav_indicator_launch, R.id.nav_indicator_instances, R.id.nav_indicator_installations,
-            R.id.nav_indicator_mods, R.id.nav_indicator_customize, R.id.nav_indicator_settings
-    };
-
     private void setupBaseNavBar() {
-        int inactive = getResources().getColor(R.color.text_secondary, getTheme());
+        PersonalizationManager pm = new PersonalizationManager(this);
 
-        for (int i = 0; i < NAV_TAB_IDS.length; i++) {
-            ImageView icon = findViewById(NAV_TAB_IDS[i]);
-            TextView label = findViewById(NAV_LABEL_IDS[i]);
-            View item = findViewById(NAV_ITEM_IDS[i]);
-            if (icon != null) {
-                icon.setImageTintList(ColorStateList.valueOf(inactive));
-            }
-            if (label != null) {
-                label.setTextColor(inactive);
-                label.setTypeface(label.getTypeface(), android.graphics.Typeface.NORMAL);
-            }
-            // The whole row is the touch target: an icon-only 22dp hit box would be too
-            // small, and the label must not be a dead zone beside it.
-            DynamicAnim.applyPressScale(item != null ? item : icon);
+        // Each tab is a single TextView carrying its own icon via drawableStart, so tinting
+        // the compound drawable is what colours the icon.
+        for (int id : NAV_TAB_IDS) {
+            TextView tab = findViewById(id);
+            if (tab == null) continue;
+            int color = getResources().getColor(R.color.text_secondary, getTheme());
+            tab.setTextColor(color);
+            tab.setTypeface(tab.getTypeface(), android.graphics.Typeface.NORMAL);
+            TextViewCompat.setCompoundDrawableTintList(tab, ColorStateList.valueOf(color));
+            DynamicAnim.applyPressScale(tab);
         }
 
-        if (new PersonalizationManager(this).hasBackgroundImage()) {
+        if (pm.hasBackgroundImage()) {
             View navRoot = findViewById(R.id.nav_bar_root);
             if (navRoot != null) {
                 boolean isDark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
@@ -302,34 +278,34 @@ public class BaseActivity extends AppCompatActivity {
         }
 
         // Click the whole row, not the 22dp icon, so the label is part of the hit target.
-        findViewById(R.id.nav_item_launch).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_launch).setOnClickListener(v -> {
             if (!(this instanceof MainActivity)) {
                 Intent intent = new Intent(this, MainActivity.class);
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
                 switchNavTab(intent);
             }
         });
-        findViewById(R.id.nav_item_instances).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_instances).setOnClickListener(v -> {
             if (!(this instanceof InstancesActivity)) {
                 switchNavTab(new Intent(this, InstancesActivity.class));
             }
         });
-        findViewById(R.id.nav_item_installations).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_installations).setOnClickListener(v -> {
             if (!(this instanceof InstallationsActivity)) {
                 switchNavTab(new Intent(this, InstallationsActivity.class));
             }
         });
-        findViewById(R.id.nav_item_mods).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_mods).setOnClickListener(v -> {
             if (!(this instanceof ModsFullscreenActivity)) {
                 switchNavTab(new Intent(this, ModsFullscreenActivity.class));
             }
         });
-        findViewById(R.id.nav_item_customize).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_customize).setOnClickListener(v -> {
             if (!(this instanceof CustomizeActivity)) {
                 switchNavTab(new Intent(this, CustomizeActivity.class));
             }
         });
-        findViewById(R.id.nav_item_settings).setOnClickListener(v -> {
+        findViewById(R.id.nav_tab_settings).setOnClickListener(v -> {
             if (!(this instanceof SettingsActivity)) {
                 switchNavTab(new Intent(this, SettingsActivity.class));
             }
@@ -459,30 +435,17 @@ public class BaseActivity extends AppCompatActivity {
         int accent = pm.getAccentColor();
         int accentColor = accent != 0
                 ? accent
-                : getResources().getColor(R.color.primary, getTheme());
+                : getResources().getColor(R.color.on_surface, getTheme());
         int inactive = getResources().getColor(R.color.text_secondary, getTheme());
 
-        for (int i = 0; i < NAV_TAB_IDS.length; i++) {
-            boolean active = NAV_TAB_IDS[i] == activeTabId;
-            int color = active ? accentColor : inactive;
-
-            ImageView icon = findViewById(NAV_TAB_IDS[i]);
-            if (icon != null) {
-                icon.setImageTintList(ColorStateList.valueOf(color));
-            }
-            TextView label = findViewById(NAV_LABEL_IDS[i]);
-            if (label != null) {
-                label.setTextColor(color);
-                label.setTypeface(label.getTypeface(),
-                        active ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
-            }
-            // The indicator is the rail's own "you are here" marker; the old top bar only
-            // had text weight to carry that.
-            View indicator = findViewById(NAV_INDICATOR_IDS[i]);
-            if (indicator != null) {
-                indicator.setBackgroundColor(accentColor);
-                indicator.setVisibility(active ? View.VISIBLE : View.INVISIBLE);
-            }
+        for (int id : NAV_TAB_IDS) {
+            TextView tab = findViewById(id);
+            if (tab == null) continue;
+            int color = id == activeTabId ? accentColor : inactive;
+            tab.setTextColor(color);
+            tab.setTypeface(tab.getTypeface(), id == activeTabId
+                    ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+            TextViewCompat.setCompoundDrawableTintList(tab, ColorStateList.valueOf(color));
         }
     }
 
