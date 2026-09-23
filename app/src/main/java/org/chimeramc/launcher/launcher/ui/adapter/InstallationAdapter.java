@@ -10,7 +10,7 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.chimeramc.launcher.R;
-import org.chimeramc.launcher.core.monster.MonsterMcpeParser.MonsterVersion;
+import org.chimeramc.launcher.core.installer.BedrockSource.Version;
 import org.chimeramc.launcher.ui.animation.DynamicAnim;
 
 import java.util.ArrayList;
@@ -25,7 +25,7 @@ import java.util.List;
 public class InstallationAdapter extends RecyclerView.Adapter<InstallationAdapter.VersionHolder> {
 
     public interface OnDownloadListener {
-        void onDownload(MonsterVersion version);
+        void onDownload(Version version);
     }
 
     /** What a row is doing right now. */
@@ -36,7 +36,7 @@ public class InstallationAdapter extends RecyclerView.Adapter<InstallationAdapte
         FAILED
     }
 
-    private final List<MonsterVersion> versions = new ArrayList<>();
+    private final List<Version> versions = new ArrayList<>();
     private final List<State> states = new ArrayList<>();
     private final List<Integer> progress = new ArrayList<>();
     private final List<String> errors = new ArrayList<>();
@@ -47,14 +47,14 @@ public class InstallationAdapter extends RecyclerView.Adapter<InstallationAdapte
         this.listener = listener;
     }
 
-    public void setVersions(List<MonsterVersion> newVersions) {
+    public void setVersions(List<Version> newVersions) {
         versions.clear();
         states.clear();
         progress.clear();
         errors.clear();
         installed.clear();
         if (newVersions != null) {
-            for (MonsterVersion version : newVersions) {
+            for (Version version : newVersions) {
                 versions.add(version);
                 states.add(State.IDLE);
                 progress.add(0);
@@ -123,7 +123,7 @@ public class InstallationAdapter extends RecyclerView.Adapter<InstallationAdapte
 
     @Override
     public void onBindViewHolder(@NonNull VersionHolder holder, int position) {
-        MonsterVersion version = versions.get(position);
+        Version version = versions.get(position);
         State state = states.get(position);
         boolean isInstalled = installed.get(position);
 
@@ -148,7 +148,7 @@ public class InstallationAdapter extends RecyclerView.Adapter<InstallationAdapte
         DynamicAnim.applyPressScale(holder.action);
     }
 
-    private String statusText(VersionHolder holder, MonsterVersion version, State state,
+    private String statusText(VersionHolder holder, Version version, State state,
                               int position, boolean isInstalled) {
         switch (state) {
             case DOWNLOADING:

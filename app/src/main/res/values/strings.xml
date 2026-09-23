@@ -1377,7 +1377,7 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="installations_title">Installations</string>
     <string name="installations_subtitle">Download a Minecraft Bedrock version and install it as its own instance</string>
     <string name="installations_refresh">Refresh</string>
-    <string name="installations_source_warning">Packages are downloaded from monster-mcpe.com, a third-party mirror — not from Mojang or Google Play. Verify what you install and keep your own backups.</string>
+    <string name="installations_source_warning">Packages are downloaded from %1$s, a third-party mirror — not from Mojang or Google Play. Verify what you install and keep your own backups.</string>
     <string name="installations_release_tag">Release</string>
     <string name="installations_installed_tag">Installed</string>
     <string name="installations_download">Download</string>
@@ -1409,6 +1409,6 @@ Migration must complete before Chimera Launcher can continue.</string>
     <string name="installations_empty_message">The download page did not list any Minecraft Bedrock versions. Check your connection and refresh.</string>
     <string name="installations_error_title">Could not load versions</string>
     <string name="installations_unknown_error">Unknown error</string>
-    <string name="installations_challenge_hint">Monster MCPE is checking that this is a real browser. Complete the check above; the list loads automatically once it clears.</string>
+    <string name="installations_challenge_hint">The download source is checking that this is a real browser. Complete the check above; the list loads automatically once it clears.</string>
     <string name="installations_challenge_cancelled">The browser check was not completed. Press Refresh to try again.</string>
 </resources>
