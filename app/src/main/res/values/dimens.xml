@@ -21,7 +21,7 @@
 
     <!-- Navigation rail -->
     <dimen name="chimera_rail_width">76dp</dimen>
-    <dimen name="chimera_rail_item_height">60dp</dimen>
+    <dimen name="chimera_rail_item_height">40dp</dimen>
     <dimen name="chimera_rail_indicator_width">4dp</dimen>
     <dimen name="chimera_rail_indicator_inset">10dp</dimen>
 </resources>
