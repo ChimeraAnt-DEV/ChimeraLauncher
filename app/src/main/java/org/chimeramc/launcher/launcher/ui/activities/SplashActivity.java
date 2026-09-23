@@ -152,6 +152,8 @@ public class SplashActivity extends BaseActivity {
     private void applySplashTheme() {
         int accent = resolveAccentColor();
         binding.tvAppName.setTextColor(accent);
+        // The ant is drawn as a white vector so it can follow the user's accent.
+        binding.imgLeaf.setImageTintList(ColorStateList.valueOf(accent));
         binding.logoGlow.setBackground(createRadialGlow(accent));
         binding.orbitRing.setBackground(createOrbitRing(accent));
         binding.orbitDot.setBackground(createOrbitDot(accent));

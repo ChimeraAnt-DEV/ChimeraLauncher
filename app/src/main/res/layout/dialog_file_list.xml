@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:paddingTop="16dp"
-    android:background="@drawable/bg_rounded_card">
+    style="@style/Widget.Chimera.Card">
 
     <TextView
         android:id="@+id/dialog_title"

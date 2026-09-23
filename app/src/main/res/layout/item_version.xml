@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="52dp"
-        android:background="@drawable/bg_third_level_item"
+        style="@style/Widget.Chimera.Card.Compact"
         android:paddingStart="12dp"
         android:paddingEnd="8dp"
         android:paddingTop="8dp"

@@ -20,4 +20,89 @@
         <item name="android:windowEnterAnimation">@anim/popup_in</item>
         <item name="android:windowExitAnimation">@anim/popup_out</item>
     </style>
+
+    <!--
+        Root of the Chimera widget style namespace. The dotted names below infer their
+        parents from it, so it must exist even though it carries no attributes itself.
+    -->
+    <style name="Widget.Chimera" parent="" />
+
+    <!--
+        The single card style. Every card surface uses one of these three variants so the
+        radius, border and elevation cannot drift screen to screen.
+
+        Widget.Chimera.Card.<X> is the shared base; the concrete styles differ only in the
+        view they must attach to (CardView vs MaterialCardView vs a plain container).
+        Use the varianted style that matches the view class, not a hand-rolled background.
+    -->
+    <style name="Widget.Chimera.Card" parent="">
+        <item name="android:background">@drawable/chimera_card</item>
+        <item name="android:elevation">@dimen/chimera_card_elevation</item>
+        <item name="android:padding">@dimen/chimera_card_padding</item>
+    </style>
+
+    <style name="Widget.Chimera.Card.Compact">
+        <item name="android:background">@drawable/chimera_card_small</item>
+        <item name="android:padding">@dimen/chimera_card_padding_compact</item>
+    </style>
+
+    <!-- For androidx.cardview.widget.CardView callers: radius/fill/stroke live on the card. -->
+    <style name="Widget.Chimera.CardView" parent="CardView">
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="cardCornerRadius">@dimen/chimera_card_radius</item>
+        <item name="cardElevation">@dimen/chimera_card_elevation</item>
+        <item name="cardUseCompatPadding">false</item>
+        <item name="android:padding">@dimen/chimera_card_padding</item>
+    </style>
+
+    <!-- For MaterialCardView callers: same token set, Material attributes. -->
+    <style name="Widget.Chimera.MaterialCardView" parent="Widget.MaterialComponents.CardView">
+        <item name="cardBackgroundColor">@color/surface</item>
+        <item name="cardCornerRadius">@dimen/chimera_card_radius</item>
+        <item name="cardElevation">@dimen/chimera_card_elevation</item>
+        <item name="strokeColor">@color/card_border</item>
+        <item name="strokeWidth">@dimen/chimera_card_border_width</item>
+        <item name="cardUseCompatPadding">false</item>
+        <item name="android:padding">@dimen/chimera_card_padding</item>
+    </style>
+
+    <!--
+        Navigation rail. One vertical rail replaces the old horizontal seven-item top bar;
+        the silhouette change is the point. The selected item is marked by a 4dp accent bar
+        plus a bold/tinted label rather than the old text-only top bar.
+    -->
+    <style name="Widget.Chimera.NavRail">
+        <item name="android:layout_width">@dimen/chimera_rail_width</item>
+        <item name="android:layout_height">match_parent</item>
+        <item name="android:background">@color/surface</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+    </style>
+
+    <style name="Widget.Chimera.NavRail.Item">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/chimera_rail_item_height</item>
+        <item name="android:paddingTop">6dp</item>
+        <item name="android:paddingBottom">6dp</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+    </style>
+
+    <style name="Widget.Chimera.NavRail.Item.Icon">
+        <item name="android:layout_width">22dp</item>
+        <item name="android:layout_height">22dp</item>
+    </style>
+
+    <style name="Widget.Chimera.NavRail.Item.Label">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">4dp</item>
+        <item name="android:fontFamily">@font/misans</item>
+        <item name="android:textColor">@color/text_secondary</item>
+        <item name="android:textSize">10sp</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+    </style>
 </resources>

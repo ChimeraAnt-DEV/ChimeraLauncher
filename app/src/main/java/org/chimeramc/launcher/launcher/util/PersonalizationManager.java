@@ -912,12 +912,17 @@ public class PersonalizationManager {
         return dp * context.getResources().getDisplayMetrics().density;
     }
 
+    /**
+     * Default accent choices. The first entry is the brand violet and is what
+     * {@link #getAccentColor()} falls back to, so the out-of-the-box accent is the Chimera
+     * brand rather than an arbitrary preset.
+     */
     public static final int[] PRESET_COLORS = {
-            0xFF26A69A, 0xFF42A5F5, 0xFF5C6BC0,
-            0xFFAB47BC, 0xFFEC407A, 0xFFEF5350,
-            0xFFFF7043, 0xFFFFA726, 0xFFFFCA28,
-            0xFF66BB6A, 0xFF26C6DA, 0xFF29B6F6,
-            0xFF7E57C2, 0xFFE91E63, 0xFFF44336
+            0xFF6236E8, 0xFF6D4AFF, 0xFFA82E9E,
+            0xFFB4690E, 0xFF8E2E82, 0xFF4A7CFF,
+            0xFF7C4DFF, 0xFF5C6BC0, 0xFFAB47BC,
+            0xFFEC407A, 0xFFEF5350, 0xFFFF7043,
+            0xFFFFA726, 0xFF26C6DA, 0xFF66BB6A
     };
 
     public static final int[] MORE_COLORS = {
@@ -933,6 +938,6 @@ public class PersonalizationManager {
             0xFF2E7D32, 0xFF1B5E20, 0xFF33691E,
             0xFF827717, 0xFF9E9E9E, 0xFF757575,
             0xFF616161, 0xFF455A64, 0xFF37474F,
-            0xFF4AE0A0, 0xFFCDDC39, 0xFF8BC34A
+            0xFFA88CFF, 0xFFCDDC39, 0xFF8BC34A
     };
 }

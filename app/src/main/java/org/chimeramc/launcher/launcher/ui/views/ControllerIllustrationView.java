@@ -353,7 +353,7 @@ public class ControllerIllustrationView extends View {
         Float strength = glow.get(r.id);
         float g = strength == null ? 0f : strength;
         if (g > 0.05f) {
-            glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF4AE0A0);
+            glowPaint.setColor(accentColor != -1 ? accentColor : 0xFF6236E8);
             glowPaint.setAlpha((int) (150 * g));
             drawShape(canvas, r, px, py, pr * (1f + 0.3f * g), true);
         }
