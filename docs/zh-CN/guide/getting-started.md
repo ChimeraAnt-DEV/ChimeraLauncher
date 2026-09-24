@@ -13,7 +13,7 @@ Chimera Client 不是 Minecraft 授权替代品。它依赖官方游戏运行，
 
 ## 安装 Chimera Client
 
-1. 打开 [Releases 页面](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)。
+1. 打开 [Releases 页面](https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases)。
 2. 下载最新 APK。
 3. 允许浏览器或文件管理器安装未知来源应用。
 4. 安装 APK 并打开 Chimera Client。

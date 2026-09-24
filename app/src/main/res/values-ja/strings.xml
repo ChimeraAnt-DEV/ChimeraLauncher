@@ -25,7 +25,7 @@
     <string name="about_title">☕ アプリについて</string>
     <string name="copyright">©2024–2026 ChimeraMC. All rights reserved.</string>
     <string name="font_license">このアプリは Misans フォントを使用しています。</string>
-    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraClient</string>
+    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraLauncher</string>
     <string name="quick_actions_title">クイックアクション</string>
     <string name="content_mgmt_section_title">コンテンツ管理</string>
     <string name="misc_section_title">その他</string>

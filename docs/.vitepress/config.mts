@@ -1,6 +1,6 @@
 import { defineConfig, type DefaultTheme } from "vitepress";
 
-const repo = "https://github.com/ChimeraAnt-DEV/ChimeraClient";
+const repo = "https://github.com/ChimeraAnt-DEV/ChimeraLauncher";
 const releases = `${repo}/releases`;
 const base = process.env.VITEPRESS_BASE ?? "/";
 

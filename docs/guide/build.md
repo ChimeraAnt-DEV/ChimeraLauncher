@@ -13,7 +13,7 @@ This page is for contributors who want to build ChimeraClient itself. Native mod
 ## Open the Project
 
 ```bash
-git clone https://github.com/ChimeraAnt-DEV/ChimeraClient.git
+git clone https://github.com/ChimeraAnt-DEV/ChimeraLauncher.git
 cd ChimeraClient
 ```
 

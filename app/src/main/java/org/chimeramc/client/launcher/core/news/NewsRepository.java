@@ -33,7 +33,7 @@ public final class NewsRepository {
         void onResult(NewsFeed feed, Throwable error);
     }
 
-    public static final String REMOTE_URL = "https://raw.githubusercontent.com/ChimeraAnt-DEV/ChimeraClient/main/resources/launcher/news.json";
+    public static final String REMOTE_URL = "https://raw.githubusercontent.com/ChimeraAnt-DEV/ChimeraLauncher/main/resources/launcher/news.json";
     private static final String ASSET_PATH = "launcher/news.json";
     private static final String CACHE_FILE = "launcher_news.json";
     private static final String PREFS = "launcher_news_repository";

@@ -20,7 +20,7 @@ hero:
       link: /zh-CN/guide/developer
     - theme: alt
       text: 下载
-      link: https://github.com/ChimeraAnt-DEV/ChimeraClient/releases/latest
+      link: https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases/latest
 
 features:
   - title: 官方游戏优先

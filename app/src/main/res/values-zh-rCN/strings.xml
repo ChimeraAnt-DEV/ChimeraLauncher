@@ -445,7 +445,7 @@
     <string name="disable_launcher_login_and_continue">关闭</string>
     <string name="sign_in">登录</string>
     <string name="ms_account_subtitle_format">用户ID：%1$s • 更新：%2$s</string>
-    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraClient</string>
+    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraLauncher</string>
 
     <string name="label_current_account">当前账号</string>
     <string name="label_other_accounts">其他账号</string>

@@ -13,7 +13,7 @@ Chimera Client is not a replacement for owning Minecraft. It works with the offi
 
 ## Install Chimera Client
 
-1. Open the [Releases page](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases).
+1. Open the [Releases page](https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases).
 2. Download the latest APK.
 3. Allow installation from the browser or file manager you used to download the APK.
 4. Install the APK and open Chimera Client.

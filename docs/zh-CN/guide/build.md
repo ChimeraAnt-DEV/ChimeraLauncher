@@ -13,7 +13,7 @@
 ## 打开项目
 
 ```bash
-git clone https://github.com/ChimeraAnt-DEV/ChimeraClient.git
+git clone https://github.com/ChimeraAnt-DEV/ChimeraLauncher.git
 cd ChimeraClient
 ```
 
