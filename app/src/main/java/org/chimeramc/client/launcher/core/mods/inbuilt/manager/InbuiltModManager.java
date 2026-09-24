@@ -45,9 +45,29 @@ public class InbuiltModManager {
     private static final String KEY_AIM_SENSITIVITY = "aim_sensitivity";
     private static final String KEY_AIM_CROSSHAIR_STYLE = "aim_crosshair_style";
     private static final String KEY_AIM_CROSSHAIR_COLOR = "aim_crosshair_color";
+    private static final String KEY_ARMOR_HUD_SHOW_TARGET = "armor_hud_show_target";
+    private static final String KEY_ARMOR_HUD_SHOW_ENCHANTS = "armor_hud_show_enchants";
+    private static final String KEY_ARMOR_HUD_STACKED = "armor_hud_stacked";
+    private static final String KEY_ARMOR_HUD_REFRESH_MS = "armor_hud_refresh_ms";
+    private static final String KEY_CRYSTAL_MIN_SELF_HP = "crystal_min_self_hp";
+    private static final String KEY_CRYSTAL_MAX_RANGE = "crystal_max_range";
+    private static final String KEY_CRYSTAL_PLACEMENT_DELAY_MS = "crystal_placement_delay_ms";
+    private static final String KEY_CRYSTAL_MANUAL_ASSIST = "crystal_manual_assist";
+    private static final String KEY_CRYSTAL_KEYBIND = "crystal_keybind";
+    private static final String KEY_HITREG_SENSITIVITY = "hitreg_sensitivity";
+    private static final String KEY_HITREG_SMOOTHING = "hitreg_smoothing";
+    private static final String KEY_HITREG_PREDICTION = "hitreg_prediction";
+    private static final String KEY_HITREG_HAPTIC = "hitreg_haptic";
     private static final int DEFAULT_AIM_SMOOTHING = 40;
     private static final int DEFAULT_AIM_SENSITIVITY = 100;
     private static final int DEFAULT_AIM_CROSSHAIR_COLOR = 0xFF3DDC84;
+    private static final int DEFAULT_ARMOR_HUD_REFRESH_MS = 100;
+    private static final int DEFAULT_CRYSTAL_MIN_SELF_HP = 14;
+    private static final int DEFAULT_CRYSTAL_MAX_RANGE = 4;
+    private static final int DEFAULT_CRYSTAL_PLACEMENT_DELAY_MS = 50;
+    private static final int DEFAULT_HITREG_SENSITIVITY = 100;
+    private static final int DEFAULT_HITREG_SMOOTHING = 25;
+    private static final int DEFAULT_HITREG_PREDICTION = 35;
     private static final int DEFAULT_OVERLAY_BUTTON_SIZE = 56;
     private static final int DEFAULT_OVERLAY_OPACITY = 100;
     private static final int MIN_MOD_MENU_OPACITY = 70;
@@ -401,6 +421,111 @@ public class InbuiltModManager {
 
     public void setAimCrosshairColor(int color) {
         prefs.edit().putInt(KEY_AIM_CROSSHAIR_COLOR, color).apply();
+    }
+
+    public boolean isArmorHudShowTarget() {
+        return prefs.getBoolean(KEY_ARMOR_HUD_SHOW_TARGET, false);
+    }
+
+    public void setArmorHudShowTarget(boolean show) {
+        prefs.edit().putBoolean(KEY_ARMOR_HUD_SHOW_TARGET, show).apply();
+    }
+
+    public boolean isArmorHudShowEnchants() {
+        return prefs.getBoolean(KEY_ARMOR_HUD_SHOW_ENCHANTS, false);
+    }
+
+    public void setArmorHudShowEnchants(boolean show) {
+        prefs.edit().putBoolean(KEY_ARMOR_HUD_SHOW_ENCHANTS, show).apply();
+    }
+
+    public boolean isArmorHudStacked() {
+        return prefs.getBoolean(KEY_ARMOR_HUD_STACKED, true);
+    }
+
+    public void setArmorHudStacked(boolean stacked) {
+        prefs.edit().putBoolean(KEY_ARMOR_HUD_STACKED, stacked).apply();
+    }
+
+    public int getArmorHudRefreshMs() {
+        return prefs.getInt(KEY_ARMOR_HUD_REFRESH_MS, DEFAULT_ARMOR_HUD_REFRESH_MS);
+    }
+
+    public void setArmorHudRefreshMs(int ms) {
+        prefs.edit().putInt(KEY_ARMOR_HUD_REFRESH_MS, Math.max(50, Math.min(1000, ms))).apply();
+    }
+
+    public int getCrystalMinSelfHp() {
+        return prefs.getInt(KEY_CRYSTAL_MIN_SELF_HP, DEFAULT_CRYSTAL_MIN_SELF_HP);
+    }
+
+    public void setCrystalMinSelfHp(int hp) {
+        prefs.edit().putInt(KEY_CRYSTAL_MIN_SELF_HP, Math.max(1, Math.min(20, hp))).apply();
+    }
+
+    public int getCrystalMaxRange() {
+        return prefs.getInt(KEY_CRYSTAL_MAX_RANGE, DEFAULT_CRYSTAL_MAX_RANGE);
+    }
+
+    public void setCrystalMaxRange(int range) {
+        prefs.edit().putInt(KEY_CRYSTAL_MAX_RANGE, Math.max(1, Math.min(8, range))).apply();
+    }
+
+    public int getCrystalPlacementDelayMs() {
+        return prefs.getInt(KEY_CRYSTAL_PLACEMENT_DELAY_MS, DEFAULT_CRYSTAL_PLACEMENT_DELAY_MS);
+    }
+
+    public void setCrystalPlacementDelayMs(int ms) {
+        prefs.edit().putInt(KEY_CRYSTAL_PLACEMENT_DELAY_MS, Math.max(0, Math.min(1000, ms))).apply();
+    }
+
+    /** When true the module only marks the ideal spot; it never issues place/break itself. */
+    public boolean isCrystalManualAssist() {
+        return prefs.getBoolean(KEY_CRYSTAL_MANUAL_ASSIST, true);
+    }
+
+    public void setCrystalManualAssist(boolean manualAssist) {
+        prefs.edit().putBoolean(KEY_CRYSTAL_MANUAL_ASSIST, manualAssist).apply();
+    }
+
+    public int getCrystalKeybind() {
+        return prefs.getInt(KEY_CRYSTAL_KEYBIND, 0);
+    }
+
+    public void setCrystalKeybind(int keyCode) {
+        prefs.edit().putInt(KEY_CRYSTAL_KEYBIND, keyCode).apply();
+    }
+
+    public int getHitRegSensitivity() {
+        return prefs.getInt(KEY_HITREG_SENSITIVITY, DEFAULT_HITREG_SENSITIVITY);
+    }
+
+    public void setHitRegSensitivity(int percent) {
+        prefs.edit().putInt(KEY_HITREG_SENSITIVITY, Math.max(10, Math.min(300, percent))).apply();
+    }
+
+    public int getHitRegSmoothing() {
+        return prefs.getInt(KEY_HITREG_SMOOTHING, DEFAULT_HITREG_SMOOTHING);
+    }
+
+    public void setHitRegSmoothing(int percent) {
+        prefs.edit().putInt(KEY_HITREG_SMOOTHING, Math.max(0, Math.min(95, percent))).apply();
+    }
+
+    public int getHitRegPrediction() {
+        return prefs.getInt(KEY_HITREG_PREDICTION, DEFAULT_HITREG_PREDICTION);
+    }
+
+    public void setHitRegPrediction(int percent) {
+        prefs.edit().putInt(KEY_HITREG_PREDICTION, Math.max(0, Math.min(100, percent))).apply();
+    }
+
+    public boolean isHitRegHapticEnabled() {
+        return prefs.getBoolean(KEY_HITREG_HAPTIC, true);
+    }
+
+    public void setHitRegHapticEnabled(boolean enabled) {
+        prefs.edit().putBoolean(KEY_HITREG_HAPTIC, enabled).apply();
     }
 
 }

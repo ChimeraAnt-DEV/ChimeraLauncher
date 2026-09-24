@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.InputDevice;
 import android.view.MotionEvent;
 
+import org.chimeramc.client.core.mods.inbuilt.overlay.HitRegistrationMod;
 import org.chimeramc.client.settings.FeatureSettings;
 
 /**
@@ -443,6 +444,11 @@ public final class ControllerInputProcessor {
             return out;
         }
         response.adjustStickPair(left, x, y, magnitude, out);
+        // The right stick is the look stick, so hit-registration shaping applies there and not
+        // to movement. Reuses the caller's buffer so the hot path still allocates nothing.
+        if (!left && HitRegistrationMod.isActive()) {
+            HitRegistrationMod.shapeLookDelta(out[0], out[1], out);
+        }
         return out;
     }
 
