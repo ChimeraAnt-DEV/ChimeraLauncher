@@ -3,27 +3,27 @@
 </p>
 
 
-# Chimera Launcher
+# Chimera Client
 
 
 **A lightweight Android launcher for Minecraft: Bedrock Edition**
 
-[![GitHub Release](https://img.shields.io/github/v/release/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=blue)](https://github.com/LuauScripts-usr/Chimera-Launcherr/releases)
-[![License: Apache 2.0](https://img.shields.io/github/license/LuauScripts-usr/Chimera-Launcherr)](https://github.com/LuauScripts-usr/Chimera-Launcherr/blob/main/LICENSE)
-[![Issues](https://img.shields.io/github/issues/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=red)](https://github.com/LuauScripts-usr/Chimera-Launcherr/issues)
-[![Stars](https://img.shields.io/github/stars/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=yellow)](https://github.com/LuauScripts-usr/Chimera-Launcherr)
-[![Downloads](https://img.shields.io/github/downloads/LuauScripts-usr/Chimera-Launcherr/total.svg)](https://github.com/LuauScripts-usr/Chimera-Launcherr/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=blue)](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)
+[![License: Apache 2.0](https://img.shields.io/github/license/ChimeraAnt-DEV/ChimeraClient)](https://github.com/ChimeraAnt-DEV/ChimeraClient/blob/main/LICENSE)
+[![Issues](https://img.shields.io/github/issues/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=red)](https://github.com/ChimeraAnt-DEV/ChimeraClient/issues)
+[![Stars](https://img.shields.io/github/stars/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=yellow)](https://github.com/ChimeraAnt-DEV/ChimeraClient)
+[![Downloads](https://img.shields.io/github/downloads/ChimeraAnt-DEV/ChimeraClient/total.svg)](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)
 [![Android](https://img.shields.io/badge/Android-9.0%2B-green?style=flat-square&logo=android)](https://www.android.com/)
 
 ---
 
 ## Introduction
 
-Chimera Launcher is a lightweight, open-source Android launcher specifically designed for legitimate players of Minecraft: Bedrock Edition (MCBE). It provides a flexible and user-friendly alternative to the standard Google Play installation, allowing you to manage multiple game versionsand extend functionality with external modules.
+Chimera Client is a lightweight, open-source Android launcher specifically designed for legitimate players of Minecraft: Bedrock Edition (MCBE). It provides a flexible and user-friendly alternative to the standard Google Play installation, allowing you to manage multiple game versionsand extend functionality with external modules.
 
-Chimera Launcher enables you to import your official Minecraft APK and run it directly without requiring system installation. The launcher supports loading external native modules to enhance gameplay, provides robust multi-version management with complete isolation between installations,and includes built-in tools for managing worlds, resource packs, skin packs, accounts, controllers,and launcher settings. Whether you're looking to organize different game versions, test modifications, or optimize your gaming experience, Chimera Launcher offers the flexibility you need. The repository also ships a full user guide(English and 简体中文, developer documentation, and Preloader API reference under `docs/`.
+Chimera Client enables you to import your official Minecraft APK and run it directly without requiring system installation. The launcher supports loading external native modules to enhance gameplay, provides robust multi-version management with complete isolation between installations,and includes built-in tools for managing worlds, resource packs, skin packs, accounts, controllers,and launcher settings. Whether you're looking to organize different game versions, test modifications, or optimize your gaming experience, Chimera Client offers the flexibility you need. The repository also ships a full user guide(English and 简体中文, developer documentation, and Preloader API reference under `docs/`.
 
-> **Project lineage:** This repository is a **fork of [LeviLauncher](https://github.com/LiteLDev/LeviLauncher)** (also known as LeviLaunchroid, the Android companion in the [LeviMC](https://levimc.org) open-source Bedrock modding ecosystem). It inherits the LeviLauncher Preloader/native-mod architecture and `.levipack` packaging,and continues development as Chimera Launcher with its own branding, features,and maintenance..
+> **Project lineage:** This repository is a **fork of [LeviLauncher](https://github.com/LiteLDev/LeviLauncher)** (also known as LeviLaunchroid, the Android companion in the [LeviMC](https://levimc.org) open-source Bedrock modding ecosystem). It inherits the LeviLauncher Preloader/native-mod architecture and `.levipack` packaging,and continues development as Chimera Client with its own branding, features,and maintenance..
 
 
 
@@ -49,13 +49,13 @@ Chimera Launcher enables you to import your official Minecraft APK and run it di
 
 ## System Requirements
 
-Before installing Chimera Launcher, ensure your device meets the following minimum specifications:
+Before installing Chimera Client, ensure your device meets the following minimum specifications:
 
 - **Operating System:** Android 9.0 (API 28) or higher
 - **Device Architecture:** 64-bit (arm64-v8a) devices. Most Minecraft versions ship both arm64-v8a and armeabi-v7a libraries and run normally; only a version whose APK ships 32-bit libraries exclusively is refused, since a 64-bit process cannot load them.
 - **RAM:** Minimum 1 GB available RAM (2 GB or more recommended)
 - **Storage:** At least 2 GB of available storage for Minecraft and game data
-- **License Requirement:** You must have Minecraft installed on you're device for Chimera Launcher to work
+- **License Requirement:** You must have Minecraft installed on you're device for Chimera Client to work
 
 > **Note:** For optimal performance,and stability, we recommend Android 9.0 or higher with at least 3 GB of available RAM and 5 GB of free storage.
 
@@ -65,24 +65,24 @@ Before installing Chimera Launcher, ensure your device meets the following minim
 
 ### Prerequisites
 
-Before proceeding with Chimera Launcher installation, ensure that you have the official Minecraft Bedrock Edition app installed on your device from Google Play. This is required for Chimera Launcher to function properly.
+Before proceeding with Chimera Client installation, ensure that you have the official Minecraft Bedrock Edition app installed on your device from Google Play. This is required for Chimera Client to function properly.
 
 ### Installation Steps
 
-1. Visit the [Releases Page](https://github.com/LuauScripts-usr/Chimera-Launcherr/releases)and download the latest Apk/Zip build (extract it)
+1. Visit the [Releases Page](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)and download the latest Apk/Zip build (extract it)
 2. Open your device Settingsand navigate to Security or Applications
 3. Enable"Unknown Sources" or "Allow installation from unknown sources" to permit APK installation
 4. Locate the downloaded APK file using your file manager,and tap to install
 5. Grant the necessary permissions when prompted during installation
-6. Once installed, open Chimera Launcher from your application drawer
+6. Once installed, open Chimera Client from your application drawer
 
-> **Important:** Chimera Launcher requires a legitimate, licensed copy of Minecraft Bedrock Edition. Do not use this launcherwith pirated or unauthorized versions of the game. Ensure your Minecraft license is validand properly linked to your Microsoft account..
+> **Important:** Chimera Client requires a legitimate, licensed copy of Minecraft Bedrock Edition. Do not use this launcherwith pirated or unauthorized versions of the game. Ensure your Minecraft license is validand properly linked to your Microsoft account..
 
 ---
 
 ## Development Setup
 
-If you want to build Chimera Launcher from source or contribute to development, follow these steps to set up your development environment:
+If you want to build Chimera Client from source or contribute to development, follow these steps to set up your development environment:
 
 ### Prerequisites
 
@@ -93,11 +93,11 @@ If you want to build Chimera Launcher from source or contribute to development, 
 
 ### Setup Instructions
 
-1. Clone the Chimera Launcher repository:
+1. Clone the Chimera Client repository:
 
 
    ```bash
-   git clone https://github.com/LuauScripts-usr/Chimera-Launcherr.git
+   git clone https://github.com/ChimeraAnt-DEV/ChimeraClient.git
    ```
 
 2. Open the project directory in Android Studio
@@ -131,7 +131,7 @@ To grab the APK from a green run:
 
 ## Contribution Guidelines
 
-We welcome contributions from the community to improve Chimera Launcher. To ensure a high-quality codebase,and smooth collaboration, please adhere to the following guidelines:
+We welcome contributions from the community to improve Chimera Client. To ensure a high-quality codebase,and smooth collaboration, please adhere to the following guidelines:
 
 ### Code Quality
 
@@ -161,27 +161,27 @@ Submit PRs with a detailed description of changes, including the problem solved 
 
 Follow our Code of Conduct to maintain a respectful,and inclusive environment. Be constructive in feedback, respect others' work,and communicate professionally with all contributors..
 
-**Before Submitting:** Run a full build cycle,and test on at least one device to minimize errors.. We review all contributions promptly,and appreciate your efforts to enhance Chimera Launcher..
+**Before Submitting:** Run a full build cycle,and test on at least one device to minimize errors.. We review all contributions promptly,and appreciate your efforts to enhance Chimera Client..
 
 ---
 
 ## Usage Guidelines
 
-Chimera Launcheris designed for legitimate players of Minecraft Bedrock Edition. Please respect the following guidelines,and terms of use:
+Chimera Clientis designed for legitimate players of Minecraft Bedrock Edition. Please respect the following guidelines,and terms of use:
 
 ### Permitted Uses
 
-- Modify Chimera Launcher for personal gameplay,and to test new features
-- Create educational content(videos, tutorials, blog posts) showcasing Chimera Launcher's capabilities
+- Modify Chimera Client for personal gameplay,and to test new features
+- Create educational content(videos, tutorials, blog posts) showcasing Chimera Client's capabilities
 - Fork the repository for learning purposes or to create derivative projects, provided you comply with the Apache License 2.0
 - Share your modified versions with others as long as you comply with the Apache License 2.0 terms
 
 ### Prohibited Uses
 
-- Do not claim Chimera Launcheras your own without crediting the Chimera Team,and its contributors
-- Do not use Chimera Launcherto violate Mojang or Microsoft's user agreements
+- Do not claim Chimera Clientas your own without crediting the Chimera Team,and its contributors
+- Do not use Chimera Clientto violate Mojang or Microsoft's user agreements
 
-> **Disclaimer:** The authors,and contributors of Chimera Launcher are not responsible for bans, damages, or issues arising from the use of this software. Use it at your own risk,and in accordance with Minecraft's terms of service..
+> **Disclaimer:** The authors,and contributors of Chimera Client are not responsible for bans, damages, or issues arising from the use of this software. Use it at your own risk,and in accordance with Minecraft's terms of service..
 
 For full legal details, see the LICENSE file in the repository..
 
@@ -189,15 +189,15 @@ For full legal details, see the LICENSE file in the repository..
 
 ## Acknowledgements
 
-Chimera Launcher owes its foundation to the **LeviMC / LeviLauncher community** — the Preloader architecture, `.levipack` tooling,and native-mod ecosystem this project builds on. It would not be possible without the contributions of many talented individuals,and organizations:
+Chimera Client owes its foundation to the **LeviMC / LeviLauncher community** — the Preloader architecture, `.levipack` tooling,and native-mod ecosystem this project builds on. It would not be possible without the contributions of many talented individuals,and organizations:
 
 ### Special Thanks To
 
-- **Chimera Team** – For maintaining the Chimera Launcher project,and providing infrastructure support
+- **Chimera Team** – For maintaining the Chimera Client project,and providing infrastructure support
 - **LeviMC Team** – For the original LeviLauncher(LeviLaunchroid, Preloader,input pipeline,and `.levipack` ecosystem that Chimera forks)
 - **Android Community** – For excellent documentation, libraries,and tools that made this launcher possible
 - **Open Source Community** – For all the libraries, frameworks,and tools that power this project
-- **Contributors** – A heartfelt thank you to all [contributors](https://github.com/LuauScripts-usr/Chimera-Launcherr/graphs/contributors) who have continuously improved,and maintained Chimera Launcher through their time,and expertise
+- **Contributors** – A heartfelt thank you to all [contributors](https://github.com/ChimeraAnt-DEV/ChimeraClient/graphs/contributors) who have continuously improved,and maintained Chimera Client through their time,and expertise
 
 ---
 
@@ -205,9 +205,9 @@ Chimera Launcher owes its foundation to the **LeviMC / LeviLauncher community** 
 
 **Author / Team:** Chimera Team
 
-**Project Repository:** [https://github.com/LuauScripts-usr/Chimera-Launcherr](https://github.com/LuauScripts-usr/Chimera-Launcherr)
+**Project Repository:** [https://github.com/ChimeraAnt-DEV/ChimeraClient](https://github.com/ChimeraAnt-DEV/ChimeraClient)
 
-**Report Issues:** [GitHub Issues Page](https://github.com/LuauScripts-usr/Chimera-Launcherr/issues)
+**Report Issues:** [GitHub Issues Page](https://github.com/ChimeraAnt-DEV/ChimeraClient/issues)
 
 **For support,and questions:** Please create an issue on the GitHub repository.
 
@@ -215,11 +215,11 @@ Chimera Launcher owes its foundation to the **LeviMC / LeviLauncher community** 
 
 <div align="center">
 
-[![GitHub Release](https://img.shields.io/github/v/release/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=blue)](https://github.com/LuauScripts-usr/Chimera-Launcherr/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=blue)](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](https://www.apache.org/licenses/LICENSE-2.0)
-[![Issues](https://img.shields.io/github/issues/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=red)](https://github.com/LuauScripts-usr/Chimera-Launcherr/issues)
-[![Stars](https://img.shields.io/github/stars/LuauScripts-usr/Chimera-Launcherr?style=flat-square&color=yellow)](https://github.com/LuauScripts-usr/Chimera-Launcherr)
-[![Downloads](https://img.shields.io/github/downloads/LuauScripts-usr/Chimera-Launcherr/total.svg)](https://github.com/LuauScripts-usr/Chimera-Launcherr/releases)
+[![Issues](https://img.shields.io/github/issues/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=red)](https://github.com/ChimeraAnt-DEV/ChimeraClient/issues)
+[![Stars](https://img.shields.io/github/stars/ChimeraAnt-DEV/ChimeraClient?style=flat-square&color=yellow)](https://github.com/ChimeraAnt-DEV/ChimeraClient)
+[![Downloads](https://img.shields.io/github/downloads/ChimeraAnt-DEV/ChimeraClient/total.svg)](https://github.com/ChimeraAnt-DEV/ChimeraClient/releases)
 [![Android](https://img.shields.io/badge/Android-9.0%2B-green?style=flat-square&logo=android)](https://www.android.com/)
 
 **Made with ❤️ by the Chimera Team Community**

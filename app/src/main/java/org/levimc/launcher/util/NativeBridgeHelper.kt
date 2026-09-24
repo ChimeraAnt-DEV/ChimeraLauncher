@@ -5,11 +5,11 @@ import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
 import org.json.JSONObject
-import org.chimeramc.launcher.core.minecraft.LauncherApplication
+import org.chimeramc.client.core.minecraft.LauncherApplication
 import androidx.core.content.edit
 import android.widget.Toast
 import android.view.Gravity
-import org.chimeramc.launcher.R
+import org.chimeramc.client.R
 
 object NativeBridgeHelper {
     @Volatile
@@ -126,7 +126,7 @@ object NativeBridgeHelper {
     @JvmStatic
     fun isGxCoreEnabled(): Boolean {
         return try {
-            org.chimeramc.launcher.settings.FeatureSettings.getInstance().isGxCoreEnabled()
+            org.chimeramc.client.settings.FeatureSettings.getInstance().isGxCoreEnabled()
         } catch (t: Throwable) {
             true
         }

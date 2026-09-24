@@ -1,4 +1,4 @@
-# F-Droid Build Instructions for Chimera Launcher
+# F-Droid Build Instructions for Chimera Client
 
 ## Prerequisites
 - Android SDK 35+
@@ -28,7 +28,7 @@ This build is fully de-Googled and contains no proprietary Google services.
 ## Microsoft OAuth Setup (Optional)
 To enable Microsoft login, users must:
 1. Register an Azure AD application at https://portal.azure.com
-2. Configure redirect URI: `msauth://org.chimeramc.launcher`
+2. Configure redirect URI: `msauth://org.chimeramc.client`
 3. Add client ID to app settings
 
 ## Java Edition Support

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.22)
 
-project(chimeralauncher_full_cpp_mod_example LANGUAGES CXX)
+project(chimeraclient_full_cpp_mod_example LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,7 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 get_filename_component(LL_REPO_ROOT "${CMAKE_CURRENT_LIST_DIR}/../.." ABSOLUTE)
 set(PRELOADER_ANDROID_ROOT
     "${LL_REPO_ROOT}/app/src/main/cpp/preloader"
-    CACHE PATH "Path to LiteLDev/preloader-android")
+    CACHE PATH "Path to ChimeraAnt-DEV/preloader-android")
 
 if(NOT EXISTS "${PRELOADER_ANDROID_ROOT}/include/pl/Config.hpp")
     message(FATAL_ERROR

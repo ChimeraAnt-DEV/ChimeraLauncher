@@ -97,13 +97,13 @@ jobs:
           data = {
               "news_id": item["id"],
               "title": "New Version Available",
-              "summary": "Please check https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases to download!",
+              "summary": "Please check https://github.com/ChimeraAnt-DEV/ChimeraClient/releases to download!",
               "published_at": item["publishedAt"],
               "url": item.get("url", ""),
           }
           request = {
               "message": {
-                  "topic": "chimeralauncher-news",
+                  "topic": "chimeraclient-news",
                   "data": data,
                   "android": {"priority": "high", "ttl": "86400s"},
               }

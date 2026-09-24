@@ -1,6 +1,6 @@
 # Build from Source
 
-This page is for contributors who want to build ChimeraLauncher itself. Native mod build notes live in [Native Mod Quick Start](/guide/developer).
+This page is for contributors who want to build ChimeraClient itself. Native mod build notes live in [Native Mod Quick Start](/guide/developer).
 
 ## Prerequisites
 
@@ -13,11 +13,11 @@ This page is for contributors who want to build ChimeraLauncher itself. Native m
 ## Open the Project
 
 ```bash
-git clone https://github.com/LiteLDev/ChimeraLauncher.git
-cd ChimeraLauncher
+git clone https://github.com/ChimeraAnt-DEV/ChimeraClient.git
+cd ChimeraClient
 ```
 
-Open the project directory in Android Studio and allow Gradle sync to finish. The project root is named `chimeralauncher` in Gradle settings, while the repository remains `ChimeraLauncher`.
+Open the project directory in Android Studio and allow Gradle sync to finish. The project root is named `chimeralauncher` in Gradle settings, while the repository remains `ChimeraClient`.
 
 ## Build and Run
 

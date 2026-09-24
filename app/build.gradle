@@ -34,10 +34,10 @@ static def getVersionCodeByTimestamp() {
 }
 
 android {
-    namespace 'org.chimeramc.launcher'
+    namespace 'org.chimeramc.client'
     compileSdkVersion 36
     defaultConfig {
-        applicationId "org.chimeramc.launcher"
+        applicationId "org.chimeramc.client"
         minSdkVersion 28
         targetSdkVersion 35
         versionCode getVersionCodeByTimestamp()
@@ -92,7 +92,7 @@ android {
             initWith release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            resValue "string", "app_name", "Chimera Launcher Beta"
+            resValue "string", "app_name", "Chimera Client Beta"
             buildConfigField "boolean", "IS_BETA", "true"
             matchingFallbacks = ["release"]
             ndk {

@@ -3,11 +3,11 @@ package org.levimc.launcher.core.minecraft
 import android.util.Log
 
 /**
- * Native companion for [org.chimeramc.launcher.core.minecraft.MinecraftRuntimePreparer].
+ * Native companion for [org.chimeramc.client.core.minecraft.MinecraftRuntimePreparer].
  *
  * `libgxcore.so` (a prebuilt, closed-source binary) hardcodes its JNI symbol for
  * `nativeSetupRuntime` to the upstream `org.levimc.launcher.core.minecraft.MinecraftRuntimePreparer`
- * path. During the rebrand the host class was moved to `org.chimeramc.launcher.core.minecraft`
+ * path. During the rebrand the host class was moved to `org.chimeramc.client.core.minecraft`
  * without a levimc-side binding, so the symbol is dead. This retained bridge keeps the
  * prebuilt library's hardcoded JNI lookup working; the implementation forwards to the
  * renamed chimeramc object.

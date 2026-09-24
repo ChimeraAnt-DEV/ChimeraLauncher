@@ -8,11 +8,11 @@
       "items": [
         {
           "text": "Manage individual HUD elements and align them with grid, element, and screen-center snapping.",
-          "url": "https://github.com/LiteLDev/ChimeraLauncher/commit/7637292753f286290233d7cbfcf1c2d4afccb3b7"
+          "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/commit/7637292753f286290233d7cbfcf1c2d4afccb3b7"
         },
         {
           "text": "Move the HUD Editor panel out of the way using its drag handle.",
-          "url": "https://github.com/LiteLDev/ChimeraLauncher/commit/41f97071b64f13584722077d8ba4565b973771d3"
+          "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/commit/41f97071b64f13584722077d8ba4565b973771d3"
         }
       ]
     },
@@ -21,11 +21,11 @@
       "items": [
         {
           "text": "Gyro and Hotbar Slot Button settings are now organized into clearer categories.",
-          "url": "https://github.com/LiteLDev/ChimeraLauncher/commit/42f4007878ed9da2e18c34af801cf2176928fd2e"
+          "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/commit/42f4007878ed9da2e18c34af801cf2176928fd2e"
         },
         {
           "text": "Mods can now bundle resource and behavior packs for the launcher to install automatically.",
-          "url": "https://github.com/LiteLDev/ChimeraLauncher/commit/b3d1f7ae2ae335f7c3ec7cca1c992500d3438c1c"
+          "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/commit/b3d1f7ae2ae335f7c3ec7cca1c992500d3438c1c"
         }
       ]
     }

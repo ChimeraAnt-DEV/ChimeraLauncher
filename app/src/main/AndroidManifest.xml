@@ -45,7 +45,7 @@
     </queries>
 
     <application
-        android:name="org.chimeramc.launcher.core.minecraft.LauncherApplication"
+        android:name="org.chimeramc.client.core.minecraft.LauncherApplication"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Base.Theme.FullScreen"
@@ -58,7 +58,7 @@
             android:value="486187589451"/>
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.SplashActivity"
+            android:name="org.chimeramc.client.ui.activities.SplashActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -70,7 +70,7 @@
         </activity>
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.MainActivity"
+            android:name="org.chimeramc.client.ui.activities.MainActivity"
             android:exported="true"
             android:screenOrientation="sensorLandscape"
             android:theme="@style/MainActivityTheme"
@@ -78,19 +78,19 @@
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.ContentManagementActivity"
+            android:name="org.chimeramc.client.ui.activities.ContentManagementActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <service
-            android:name="org.chimeramc.launcher.util.StorageMigrationService"
+            android:name="org.chimeramc.client.util.StorageMigrationService"
             android:exported="false"
             android:foregroundServiceType="dataSync" />
 
         <service
-            android:name="org.chimeramc.launcher.core.minecraft.MinecraftForegroundService"
+            android:name="org.chimeramc.client.core.minecraft.MinecraftForegroundService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property
@@ -99,7 +99,7 @@
         </service>
 
         <service
-            android:name="org.chimeramc.launcher.core.news.LauncherNewsMessagingService"
+            android:name="org.chimeramc.client.core.news.LauncherNewsMessagingService"
             android:exported="false">
             <intent-filter>
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
@@ -107,21 +107,21 @@
         </service>
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.NewsActivity"
+            android:name="org.chimeramc.client.ui.activities.NewsActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.ContentListActivity"
+            android:name="org.chimeramc.client.ui.activities.ContentListActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.WorldEditorActivity"
+            android:name="org.chimeramc.client.ui.activities.WorldEditorActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -129,7 +129,7 @@
             android:label="@string/edit_world" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.OptionsEditorActivity"
+            android:name="org.chimeramc.client.ui.activities.OptionsEditorActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -137,7 +137,7 @@
             android:label="@string/edit_options" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.CustomFlatWorldActivity"
+            android:name="org.chimeramc.client.ui.activities.CustomFlatWorldActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -145,28 +145,28 @@
             android:label="@string/custom_flat_world" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.AboutActivity"
+            android:name="org.chimeramc.client.ui.activities.AboutActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.InstancesActivity"
+            android:name="org.chimeramc.client.ui.activities.InstancesActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.InstallationsActivity"
+            android:name="org.chimeramc.client.ui.activities.InstallationsActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
             tools:ignore="DiscouragedApi" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.SettingsActivity"
+            android:name="org.chimeramc.client.ui.activities.SettingsActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -174,7 +174,7 @@
             android:label="@string/settings_title" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.CustomizeActivity"
+            android:name="org.chimeramc.client.ui.activities.CustomizeActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -182,7 +182,7 @@
             android:label="@string/nav_customize" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.InstanceSettingsActivity"
+            android:name="org.chimeramc.client.ui.activities.InstanceSettingsActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -190,7 +190,7 @@
 
         <!-- Accounts Management -->
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.AccountsActivity"
+            android:name="org.chimeramc.client.ui.activities.AccountsActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -198,7 +198,7 @@
             android:label="@string/accounts_title" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.MsftLoginActivity"
+            android:name="org.chimeramc.client.ui.activities.MsftLoginActivity"
             android:exported="false"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -232,7 +232,7 @@
 
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.CurseForgeActivity"
+            android:name="org.chimeramc.client.ui.activities.CurseForgeActivity"
             android:theme="@style/Base.Theme.FullScreen"
             android:screenOrientation="sensorLandscape"
             android:configChanges="fontScale|density|smallestScreenSize|screenSize|uiMode|screenLayout|orientation|navigation|keyboardHidden|keyboard|touchscreen|locale|mnc|mcc"
@@ -520,7 +520,7 @@
             tools:replace="android:configChanges,android:exported" />
 
         <activity
-            android:name="org.chimeramc.launcher.ui.activities.CrashActivity"
+            android:name="org.chimeramc.client.ui.activities.CrashActivity"
             android:exported="false"
             android:launchMode="singleTask"
             android:process=":crash"
