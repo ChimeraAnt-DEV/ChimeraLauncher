@@ -20,6 +20,7 @@ import java.util.List;
 
 public final class InbuiltModuleProvider {
     private static final String GROUP_ID = "inbuilt";
+    private static final String GROUP_PVP_ID = ModIds.GROUP_PVP;
     private static final String MOD_ID = "inbuilt";
 
     private static final String CFG_OVERLAY_SIZE = "overlay_size";
@@ -103,7 +104,23 @@ public final class InbuiltModuleProvider {
                 R.string.inbuilt_mod_aim_settings, R.string.inbuilt_mod_aim_settings_desc,
                 groupName));
 
-        return mods;
+        return groupPvpLast(mods);
+    }
+
+    /**
+     * Moves PvP modules to the end, preserving the declared order within each bucket. The menu
+     * draws one section header per contiguous group, and the combat modules are declared apart
+     * from each other, so without this the PvP section would render twice.
+     */
+    static List<UnifiedMod> groupPvpLast(List<UnifiedMod> mods) {
+        List<UnifiedMod> ordered = new ArrayList<>(mods.size());
+        for (UnifiedMod mod : mods) {
+            if (!ModIds.isPvpModule(mod.getId())) ordered.add(mod);
+        }
+        for (UnifiedMod mod : mods) {
+            if (ModIds.isPvpModule(mod.getId())) ordered.add(mod);
+        }
+        return ordered;
     }
 
     private static UnifiedMod create(Activity activity, InbuiltModManager manager,
@@ -113,6 +130,10 @@ public final class InbuiltModuleProvider {
                 ? overlayManager.isModActive(id)
                 : manager.resolveInbuiltModEnabled(id, false);
         boolean customConfig = ModIds.POJAV_CONTROLS.equals(id) || ModIds.MORE_BUTTONS.equals(id);
+        // Combat modules get their own PvP section so the tab is a real destination, not just a
+        // filter over the inbuilt list. They remain inbuilt modules, so the Inbuilt filter and
+        // the "Inbuilt" grouping still find them.
+        boolean pvpModule = ModIds.isPvpModule(id);
         UnifiedMod result = new UnifiedMod(
                 id,
                 activity.getString(nameRes),
@@ -122,8 +143,8 @@ public final class InbuiltModuleProvider {
                 active,
                 createConfigs(activity, manager, id),
                 customConfig,
-                GROUP_ID,
-                groupName,
+                pvpModule ? GROUP_PVP_ID : GROUP_ID,
+                pvpModule ? activity.getString(R.string.mod_menu_group_pvp) : groupName,
                 (mod, enabled) -> setEnabled(manager, mod, enabled),
                 (mod, config, value) -> setConfig(manager, mod, config, value),
                 ModIds.POJAV_CONTROLS.equals(id)

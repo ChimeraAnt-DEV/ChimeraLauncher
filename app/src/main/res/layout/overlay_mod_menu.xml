@@ -348,6 +348,22 @@
                             android:textSize="12sp" />
 
                         <TextView
+                            android:id="@+id/filter_pvp"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="30dp"
+                            android:layout_marginEnd="8dp"
+                            android:background="@drawable/bg_search_field"
+                            android:defaultFocusHighlightEnabled="false"
+                            android:gravity="center"
+                            android:minWidth="58dp"
+                            android:paddingStart="14dp"
+                            android:paddingEnd="14dp"
+                            android:text="@string/mod_menu_filter_pvp"
+                            android:textColor="#A8B0B8"
+                            android:textSize="12sp" />
+
+                        <TextView
                             android:id="@+id/module_count_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"

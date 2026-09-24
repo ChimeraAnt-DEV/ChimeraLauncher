@@ -38,6 +38,12 @@
 - **Prefs keys and storage roots are not package paths.** `org.chimeramc.xal.crypto` (prefs key) and `games/org.chimeramc` (legacy root) were deliberately left alone — renaming them would strand existing data. Same for `chimeralauncher_instance_backup` (backup `FORMAT_ID`, validated on import) and the `chimeralauncher_*` managed-pack/skin state filenames.
 - The app's update check, news feed and signature-rule URLs previously pointed at `LiteLDev/ChimeraLauncher`, which 404s; they now use `ChimeraAnt-DEV/ChimeraClient`. If a URL looks wrong, test it with `curl -o /dev/null -w '%{http_code}'` before assuming the code is at fault.
 
+## Mod Menu tabs (PvP group)
+- The Mod Menu's top-level nav is Modules / HUD Editor / Settings. The **PvP tab is a filter + section**, not a fourth nav entry: `ModuleFilter.PVP` with a `filter_pvp` chip, plus `ModIds.GROUP_PVP`.
+- `ModIds.isPvpModule(id)` is the single source of truth for what counts as PvP (`aim_settings`, `cps_display`, `snaplook`). The filter predicate and the provider's grouping both call it so they cannot drift.
+- **PvP modules must stay contiguous in the provider's list.** `ModMenuAdapter` emits one group header per contiguous run of `groupId`, so `InbuiltModuleProvider.groupPvpLast(...)` moves them to the end. Reordering them apart renders the PvP header more than once. `PvpModuleGroupingTest` pins this.
+- PvP modules remain `Source.INBUILT`, so the Inbuilt filter/grouping still finds them — do not move them into a separate store.
+
 ## JNI/native packaging (org.levimc vs org.chimeramc)
 - **Prebuilt** `libgxcore.so` and `libinbuiltmods.so` (in `app/src/main/jniLibs/arm64-v8a/`) still export symbols under the **upstream** `org.levimc.*` package names. Do NOT move their Java-bound classes too `org.chimeramc.*` or you get `UnsatisfiedLinkError: No implementation found.`:
   - `org.levimc.launcher.util.NativeBridgeHelper` (+ colocated `NativeImageGuard`) binds `Java_org_levimc_launcher_util_NativeBridgeHelper_*`
