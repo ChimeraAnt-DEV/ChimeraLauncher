@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -64,6 +65,10 @@ public class InstallationsActivity extends BaseActivity {
     private TextView stagedRetry;
     private TextView stagedClear;
     private View stagedContainer;
+    private LinearLayout paginationContainer;
+    private TextView pageLabel;
+    private TextView prevPageButton;
+    private TextView nextPageButton;
 
     private InstallationAdapter adapter;
     private PackageSourceClient client;
@@ -83,6 +88,18 @@ public class InstallationsActivity extends BaseActivity {
     private String pendingVersionName;
     private String pendingPageUrl;
     private File pendingFile;
+
+    /**
+     * Listing pages walked so far, oldest first, and where in that history we are.
+     *
+     * The site paginates 43 pages deep, so the archive is fetched one page at a time rather
+     * than all at once: the stack is what lets "Back" return to a page already seen, and the
+     * recorded next-page URL is what "Next" follows. It lives on the activity so returning from
+     * the browser check resumes the same page instead of resetting to the newest releases.
+     */
+    private final List<String> pageHistory = new ArrayList<>();
+    private String nextPageUrl;
+    private int currentPage = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -135,15 +152,23 @@ public class InstallationsActivity extends BaseActivity {
         browser = findViewById(R.id.installations_browser);
         browserContainer = findViewById(R.id.installations_browser_container);
         browserHint = findViewById(R.id.installations_browser_hint);
+        paginationContainer = findViewById(R.id.installations_pagination);
+        pageLabel = findViewById(R.id.installations_page_label);
+        prevPageButton = findViewById(R.id.installations_prev_page);
+        nextPageButton = findViewById(R.id.installations_next_page);
         findViewById(R.id.installations_browser_cancel).setOnClickListener(v -> cancelBrowserCheck());
 
         sourceWarning.setText(getString(R.string.installations_source_warning, source.displayHost()));
         refreshButton.setOnClickListener(v -> loadVersions());
         stagedRetry.setOnClickListener(v -> retryStagedImport());
         stagedClear.setOnClickListener(v -> confirmClearStaged());
+        prevPageButton.setOnClickListener(v -> goToPreviousPage());
+        nextPageButton.setOnClickListener(v -> goToNextPage());
         DynamicAnim.applyPressScale(refreshButton);
         DynamicAnim.applyPressScale(stagedRetry);
         DynamicAnim.applyPressScale(stagedClear);
+        DynamicAnim.applyPressScale(prevPageButton);
+        DynamicAnim.applyPressScale(nextPageButton);
     }
 
     /**
@@ -190,11 +215,29 @@ public class InstallationsActivity extends BaseActivity {
         recycler.setAdapter(adapter);
     }
 
+    /**
+     * Loads the first listing page, resetting any paging history.
+     *
+     * Refresh therefore returns to page 1 with the newest releases, which is what a user who
+     * pressed Refresh after a failure expects; "Next" is what moves into the archive.
+     */
     private void loadVersions() {
+        pageHistory.clear();
+        currentPage = 0;
+        loadPage(source.listingUrl(), 0);
+    }
+
+    /**
+     * Loads one listing page and lays out its rows.
+     *
+     * [historyIndex] is the position of [pageUrl] in the history stack (0 for page 1), used
+     * only for the "Page N" label.
+     */
+    private void loadPage(String pageUrl, int historyIndex) {
         showLoading(true);
-        client.fetchVersions(source, fallback, new PackageSourceClient.ListingCallback() {
+        client.fetchVersions(source, fallback, pageUrl, new PackageSourceClient.ListingCallback() {
             @Override
-            public void onSuccess(List<Version> fetched) {
+            public void onSuccess(List<Version> fetched, String nextUrl) {
                 if (isFinishing() || isDestroyed()) return;
                 showLoading(false);
                 hideBrowser();
@@ -203,8 +246,11 @@ public class InstallationsActivity extends BaseActivity {
                 versions.addAll(fetched);
                 adapter.setVersions(versions);
                 markInstalledVersions();
+                currentPage = historyIndex;
+                nextPageUrl = nextUrl;
                 emptyContainer.setVisibility(versions.isEmpty() ? View.VISIBLE : View.GONE);
                 recycler.setVisibility(versions.isEmpty() ? View.GONE : View.VISIBLE);
+                updatePagination();
             }
 
             @Override
@@ -220,6 +266,45 @@ public class InstallationsActivity extends BaseActivity {
                 showEmpty(getString(R.string.installations_error_title), describe(error));
             }
         });
+    }
+
+    /** Moves to the following listing page, recording where we came from. */
+    private void goToNextPage() {
+        String target = nextPageUrl;
+        if (target == null || target.isEmpty()) return;
+        int index = pageHistory.size();
+        pageHistory.add(target);
+        loadPage(target, index);
+    }
+
+    /**
+     * Returns to the listing page before this one.
+     *
+     * The URL is re-fetched rather than cached so the archive always reflects what the site
+     * currently publishes, and the history is trimmed so pressing Next again re-reads the
+     * page that was left, not a stale copy of it.
+     */
+    private void goToPreviousPage() {
+        if (pageHistory.isEmpty()) return;
+        pageHistory.remove(pageHistory.size() - 1);
+        int index = pageHistory.size() - 1;
+        String target = index < 0 ? source.listingUrl() : pageHistory.get(index);
+        loadPage(target, Math.max(0, index));
+    }
+
+    /** Shows the page controls and reflects whether Back and Next are available. */
+    private void updatePagination() {
+        if (paginationContainer == null) return;
+        paginationContainer.setVisibility(View.VISIBLE);
+        pageLabel.setText(getString(R.string.installations_page_label, currentPage + 1));
+
+        boolean hasPrevious = currentPage > 0;
+        prevPageButton.setEnabled(hasPrevious);
+        prevPageButton.setAlpha(hasPrevious ? 1f : 0.4f);
+
+        boolean hasNext = nextPageUrl != null && !nextPageUrl.isEmpty();
+        nextPageButton.setEnabled(hasNext);
+        nextPageButton.setAlpha(hasNext ? 1f : 0.4f);
     }
 
     /** Flags the rows whose version already exists as an instance. */

@@ -153,6 +153,52 @@ public class McpedlSourceTest {
         assertFalse(chosen.is32BitOnly());
     }
 
+    /**
+     * MCPEDL now labels the ABI-specific builds, and on those pages the unlabelled default can
+     * be the 32-bit one. Picking "the first build that is not 32-bit-only" therefore chose the
+     * unlabelled 32-bit package and failed the ABI preflight even though a correctly-labelled
+     * arm64 build sat on the same page. An explicit arm64 label must win.
+     */
+    @Test
+    public void prefersAnExplicitlyLabelledArm64Build() {
+        String html = ""
+                + "<table><tbody>"
+                + "  <tr><td>Xbox+servers, no music</td><td>"
+                + "    <form method=\"post\" action=\"/show_file.php\">"
+                + "      <input type=\"hidden\" name=\"file_id\" value=\"7521\"></form></td></tr>"
+                + "  <tr><td>arm64-v8a. Xbox+servers, no music</td><td>"
+                + "    <form method=\"post\" action=\"/show_file.php\">"
+                + "      <input type=\"hidden\" name=\"file_id\" value=\"7523\"></form></td></tr>"
+                + "  <tr><td>armv7a. Xbox+servers, no music</td><td>"
+                + "    <form method=\"post\" action=\"/show_file.php\">"
+                + "      <input type=\"hidden\" name=\"file_id\" value=\"7522\"></form></td></tr>"
+                + "</tbody></table>";
+        DownloadForm chosen = BedrockSource.selectDownload(source.parseVersionPage(html));
+
+        assertNotNull(chosen);
+        assertEquals("7523", field(chosen, "file_id"));
+        assertEquals("arm64-v8a. Xbox+servers, no music", chosen.label);
+    }
+
+    @Test
+    public void recognisesA64BitBuildLabel() {
+        assertTrue(BedrockSource.is64BitLabel("arm64-v8a. Xbox+servers, +music"));
+        assertTrue(BedrockSource.is64BitLabel("aarch64 build"));
+        assertFalse(BedrockSource.is64BitLabel("armv7a. Xbox+servers"));
+        assertFalse(BedrockSource.is64BitLabel("Xbox+servers, no music"));
+        assertFalse(BedrockSource.is64BitLabel(null));
+    }
+
+    /** An unlabelled default is still taken when no build is explicitly marked arm64. */
+    @Test
+    public void fallsBackToAnUnlabelledBuildWhenNoArm64LabelExists() {
+        List<DownloadForm> forms = source.parseVersionPage(VERSION_HTML);
+        DownloadForm chosen = BedrockSource.selectDownload(forms);
+
+        assertEquals("7549", field(chosen, "file_id"));
+        assertEquals("Xbox+servers, no music", chosen.label);
+    }
+
     @Test
     public void recognisesA32BitBuildLabel() {
         List<DownloadForm> forms = source.parseVersionPage(VERSION_HTML);
@@ -241,6 +287,59 @@ public class McpedlSourceTest {
         assertEquals("mcpedl.org", source.displayHost());
         assertEquals("https://mcpedl.org/downloading/", source.listingUrl());
         assertEquals("mcpedl", source.id());
+    }
+
+    /**
+     * The archive is 43 pages deep and each page holds ten entries. The next-page link is what
+     * lets the screen walk past the newest handful and reach older releases such as 1.21.132.
+     */
+    @Test
+    public void readsTheNextPageLinkFromPagination() {
+        String html = "<nav><a rel=\"prev\" href=\"https://mcpedl.org/downloading/page/1/\">"
+                + "Previous</a>"
+                + "<a rel=\"next\" href=\"https://mcpedl.org/downloading/page/3/\">Next</a></nav>";
+
+        assertEquals("https://mcpedl.org/downloading/page/3/", source.nextListingUrl(html));
+    }
+
+    /** The last page has no next link, which must read as "stop", not as an error. */
+    @Test
+    public void reportsNoNextPageOnTheLastPage() {
+        String html = "<nav><a rel=\"prev\" href=\"/downloading/page/42/\">Back</a></nav>";
+
+        assertNull(source.nextListingUrl(html));
+        assertNull(source.nextListingUrl(""));
+        assertNull(source.nextListingUrl(null));
+    }
+
+    /** A site-relative next link must still be followed. */
+    @Test
+    public void resolvesARelativeNextPageLink() {
+        String html = "<a class=\"next\" href=\"/downloading/page/8/\">Next</a>";
+
+        assertEquals("https://mcpedl.org/downloading/page/8/", source.nextListingUrl(html));
+    }
+
+    /**
+     * Every listing page repeats the newest handful of versions in its sidebar menu. Those
+     * links belong to an earlier page, so counting them as entries would re-offer the newest
+     * releases while the user pages into the archive, and they would never disappear.
+     */
+    @Test
+    public void ignoresSidebarVersionLinksOnAListingPage() {
+        String html = ""
+                + "<div class=\"g-tagmenu menu4\">"
+                + "  <a href=\"/minecraft-pe-26-60-28-apk/\" class=\"button g-tagmenu-item\">26.60.28</a>"
+                + "  <a href=\"/minecraft-pe-26-51-apk/\" class=\"button g-tagmenu-item\">26.51</a>"
+                + "</div>"
+                + "<article><div class=\"entry-title\">"
+                + "  <a href=\"/minecraft-pe-1-21-132-apk/\" title=\"Download Minecraft 1.21.132\">"
+                + "    Download Minecraft 1.21.132</a></div></article>";
+
+        List<Version> versions = source.parseListing(html);
+
+        assertEquals(1, versions.size());
+        assertEquals("https://mcpedl.org/minecraft-pe-1-21-132-apk/", versions.get(0).pageUrl);
     }
 
     /** The registry is what the UI reads, so it must resolve to the MCPEDL source. */

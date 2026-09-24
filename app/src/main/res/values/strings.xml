@@ -1427,6 +1427,10 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="installations_title">Installations</string>
     <string name="installations_subtitle">Download a Minecraft Bedrock version and install it as its own instance</string>
     <string name="installations_refresh">Refresh</string>
+    <string name="installations_next_page">Next</string>
+    <string name="installations_prev_page">Back</string>
+    <string name="installations_page_label">Page %1$d</string>
+    <string name="installations_loading_page">Loading page %1$d…</string>
     <string name="installations_source_warning">Packages are downloaded from %1$s, a third-party mirror — not from Mojang or Google Play. Verify what you install and keep your own backups.</string>
     <string name="installations_release_tag">Release</string>
     <string name="installations_installed_tag">Installed</string>

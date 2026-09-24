@@ -57,6 +57,18 @@ public final class McpedlSource implements BedrockSource {
     /** The resolved link is assigned to {@code window.location.href} inside an onclick. */
     private static final Pattern JS_REDIRECT = Pattern.compile(
             "(?:window\\.)?location(?:\\.href)?\\s*=\\s*[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+    /**
+     * The class these pages put on every link in their sidebar version menu.
+     *
+     * The menu repeats the newest handful of version links on <em>every</em> listing page, so
+     * a page-2+ fetch returns them a second time and, when walking the archive, would offer
+     * rows that belong to an earlier page. They are navigation chrome, not entries on the page,
+     * so they are skipped by class rather than by position.
+     */
+    private static final String SIDEBAR_LINK_CLASS = "g-tagmenu-item";
+    /** An anchor's attributes (group 1) and body (group 2), so the class can be inspected. */
+    private static final Pattern TAGGED_ANCHOR = Pattern.compile(
+            "<a\\b([^>]*)>(.*?)</a>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
     /** The variant name sits in the table cell beside the form. */
     private static final Pattern TABLE_CELL = Pattern.compile(
             "<td\\b[^>]*>(.*?)</td>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
@@ -99,9 +111,13 @@ public final class McpedlSource implements BedrockSource {
         if (html == null || html.isEmpty()) return Collections.emptyList();
 
         Map<String, Version> byUrl = new LinkedHashMap<>();
-        Matcher anchor = ANCHOR.matcher(html);
+        Matcher anchor = TAGGED_ANCHOR.matcher(html);
         while (anchor.find()) {
-            String href = anchor.group(1).trim();
+            String attributes = anchor.group(1);
+            if (attributes.contains(SIDEBAR_LINK_CLASS)) continue;
+            Matcher hrefMatcher = ANCHOR_HREF.matcher(attributes);
+            if (!hrefMatcher.find()) continue;
+            String href = hrefMatcher.group(1).trim();
             String path = pathOf(href);
             if (path == null) continue;
             Matcher version = VERSION_PATH.matcher(path);
@@ -235,6 +251,19 @@ public final class McpedlSource implements BedrockSource {
             }
         }
         return null;
+    }
+
+    /**
+     * The next page of the archive, from the listing's pagination link.
+     *
+     * The index paginates 43 pages deep, so this is what lets the screen walk back to older
+     * releases instead of stopping after the newest handful. The link is resolved against
+     * {@link #HOST} because the site writes it site-relative.
+     */
+    @Override
+    public String nextListingUrl(String html) {
+        String href = BedrockSource.pageLink(html, true);
+        return BedrockSource.absolutize(href, HOST);
     }
 
     /** The variant label is the table cell immediately before the form. */

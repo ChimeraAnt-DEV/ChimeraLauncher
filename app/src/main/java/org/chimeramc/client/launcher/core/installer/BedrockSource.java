@@ -31,6 +31,15 @@ public interface BedrockSource {
     Pattern ANCHOR = Pattern.compile(
             "<a\\b[^>]*href=[\"']([^\"']+)[\"'][^>]*>(.*?)</a>",
             Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+    /** The opening tag of an anchor, so its attributes can be read without its body. */
+    Pattern ANCHOR_TAG = Pattern.compile("<a\\b([^>]*)>", Pattern.CASE_INSENSITIVE);
+    Pattern ANCHOR_HREF = Pattern.compile("href=[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
+    Pattern ANCHOR_REL_NEXT = Pattern.compile("rel=[\"']next[\"']", Pattern.CASE_INSENSITIVE);
+    Pattern ANCHOR_REL_PREV = Pattern.compile("rel=[\"']prev(?:ious)?[\"']", Pattern.CASE_INSENSITIVE);
+    Pattern ANCHOR_CLASS_NEXT = Pattern.compile(
+            "class=[\"'][^\"']*\\bnext\\b[^\"']*[\"']", Pattern.CASE_INSENSITIVE);
+    Pattern ANCHOR_CLASS_PREV = Pattern.compile(
+            "class=[\"'][^\"']*\\bprev(?:ious)?\\b[^\"']*[\"']", Pattern.CASE_INSENSITIVE);
     Pattern FILENAME_STAR = Pattern.compile(
             "filename\\*\\s*=\\s*(?:UTF-8''|utf-8'')?([^;\\r\\n]+)", Pattern.CASE_INSENSITIVE);
     Pattern FILENAME_PLAIN = Pattern.compile(
@@ -66,6 +75,48 @@ public interface BedrockSource {
      * a failed resolve rather than a failed download.
      */
     String parseResolvedUrl(String html);
+
+    /**
+     * The URL of the listing page after the one [html] represents, or null on the last page.
+     *
+     * Sources that paginate override this so the caller can walk the whole archive. Returning
+     * null means "no further pages", which is also the default for a source that publishes its
+     * whole list on one page.
+     */
+    default String nextListingUrl(String html) {
+        return null;
+    }
+
+    /**
+     * The href of a pagination link carrying {@code rel="next"} (or {@code rel="prev"} when
+     * [next] is false).
+     *
+     * Pagination is read from the link's {@code rel} attribute rather than its label, because
+     * the label is translated and the class name is a theme detail; {@code rel} is what tells
+     * a crawler — and this parser — which direction the link points. A missing link on the
+     * last page is the normal case and yields null.
+     */
+    static String pageLink(String html, boolean next) {
+        if (html == null || html.isEmpty()) return null;
+        Pattern rel = next ? ANCHOR_REL_NEXT : ANCHOR_REL_PREV;
+        Matcher tag = ANCHOR_TAG.matcher(html);
+        while (tag.find()) {
+            String attributes = tag.group(1);
+            if (!rel.matcher(attributes).find()) continue;
+            Matcher href = ANCHOR_HREF.matcher(attributes);
+            if (href.find()) return href.group(1).trim();
+        }
+        // Some themes put the direction in the class ("... next") without a rel attribute.
+        Pattern cls = next ? ANCHOR_CLASS_NEXT : ANCHOR_CLASS_PREV;
+        tag.reset();
+        while (tag.find()) {
+            String attributes = tag.group(1);
+            if (!cls.matcher(attributes).find()) continue;
+            Matcher href = ANCHOR_HREF.matcher(attributes);
+            if (href.find()) return href.group(1).trim();
+        }
+        return null;
+    }
 
     /** One Bedrock release advertised on a listing page. */
     final class Version {
@@ -149,12 +200,20 @@ public interface BedrockSource {
     /**
      * Chooses which of a page's builds to download.
      *
-     * The launcher ships arm64 only, so a 32-bit-only build cannot be loaded even though it
-     * exists; preferring a build that is not 32-bit-only keeps the download usable. Among the
-     * rest the first is taken, because sources list their recommended build first.
+     * The launcher ships arm64 only, so a build that cannot load must not be picked.
+     *
+     * The order matters. These sites now label ABI-specific builds ("arm64-v8a. Xbox+servers,
+     * no music", "armv7a. ..."), and on those pages the <em>unlabelled</em> default is
+     * sometimes the 32-bit build. Choosing "the first build that is not 32-bit-only" therefore
+     * picked the unlabelled 32-bit package and failed the ABI preflight, even though a
+     * correctly-labelled arm64 build was on the same page. So an explicit 64-bit label wins
+     * first, and only then does an unlabelled build.
      */
     static DownloadForm selectDownload(List<DownloadForm> forms) {
         if (forms == null || forms.isEmpty()) return null;
+        for (DownloadForm form : forms) {
+            if (is64BitLabel(form.label)) return form;
+        }
         for (DownloadForm form : forms) {
             if (!form.is32BitOnly()) return form;
         }
@@ -174,6 +233,19 @@ public interface BedrockSource {
         if (label == null) return false;
         String lower = label.toLowerCase(Locale.US);
         return lower.contains("armv7") || lower.contains("armeabi") || lower.contains("v7a");
+    }
+
+    /**
+     * True when a label explicitly names a 64-bit ARM build.
+     *
+     * Used to prefer the build the site itself marks as arm64 over an unlabelled default that
+     * may secretly be 32-bit. {@code arm64-v8a} contains {@code arm64}, and {@code aarch64} is
+     * the same architecture under its other common name.
+     */
+    static boolean is64BitLabel(String label) {
+        if (label == null) return false;
+        String lower = label.toLowerCase(Locale.US);
+        return lower.contains("arm64") || lower.contains("aarch64");
     }
 
     /**
