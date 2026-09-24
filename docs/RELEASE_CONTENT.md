@@ -1,6 +1,6 @@
 # Changelogs and launcher news
 
-Chimera Launcher uses two small JSON files as the source of truth. Both files are bundled into the APK, validated in CI, and intentionally stay in English.
+Chimera Client uses two small JSON files as the source of truth. Both files are bundled into the APK, validated in CI, and intentionally stay in English.
 
 ## Prepare a launcher release
 
@@ -33,7 +33,7 @@ Add one new object to the beginning of `resources/launcher/news.json`. Use a per
   "summary": "The short text users will see in the inbox and notification.",
   "publishedAt": "2026-08-27T12:00:00Z",
   "category": "Announcement",
-  "url": "https://github.com/LiteLDev/ChimeraLauncher/releases",
+  "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/releases",
   "important": false,
   "notify": true
 }
@@ -50,7 +50,7 @@ git push origin main
 
 Confirm that the public feed opens before testing refresh in the app:
 
-`https://raw.githubusercontent.com/LiteLDev/ChimeraLauncher/main/resources/launcher/news.json`
+`https://raw.githubusercontent.com/ChimeraAnt-DEV/ChimeraClient/main/resources/launcher/news.json`
 
 If that URL returns `404: Not Found`, the `resources/launcher` files were not committed to `main`. Add and push them:
 

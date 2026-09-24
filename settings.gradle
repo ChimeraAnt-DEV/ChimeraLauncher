@@ -27,7 +27,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "chimeralauncher"
+rootProject.name = "chimeraclient"
 include ':app'
 include ':minecraft'
 include ':pojav_controls'

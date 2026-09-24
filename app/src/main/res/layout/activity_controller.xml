@@ -51,7 +51,7 @@
             android:layout_weight="1"
             android:layout_marginTop="8dp">
 
-            <org.chimeramc.launcher.ui.views.ControllerIllustrationView
+            <org.chimeramc.client.ui.views.ControllerIllustrationView
                 android:id="@+id/controller_illustration"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"

@@ -1,8 +1,8 @@
 {
-  "name": "chimeralauncher-docs",
+  "name": "chimeraclient-docs",
   "private": true,
   "version": "0.0.0",
-  "description": "Documentation site for the ChimeraLauncher Android launcher",
+  "description": "Documentation site for the ChimeraClient Android launcher",
   "scripts": {
     "docs:dev": "vitepress dev .",
     "docs:build": "vitepress build .",

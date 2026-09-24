@@ -1,11 +1,11 @@
 # Native Mod Quick Start
 
-This page describes the supported developer path for ChimeraLauncher native
+This page describes the supported developer path for ChimeraClient native
 mods. The public SDK is published in
-[LiteLDev/preloader-android](https://github.com/LiteLDev/preloader-android).
+[ChimeraAnt-DEV/preloader-android](https://github.com/ChimeraAnt-DEV/preloader-android).
 
 For standalone third-party mods, start from the
-[Chimera Launcher Android mod template](https://github.com/QYCottage/levilauncher-android-mod-template).
+[Chimera Client Android mod template](https://github.com/QYCottage/levilauncher-android-mod-template).
 
 Use `examples/full-cpp-mod` as the reference implementation. It includes
 lifecycle registration, typed config, Mod Menu integration, Android packaging,
@@ -124,7 +124,7 @@ include(FetchContent)
 
 FetchContent_Declare(
     preloader_android
-    GIT_REPOSITORY https://github.com/LiteLDev/preloader-android.git
+    GIT_REPOSITORY https://github.com/ChimeraAnt-DEV/preloader-android.git
     GIT_TAG 0.2.2)
 FetchContent_MakeAvailable(preloader_android)
 

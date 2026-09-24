@@ -1,6 +1,6 @@
 import { defineConfig, type DefaultTheme } from "vitepress";
 
-const repo = "https://github.com/LiteLDev/ChimeraLauncher";
+const repo = "https://github.com/ChimeraAnt-DEV/ChimeraClient";
 const releases = `${repo}/releases`;
 const base = process.env.VITEPRESS_BASE ?? "/";
 
@@ -102,8 +102,8 @@ function buildChineseNav(): DefaultTheme.NavItem[] {
 }
 
 export default defineConfig({
-  title: "Chimera Launcher",
-  description: "Documentation for the ChimeraLauncher Android Minecraft Bedrock launcher.",
+  title: "Chimera Client",
+  description: "Documentation for the ChimeraClient Android Minecraft Bedrock launcher.",
   lang: "en-US",
   base,
   cleanUrls: true,

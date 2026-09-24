@@ -1,6 +1,6 @@
 [submodule "app/src/main/cpp/preloader"]
 	path = app/src/main/cpp/preloader
-	url = https://github.com/LuauScripts-usr/preloader-android
+	url = https://github.com/ChimeraAnt-DEV/preloader-android
 [submodule "app/src/main/cpp/libHttpClient"]
 	path = app/src/main/cpp/libHttpClient
 	url = https://github.com/microsoft/libHttpClient
