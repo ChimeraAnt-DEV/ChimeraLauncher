@@ -33,6 +33,7 @@ import org.chimeramc.client.core.mods.inbuilt.ExternalModuleProvider;
 import org.chimeramc.client.core.mods.inbuilt.InbuiltModuleProvider;
 import org.chimeramc.client.core.mods.inbuilt.UnifiedMod;
 import org.chimeramc.client.core.mods.inbuilt.manager.InbuiltModManager;
+import org.chimeramc.client.core.mods.inbuilt.model.ModIds;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -47,7 +48,8 @@ public class ModMenuOverlay {
         FAVORITES,
         ENABLED,
         INBUILT,
-        EXTERNAL
+        EXTERNAL,
+        PVP
     }
 
     private final Activity activity;
@@ -67,7 +69,7 @@ public class ModMenuOverlay {
     private ImageButton clearSearchBtn;
     private TextView navModules, navSettings, navHudEditor;
     private ImageButton compactNavModules, compactNavSettings, compactNavHudEditor;
-    private TextView filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal;
+    private TextView filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal, filterPvp;
     private TextView moduleCountText, emptyStateText;
     private TextView compactFilterSelector, compactModuleCount;
     private View settingsContainer;
@@ -286,6 +288,7 @@ public class ModMenuOverlay {
         filterEnabled = overlayView.findViewById(R.id.filter_enabled);
         filterInbuilt = overlayView.findViewById(R.id.filter_inbuilt);
         filterExternal = overlayView.findViewById(R.id.filter_external);
+        filterPvp = overlayView.findViewById(R.id.filter_pvp);
         moduleCountText = overlayView.findViewById(R.id.module_count_text);
         settingsContainer = overlayView.findViewById(R.id.settings_container);
         modulesContainer = overlayView.findViewById(R.id.modules_container);
@@ -336,7 +339,7 @@ public class ModMenuOverlay {
         // their own feedback in the adapter, since they are recycled and rebound.
         for (View v : new View[]{navModules, navSettings, navHudEditor,
                 compactNavModules, compactNavSettings, compactNavHudEditor,
-                filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal,
+                filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal, filterPvp,
                 closeBtn, clearSearchBtn}) {
             if (v != null) DynamicAnim.applyPressScale(v);
         }
@@ -797,6 +800,7 @@ public class ModMenuOverlay {
         popup.getMenu().add(0, 102, 2, R.string.mod_menu_filter_enabled);
         popup.getMenu().add(0, 103, 3, R.string.mod_menu_filter_inbuilt);
         popup.getMenu().add(0, 104, 4, R.string.mod_menu_filter_external);
+        popup.getMenu().add(0, 105, 5, R.string.mod_menu_filter_pvp);
         popup.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case 101:
@@ -810,6 +814,9 @@ public class ModMenuOverlay {
                     break;
                 case 104:
                     setModuleFilter(ModuleFilter.EXTERNAL);
+                    break;
+                case 105:
+                    setModuleFilter(ModuleFilter.PVP);
                     break;
                 case 100:
                 default:
@@ -940,6 +947,8 @@ public class ModMenuOverlay {
                 return R.string.mod_menu_filter_inbuilt;
             case EXTERNAL:
                 return R.string.mod_menu_filter_external;
+            case PVP:
+                return R.string.mod_menu_filter_pvp;
             case ALL:
             default:
                 return R.string.filter_all;
@@ -965,6 +974,9 @@ public class ModMenuOverlay {
         }
         if (filterExternal != null) {
             filterExternal.setOnClickListener(v -> setModuleFilter(ModuleFilter.EXTERNAL));
+        }
+        if (filterPvp != null) {
+            filterPvp.setOnClickListener(v -> setModuleFilter(ModuleFilter.PVP));
         }
         updateFilterButtons();
     }
@@ -1014,6 +1026,8 @@ public class ModMenuOverlay {
                 return mod.getSource() == UnifiedMod.Source.INBUILT;
             case EXTERNAL:
                 return mod.getSource() == UnifiedMod.Source.EXTERNAL;
+            case PVP:
+                return ModIds.isPvpModule(mod.getId());
             case ALL:
             default:
                 return true;
@@ -1047,6 +1061,7 @@ public class ModMenuOverlay {
         updateFilterButton(filterEnabled, activeFilter == ModuleFilter.ENABLED);
         updateFilterButton(filterInbuilt, activeFilter == ModuleFilter.INBUILT);
         updateFilterButton(filterExternal, activeFilter == ModuleFilter.EXTERNAL);
+        updateFilterButton(filterPvp, activeFilter == ModuleFilter.PVP);
         updateCompactFilterSelector();
     }
 
@@ -1126,6 +1141,8 @@ public class ModMenuOverlay {
                 emptyStateText.setText(R.string.mod_menu_no_matches);
             } else if (activeFilter == ModuleFilter.FAVORITES) {
                 emptyStateText.setText(R.string.mod_menu_no_favorites);
+            } else if (activeFilter == ModuleFilter.PVP) {
+                emptyStateText.setText(R.string.mod_menu_pvp_empty);
             } else {
                 emptyStateText.setText(R.string.mod_menu_no_mods);
             }

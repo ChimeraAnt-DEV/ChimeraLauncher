@@ -764,6 +764,9 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="mod_menu_filter_enabled">Enabled</string>
     <string name="mod_menu_filter_inbuilt">Inbuilt</string>
     <string name="mod_menu_filter_external">External</string>
+    <string name="mod_menu_filter_pvp">PvP</string>
+    <string name="mod_menu_group_pvp">PvP</string>
+    <string name="mod_menu_pvp_empty">No PvP modules enabled. PvP modules also appear under Inbuilt.</string>
     <string name="mod_menu_search_hint">Search mods…</string>
     <string name="mod_menu_no_mods">No mods added</string>
     <string name="mod_menu_no_favorites">No favorite mods yet</string>
