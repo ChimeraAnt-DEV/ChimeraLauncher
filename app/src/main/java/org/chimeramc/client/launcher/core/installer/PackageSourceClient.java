@@ -76,7 +76,11 @@ public class PackageSourceClient {
     }
 
     public interface ListingCallback {
-        void onSuccess(List<Version> versions);
+        /**
+         * [nextPageUrl] is the following listing page, or null on the last one, so the caller
+         * can offer "Next" and walk further back into the archive.
+         */
+        void onSuccess(List<Version> versions, String nextPageUrl);
 
         /** The site wants a browser check; the caller should surface the WebView. */
         void onChallenge();
@@ -123,14 +127,26 @@ public class PackageSourceClient {
      */
     public void fetchVersions(BedrockSource source, BrowserFallback fallback,
                               ListingCallback callback) {
+        fetchVersions(source, fallback, source.listingUrl(), callback);
+    }
+
+    /**
+     * Loads one listing page, reporting the URL of the page after it.
+     *
+     * Callers pass a page URL from a previous result to walk deeper into the archive; the
+     * screen shows the first page and then follows the reported link one page at a time.
+     */
+    public void fetchVersions(BedrockSource source, BrowserFallback fallback, String pageUrl,
+                              ListingCallback callback) {
         run(() -> {
             try {
-                String html = read(source, source.listingUrl(), fallback, callback::onChallenge);
+                String html = read(source, pageUrl, fallback, callback::onChallenge);
                 List<Version> versions = source.parseListing(html);
                 if (versions.isEmpty()) {
                     throw new IOException("No versions found on the download page");
                 }
-                post(() -> callback.onSuccess(versions));
+                String nextPageUrl = source.nextListingUrl(html);
+                post(() -> callback.onSuccess(versions, nextPageUrl));
             } catch (ChallengeException e) {
                 post(callback::onChallenge);
             } catch (Exception e) {

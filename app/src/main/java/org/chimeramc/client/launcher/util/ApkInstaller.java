@@ -69,6 +69,7 @@ public class ApkInstaller {
 
     public void install(final Uri apkOrApksUri, final String dirName) {
         executor.submit(() -> {
+            boolean committed = false;
             try {
                 lastPostedProgress = -1;
                 postProgress(0);
@@ -185,13 +186,37 @@ public class ApkInstaller {
                 postProgress(PROGRESS_METADATA_DONE);
                 writeProfileMetadata(metadataDir, dirName, versionName);
 
+                committed = true;
                 postProgress(PROGRESS_MAX);
                 postSuccess(versionName);
 
             } catch (Exception e) {
                 postError("Install error: " + e.getMessage());
+            } finally {
+                // A half-written version directory is not inert: the instance list treats any
+                // folder holding base.apk.chimera as an installed instance, so a failed import
+                // (a 32-bit package, a corrupt bundle, a full disk) would otherwise leave a
+                // phantom entry the user has to delete by hand. Once the metadata is written
+                // the instance is real, so only the pre-commit state is rolled back.
+                if (!committed) {
+                    rollBackPartialInstall(dirName);
+                }
             }
         });
+    }
+
+    /** Removes a version directory left behind by an install that did not complete. */
+    private void rollBackPartialInstall(String dirName) {
+        try {
+            File versionDir = LauncherStorage.getVersionDir(context, dirName);
+            if (versionDir.exists()) deleteDir(versionDir);
+        } catch (Exception ignored) {
+        }
+        try {
+            File libDir = MinecraftLauncher.getRuntimeLibDir(context, dirName);
+            if (libDir.exists()) deleteDir(libDir);
+        } catch (Exception ignored) {
+        }
     }
 
     private String extractVersionName(Uri apkOrApksUri, File baseDir, String dirName) {
