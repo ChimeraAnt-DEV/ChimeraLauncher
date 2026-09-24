@@ -4,10 +4,10 @@
     {
       "id": "2026-09-19-chimera-v5-release",
       "title": "New Release avaliable",
-      "summary": "Please Check https://github.com/ChimeraAnt-DEV/ChimeraClient/releases/tag/V5 to update to the newest version possible!",
+      "summary": "Please Check https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases/tag/V5 to update to the newest version possible!",
       "publishedAt": "2026-09-19T18:57:00Z",
       "category": "Important",
-      "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/releases/tag/V5",
+      "url": "https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases/tag/V5",
       "important": true,
       "notify": true
     },
@@ -47,7 +47,7 @@
       "summary": "Tap the bell at the top of Chimera Client to see announcements, release information, and important notices in one place.",
       "publishedAt": "2026-08-26T18:00:00Z",
       "category": "Launcher",
-      "url": "https://github.com/ChimeraAnt-DEV/ChimeraClient/releases",
+      "url": "https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases",
       "important": false,
       "notify": false
     }

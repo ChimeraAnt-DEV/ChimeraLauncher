@@ -20,7 +20,7 @@ hero:
       link: /guide/developer
     - theme: alt
       text: Download
-      link: https://github.com/ChimeraAnt-DEV/ChimeraClient/releases/latest
+      link: https://github.com/ChimeraAnt-DEV/ChimeraLauncher/releases/latest
 
 features:
   - title: Official game first

@@ -40,7 +40,7 @@
     <string name="about_title">☕ About</string>
     <string name="copyright">©2024–2026 Chimera Client. All rights reserved.</string>
     <string name="font_license">This app uses the Misans font.</string>
-    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraClient</string>
+    <string name="about_footer_github">GitHub: https://github.com/ChimeraAnt-DEV/ChimeraLauncher</string>
     <string name="quick_actions_title">Quick Actions</string>
 
     <!-- Home screen -->
