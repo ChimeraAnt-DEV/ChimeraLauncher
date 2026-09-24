@@ -18,6 +18,7 @@ import org.chimeramc.client.core.installer.BedrockSource;
 import org.chimeramc.client.core.installer.BedrockSource.ResolvedDownload;
 import org.chimeramc.client.core.installer.BedrockSource.Version;
 import org.chimeramc.client.core.installer.BrowserFallback;
+import org.chimeramc.client.core.installer.ListingPager;
 import org.chimeramc.client.core.installer.PackageSourceClient;
 import org.chimeramc.client.core.installer.SourceRegistry;
 import org.chimeramc.client.core.versions.GameVersion;
@@ -53,6 +54,8 @@ public class InstallationsActivity extends BaseActivity {
     private static final String STATE_PENDING_VERSION = "installations_pending_version";
     private static final String STATE_PENDING_PAGE = "installations_pending_page";
     private static final String STATE_PENDING_FILE = "installations_pending_file";
+    private static final String STATE_PAGE_WALK = "installations_page_walk";
+    private static final String STATE_NEXT_PAGE = "installations_next_page_url";
 
     private RecyclerView recycler;
     private ProgressBar progress;
@@ -90,16 +93,13 @@ public class InstallationsActivity extends BaseActivity {
     private File pendingFile;
 
     /**
-     * Listing pages walked so far, oldest first, and where in that history we are.
+     * Which listing page is on screen and how to step between them.
      *
-     * The site paginates 43 pages deep, so the archive is fetched one page at a time rather
-     * than all at once: the stack is what lets "Back" return to a page already seen, and the
-     * recorded next-page URL is what "Next" follows. It lives on the activity so returning from
-     * the browser check resumes the same page instead of resetting to the newest releases.
+     * The archive is fetched one page at a time, so the screen remembers the walk in order to
+     * offer "Back", and the page after the current one in order to offer "Next". The numbering
+     * and the boundaries live in {@link ListingPager}, which is unit-tested without a device.
      */
-    private final List<String> pageHistory = new ArrayList<>();
-    private String nextPageUrl;
-    private int currentPage = 0;
+    private ListingPager pager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -122,11 +122,17 @@ public class InstallationsActivity extends BaseActivity {
         importManager.setOnImportCompleteListener(this::onImportSucceeded);
         importManager.setOnImportFailedListener(this::onImportFailed);
 
+        String savedNext = savedInstanceState == null
+                ? null : savedInstanceState.getString(STATE_NEXT_PAGE);
+        List<String> savedWalk = savedInstanceState == null
+                ? null : savedInstanceState.getStringArrayList(STATE_PAGE_WALK);
+        pager = new ListingPager(source.listingUrl(), savedWalk, savedNext);
+
         bindViews();
         fallback = new BrowserFallback(browser);
         setupRecycler();
         refreshStagedPackages();
-        loadVersions();
+        loadCurrentPage();
     }
 
     @Override
@@ -135,6 +141,10 @@ public class InstallationsActivity extends BaseActivity {
         outState.putString(STATE_PENDING_VERSION, pendingVersionName);
         outState.putString(STATE_PENDING_PAGE, pendingPageUrl);
         outState.putString(STATE_PENDING_FILE, pendingFile == null ? null : pendingFile.getAbsolutePath());
+        if (pager != null) {
+            outState.putStringArrayList(STATE_PAGE_WALK, new ArrayList<>(pager.visitedPages()));
+            outState.putString(STATE_NEXT_PAGE, pager.nextPageUrl());
+        }
     }
 
     private void bindViews() {
@@ -216,24 +226,28 @@ public class InstallationsActivity extends BaseActivity {
     }
 
     /**
+     * Reloads the page currently on screen, without changing which page that is.
+     *
+     * Used on create and after the browser check: the walk is restored, so resuming must not
+     * silently jump the reader back to the newest releases.
+     */
+    private void loadCurrentPage() {
+        loadPage(pager.currentPageUrl());
+    }
+
+    /**
      * Loads the first listing page, resetting any paging history.
      *
      * Refresh therefore returns to page 1 with the newest releases, which is what a user who
      * pressed Refresh after a failure expects; "Next" is what moves into the archive.
      */
     private void loadVersions() {
-        pageHistory.clear();
-        currentPage = 0;
-        loadPage(source.listingUrl(), 0);
+        pager.reset();
+        loadCurrentPage();
     }
 
-    /**
-     * Loads one listing page and lays out its rows.
-     *
-     * [historyIndex] is the position of [pageUrl] in the history stack (0 for page 1), used
-     * only for the "Page N" label.
-     */
-    private void loadPage(String pageUrl, int historyIndex) {
+    /** Loads one listing page and lays out its rows. */
+    private void loadPage(String pageUrl) {
         showLoading(true);
         client.fetchVersions(source, fallback, pageUrl, new PackageSourceClient.ListingCallback() {
             @Override
@@ -246,8 +260,7 @@ public class InstallationsActivity extends BaseActivity {
                 versions.addAll(fetched);
                 adapter.setVersions(versions);
                 markInstalledVersions();
-                currentPage = historyIndex;
-                nextPageUrl = nextUrl;
+                pager.onPageLoaded(nextUrl);
                 emptyContainer.setVisibility(versions.isEmpty() ? View.VISIBLE : View.GONE);
                 recycler.setVisibility(versions.isEmpty() ? View.GONE : View.VISIBLE);
                 updatePagination();
@@ -268,41 +281,33 @@ public class InstallationsActivity extends BaseActivity {
         });
     }
 
-    /** Moves to the following listing page, recording where we came from. */
+    /** Moves to the following listing page. */
     private void goToNextPage() {
-        String target = nextPageUrl;
-        if (target == null || target.isEmpty()) return;
-        int index = pageHistory.size();
-        pageHistory.add(target);
-        loadPage(target, index);
+        if (pager == null) return;
+        String target = pager.advance();
+        if (target == null) return;
+        loadPage(target);
     }
 
-    /**
-     * Returns to the listing page before this one.
-     *
-     * The URL is re-fetched rather than cached so the archive always reflects what the site
-     * currently publishes, and the history is trimmed so pressing Next again re-reads the
-     * page that was left, not a stale copy of it.
-     */
+    /** Returns to the listing page before this one. */
     private void goToPreviousPage() {
-        if (pageHistory.isEmpty()) return;
-        pageHistory.remove(pageHistory.size() - 1);
-        int index = pageHistory.size() - 1;
-        String target = index < 0 ? source.listingUrl() : pageHistory.get(index);
-        loadPage(target, Math.max(0, index));
+        if (pager == null) return;
+        String target = pager.retreat();
+        if (target == null) return;
+        loadPage(target);
     }
 
     /** Shows the page controls and reflects whether Back and Next are available. */
     private void updatePagination() {
-        if (paginationContainer == null) return;
+        if (paginationContainer == null || pager == null) return;
         paginationContainer.setVisibility(View.VISIBLE);
-        pageLabel.setText(getString(R.string.installations_page_label, currentPage + 1));
+        pageLabel.setText(getString(R.string.installations_page_label, pager.pageNumber()));
 
-        boolean hasPrevious = currentPage > 0;
+        boolean hasPrevious = pager.hasPrevious();
         prevPageButton.setEnabled(hasPrevious);
         prevPageButton.setAlpha(hasPrevious ? 1f : 0.4f);
 
-        boolean hasNext = nextPageUrl != null && !nextPageUrl.isEmpty();
+        boolean hasNext = pager.hasNext();
         nextPageButton.setEnabled(hasNext);
         nextPageButton.setAlpha(hasNext ? 1f : 0.4f);
     }
