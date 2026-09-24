@@ -20,6 +20,9 @@ public final class ModIds {
     public static final String HOTBAR_SLOT = "hotbar_slot";
     public static final String AIM_SETTINGS = "aim_settings";
     public static final String MOD_MENU = "mod_menu";
+    public static final String ARMOR_HUD = "armor_hud";
+    public static final String CRYSTAL_OPTIMIZER = "crystal_optimizer";
+    public static final String HIT_REGISTRATION = "hit_registration";
 
     /**
      * Combat-oriented modules the Mod Menu files under its PvP tab. Kept here rather than
@@ -27,10 +30,19 @@ public final class ModIds {
      * drift apart.
      */
     private static final java.util.Set<String> PVP_MODULES = java.util.Set.of(
-            AIM_SETTINGS, CPS_DISPLAY, SNAPLOOK);
+            AIM_SETTINGS, CPS_DISPLAY, SNAPLOOK, CRYSTAL_OPTIMIZER, HIT_REGISTRATION);
 
     public static boolean isPvpModule(String modId) {
         return modId != null && PVP_MODULES.contains(modId);
+    }
+
+    /**
+     * True for modules that need a per-frame data feed from the game process (durability,
+     * target entity, placement geometry). They render a "no game data" placeholder rather
+     * than a stale or fabricated reading until a native provider publishes values.
+     */
+    public static boolean requiresGameData(String modId) {
+        return ARMOR_HUD.equals(modId) || CRYSTAL_OPTIMIZER.equals(modId);
     }
 
     private ModIds() {}

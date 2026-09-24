@@ -39,6 +39,8 @@ public class InbuiltOverlayManager {
     private FpsDisplayOverlay fpsDisplayOverlay;
     private CpsDisplayOverlay cpsDisplayOverlay;
     private AimSettingsOverlay aimSettingsOverlay;
+    private ArmorHudOverlay armorHudOverlay;
+    private CrystalOptimizerOverlay crystalOptimizerOverlay;
     private ModMenuButton modMenuButton;
     private HudOverlay hudOverlay;
     private BaseOverlayButton selectedHudEditorOverlay;
@@ -85,6 +87,9 @@ public class InbuiltOverlayManager {
         modActiveStates.put(ModIds.MORE_BUTTONS, false);
         modActiveStates.put(ModIds.HOTBAR_SLOT, false);
         modActiveStates.put(ModIds.AIM_SETTINGS, false);
+        modActiveStates.put(ModIds.ARMOR_HUD, false);
+        modActiveStates.put(ModIds.CRYSTAL_OPTIMIZER, false);
+        modActiveStates.put(ModIds.HIT_REGISTRATION, false);
 
         modPositionMap.put(ModIds.QUICK_DROP, nextY + SPACING);
         modPositionMap.put(ModIds.CAMERA_PERSPECTIVE, nextY + SPACING * 2);
@@ -122,6 +127,9 @@ public class InbuiltOverlayManager {
         restorePersistedInbuiltModState(manager, ModIds.MORE_BUTTONS);
         restorePersistedInbuiltModState(manager, ModIds.HOTBAR_SLOT);
         restorePersistedInbuiltModState(manager, ModIds.AIM_SETTINGS);
+        restorePersistedInbuiltModState(manager, ModIds.ARMOR_HUD);
+        restorePersistedInbuiltModState(manager, ModIds.CRYSTAL_OPTIMIZER);
+        restorePersistedInbuiltModState(manager, ModIds.HIT_REGISTRATION);
 
         modMenuButton = new ModMenuButton(activity);
         modMenuButton.show(START_X, nextY);
@@ -259,10 +267,47 @@ public class InbuiltOverlayManager {
                 aimSettingsOverlay.show();
                 AimSettingsMod.setEnabled(true, InbuiltModManager.getInstance(activity));
                 break;
+            case ModIds.ARMOR_HUD:
+                if (armorHudOverlay == null) {
+                    armorHudOverlay = new ArmorHudOverlay(activity);
+                }
+                armorHudOverlay.show(savedX, savedY);
+                ArmorHudMod.setEnabled(true, manager);
+                break;
+            case ModIds.CRYSTAL_OPTIMIZER:
+                if (crystalOptimizerOverlay == null) {
+                    crystalOptimizerOverlay = new CrystalOptimizerOverlay(activity);
+                }
+                crystalOptimizerOverlay.show();
+                CrystalOptimizerMod.setEnabled(true, manager);
+                break;
+            case ModIds.HIT_REGISTRATION:
+                HitRegistrationMod.setEnabled(true, manager);
+                break;
         }
     }
 
     private void hideModOverlay(String modId) {
+        if (modId.equals(ModIds.ARMOR_HUD)) {
+            if (armorHudOverlay != null) {
+                armorHudOverlay.hide();
+                armorHudOverlay = null;
+            }
+            ArmorHudMod.setEnabled(false, null);
+            return;
+        }
+        if (modId.equals(ModIds.CRYSTAL_OPTIMIZER)) {
+            if (crystalOptimizerOverlay != null) {
+                crystalOptimizerOverlay.hide();
+                crystalOptimizerOverlay = null;
+            }
+            CrystalOptimizerMod.setEnabled(false, null);
+            return;
+        }
+        if (modId.equals(ModIds.HIT_REGISTRATION)) {
+            HitRegistrationMod.setEnabled(false, null);
+            return;
+        }
         if (modId.equals(ModIds.AIM_SETTINGS)) {
             if (aimSettingsOverlay != null) aimSettingsOverlay.hide();
             AimSettingsMod.setEnabled(false, null);
@@ -710,6 +755,9 @@ public class InbuiltOverlayManager {
         if (modId.equals(ModIds.CPS_DISPLAY) && cpsDisplayOverlay != null) {
             cpsDisplayOverlay.applyConfigurationChanges();
         }
+        if (modId.equals(ModIds.ARMOR_HUD) && armorHudOverlay != null) {
+            armorHudOverlay.applyConfigurationChanges();
+        }
         if (modId.equals(ModIds.MORE_BUTTONS)) {
             refreshMoreButtons();
         }
@@ -728,6 +776,9 @@ public class InbuiltOverlayManager {
         }
         if (cpsDisplayOverlay != null) {
             cpsDisplayOverlay.setHudEditorMode(active);
+        }
+        if (armorHudOverlay != null) {
+            armorHudOverlay.setHudEditorMode(active);
         }
         if (hudOverlay != null) {
             hudOverlay.setHudEditorMode(active);
@@ -876,6 +927,10 @@ public class InbuiltOverlayManager {
             manager.setOverlayPosition(ModIds.FPS_DISPLAY, centerX, centerY);
             fpsDisplayOverlay.updatePosition(centerX, centerY);
         }
+        if (armorHudOverlay != null) {
+            manager.setOverlayPosition(ModIds.ARMOR_HUD, centerX, centerY);
+            armorHudOverlay.updatePosition(centerX, centerY);
+        }
         if (cpsDisplayOverlay != null) {
             manager.setOverlayPosition(ModIds.CPS_DISPLAY, centerX, centerY);
             cpsDisplayOverlay.updatePosition(centerX, centerY);
@@ -998,6 +1053,20 @@ public class InbuiltOverlayManager {
                         ? android.view.View.VISIBLE
                         : android.view.View.GONE;
                 cpsDisplayOverlay.setVisibility(visibility);
+            }
+
+            if (armorHudOverlay != null) {
+                int visibility = inbuiltVisible || manager.isOverlayShowEverywhere(ModIds.ARMOR_HUD)
+                        ? android.view.View.VISIBLE
+                        : android.view.View.GONE;
+                armorHudOverlay.setOverlayVisibility(visibility);
+            }
+
+            if (crystalOptimizerOverlay != null) {
+                int visibility = inbuiltVisible || manager.isOverlayShowEverywhere(ModIds.CRYSTAL_OPTIMIZER)
+                        ? android.view.View.VISIBLE
+                        : android.view.View.GONE;
+                crystalOptimizerOverlay.setOverlayVisibility(visibility);
             }
         });
     }

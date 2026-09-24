@@ -48,6 +48,19 @@ public final class InbuiltModuleProvider {
     private static final String CFG_AIM_SENSITIVITY = "aim_sensitivity";
     private static final String CFG_AIM_CROSSHAIR_STYLE = "aim_crosshair_style";
     private static final String CFG_AIM_CROSSHAIR_COLOR = "aim_crosshair_color";
+    private static final String CFG_ARMOR_HUD_SHOW_TARGET = "armor_hud_show_target";
+    private static final String CFG_ARMOR_HUD_SHOW_ENCHANTS = "armor_hud_show_enchants";
+    private static final String CFG_ARMOR_HUD_STACKED = "armor_hud_stacked";
+    private static final String CFG_ARMOR_HUD_REFRESH_MS = "armor_hud_refresh_ms";
+    private static final String CFG_CRYSTAL_MIN_SELF_HP = "crystal_min_self_hp";
+    private static final String CFG_CRYSTAL_MAX_RANGE = "crystal_max_range";
+    private static final String CFG_CRYSTAL_PLACEMENT_DELAY_MS = "crystal_placement_delay_ms";
+    private static final String CFG_CRYSTAL_MANUAL_ASSIST = "crystal_manual_assist";
+    private static final String CFG_CRYSTAL_KEYBIND = "crystal_keybind";
+    private static final String CFG_HITREG_SENSITIVITY = "hitreg_sensitivity";
+    private static final String CFG_HITREG_SMOOTHING = "hitreg_smoothing";
+    private static final String CFG_HITREG_PREDICTION = "hitreg_prediction";
+    private static final String CFG_HITREG_HAPTIC = "hitreg_haptic";
 
     private InbuiltModuleProvider() {
     }
@@ -103,6 +116,15 @@ public final class InbuiltModuleProvider {
         mods.add(create(activity, manager, overlayManager, ModIds.AIM_SETTINGS,
                 R.string.inbuilt_mod_aim_settings, R.string.inbuilt_mod_aim_settings_desc,
                 groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.ARMOR_HUD,
+                R.string.inbuilt_mod_armor_hud, R.string.inbuilt_mod_armor_hud_desc,
+                groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.CRYSTAL_OPTIMIZER,
+                R.string.inbuilt_mod_crystal_optimizer, R.string.inbuilt_mod_crystal_optimizer_desc,
+                groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.HIT_REGISTRATION,
+                R.string.inbuilt_mod_hit_registration, R.string.inbuilt_mod_hit_registration_desc,
+                groupName));
 
         return groupPvpLast(mods);
     }
@@ -129,7 +151,9 @@ public final class InbuiltModuleProvider {
         boolean active = overlayManager != null
                 ? overlayManager.isModActive(id)
                 : manager.resolveInbuiltModEnabled(id, false);
-        boolean customConfig = ModIds.POJAV_CONTROLS.equals(id) || ModIds.MORE_BUTTONS.equals(id);
+        boolean customConfig = ModIds.POJAV_CONTROLS.equals(id) || ModIds.MORE_BUTTONS.equals(id)
+                || ModIds.ARMOR_HUD.equals(id) || ModIds.CRYSTAL_OPTIMIZER.equals(id)
+                || ModIds.HIT_REGISTRATION.equals(id);
         // Combat modules get their own PvP section so the tab is a real destination, not just a
         // filter over the inbuilt list. They remain inbuilt modules, so the Inbuilt filter and
         // the "Inbuilt" grouping still find them.
@@ -156,6 +180,11 @@ public final class InbuiltModuleProvider {
     }
 
     private static RuntimeConfigSchema createLocalConfigSchema(Context context, UnifiedMod mod) {
+        String modId = mod.getId();
+        if (ModIds.ARMOR_HUD.equals(modId) || ModIds.CRYSTAL_OPTIMIZER.equals(modId)
+                || ModIds.HIT_REGISTRATION.equals(modId)) {
+            return createCombatConfigSchema(context, mod);
+        }
         boolean hotbar = ModIds.HOTBAR_SLOT.equals(mod.getId());
         if (!hotbar && !ModIds.GYRO.equals(mod.getId())) return null;
         try {
@@ -203,6 +232,60 @@ public final class InbuiltModuleProvider {
                     .put("categories", categories).put("nodes", nodes).toString());
         } catch (JSONException e) {
             throw new IllegalStateException("Unable to build inbuilt config schema", e);
+        }
+    }
+
+    /**
+     * Category layout for the three combat modules. They each get an explicit schema so the
+     * dialog groups related settings rather than listing one flat column.
+     */
+    private static RuntimeConfigSchema createCombatConfigSchema(Context context, UnifiedMod mod) {
+        String modId = mod.getId();
+        try {
+            JSONArray categories = new JSONArray();
+            JSONArray nodes = new JSONArray();
+            String defaultCategory;
+            if (ModIds.ARMOR_HUD.equals(modId)) {
+                categories.put(configCategory(context, "display", R.string.mod_config_category_appearance));
+                categories.put(configCategory(context, "data", R.string.mod_config_category_behavior));
+                defaultCategory = "display";
+                nodes.put(configNode(mod, CFG_ARMOR_HUD_SHOW_TARGET, "display"));
+                nodes.put(configNode(mod, CFG_ARMOR_HUD_SHOW_ENCHANTS, "display"));
+                nodes.put(configNode(mod, CFG_ARMOR_HUD_STACKED, "display"));
+                nodes.put(configNode(mod, CFG_ARMOR_HUD_REFRESH_MS, "data"));
+                nodes.put(configNode(mod, CFG_OVERLAY_SIZE, "display"));
+                nodes.put(configNode(mod, CFG_OVERLAY_OPACITY, "display"));
+                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "data"));
+                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "data"));
+            } else if (ModIds.CRYSTAL_OPTIMIZER.equals(modId)) {
+                categories.put(configCategory(context, "safety", R.string.mod_config_category_behavior));
+                categories.put(configCategory(context, "tuning", R.string.mod_config_category_motion));
+                defaultCategory = "safety";
+                nodes.put(configNode(mod, CFG_CRYSTAL_MANUAL_ASSIST, "safety"));
+                nodes.put(configNode(mod, CFG_CRYSTAL_MIN_SELF_HP, "safety"));
+                nodes.put(configNode(mod, CFG_CRYSTAL_MAX_RANGE, "tuning"));
+                nodes.put(configNode(mod, CFG_CRYSTAL_PLACEMENT_DELAY_MS, "tuning"));
+                nodes.put(configNode(mod, CFG_CRYSTAL_KEYBIND, "tuning"));
+                nodes.put(configNode(mod, CFG_OVERLAY_SIZE, "tuning"));
+                nodes.put(configNode(mod, CFG_OVERLAY_OPACITY, "tuning"));
+                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "safety"));
+                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "safety"));
+            } else {
+                categories.put(configCategory(context, "aim", R.string.mod_config_category_motion));
+                categories.put(configCategory(context, "feedback", R.string.mod_config_category_button));
+                defaultCategory = "aim";
+                nodes.put(configNode(mod, CFG_HITREG_SENSITIVITY, "aim"));
+                nodes.put(configNode(mod, CFG_HITREG_SMOOTHING, "aim"));
+                nodes.put(configNode(mod, CFG_HITREG_PREDICTION, "aim"));
+                nodes.put(configNode(mod, CFG_HITREG_HAPTIC, "feedback"));
+                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "feedback"));
+                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "feedback"));
+            }
+            return RuntimeConfigSchema.parse(new JSONObject().put("version", 2)
+                    .put("default_category", defaultCategory)
+                    .put("categories", categories).put("nodes", nodes).toString());
+        } catch (JSONException e) {
+            throw new IllegalStateException("Unable to build combat config schema", e);
         }
     }
 
@@ -370,6 +453,76 @@ public final class InbuiltModuleProvider {
                     UnifiedMod.ConfigType.TOGGLE,
                     "true", "", "",
                     String.valueOf(manager.isAimFlashEnabled())));
+        } else if (ModIds.ARMOR_HUD.equals(modId)) {
+            configs.add(config(CFG_ARMOR_HUD_SHOW_TARGET,
+                    context.getString(R.string.mod_config_armor_hud_show_target),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "false", "", "",
+                    String.valueOf(manager.isArmorHudShowTarget())));
+            configs.add(config(CFG_ARMOR_HUD_SHOW_ENCHANTS,
+                    context.getString(R.string.mod_config_armor_hud_show_enchants),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "false", "", "",
+                    String.valueOf(manager.isArmorHudShowEnchants())));
+            configs.add(config(CFG_ARMOR_HUD_STACKED,
+                    context.getString(R.string.mod_config_armor_hud_stacked),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isArmorHudStacked())));
+            configs.add(config(CFG_ARMOR_HUD_REFRESH_MS,
+                    context.getString(R.string.mod_config_armor_hud_refresh_ms),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "100", "50", "1000",
+                    String.valueOf(manager.getArmorHudRefreshMs())));
+        } else if (ModIds.CRYSTAL_OPTIMIZER.equals(modId)) {
+            // Manual assist is listed first and defaults on: it is the variant that does not
+            // automate a player action, so it must be the one a fresh profile lands on.
+            configs.add(config(CFG_CRYSTAL_MANUAL_ASSIST,
+                    context.getString(R.string.mod_config_crystal_manual_assist),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isCrystalManualAssist())));
+            configs.add(config(CFG_CRYSTAL_MIN_SELF_HP,
+                    context.getString(R.string.mod_config_crystal_min_self_hp),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "14", "1", "20",
+                    String.valueOf(manager.getCrystalMinSelfHp())));
+            configs.add(config(CFG_CRYSTAL_MAX_RANGE,
+                    context.getString(R.string.mod_config_crystal_max_range),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "4", "1", "8",
+                    String.valueOf(manager.getCrystalMaxRange())));
+            configs.add(config(CFG_CRYSTAL_PLACEMENT_DELAY_MS,
+                    context.getString(R.string.mod_config_crystal_placement_delay_ms),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "50", "0", "1000",
+                    String.valueOf(manager.getCrystalPlacementDelayMs())));
+            configs.add(config(CFG_CRYSTAL_KEYBIND,
+                    context.getString(R.string.mod_config_crystal_keybind),
+                    UnifiedMod.ConfigType.KEYBIND,
+                    "", "", "",
+                    String.valueOf(manager.getCrystalKeybind())));
+        } else if (ModIds.HIT_REGISTRATION.equals(modId)) {
+            configs.add(config(CFG_HITREG_SENSITIVITY,
+                    context.getString(R.string.mod_config_hitreg_sensitivity),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "100", "10", "300",
+                    String.valueOf(manager.getHitRegSensitivity())));
+            configs.add(config(CFG_HITREG_SMOOTHING,
+                    context.getString(R.string.mod_config_hitreg_smoothing),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "25", "0", "95",
+                    String.valueOf(manager.getHitRegSmoothing())));
+            configs.add(config(CFG_HITREG_PREDICTION,
+                    context.getString(R.string.mod_config_hitreg_prediction),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    "35", "0", "100",
+                    String.valueOf(manager.getHitRegPrediction())));
+            configs.add(config(CFG_HITREG_HAPTIC,
+                    context.getString(R.string.mod_config_hitreg_haptic),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitRegHapticEnabled())));
         }
         return configs;
     }
@@ -475,11 +628,56 @@ public final class InbuiltModuleProvider {
             case CFG_AIM_FLASH:
                 manager.setAimFlashEnabled(parseBoolean(value));
                 break;
+            case CFG_ARMOR_HUD_SHOW_TARGET:
+                manager.setArmorHudShowTarget(parseBoolean(value));
+                break;
+            case CFG_ARMOR_HUD_SHOW_ENCHANTS:
+                manager.setArmorHudShowEnchants(parseBoolean(value));
+                break;
+            case CFG_ARMOR_HUD_STACKED:
+                manager.setArmorHudStacked(parseBoolean(value));
+                break;
+            case CFG_ARMOR_HUD_REFRESH_MS:
+                manager.setArmorHudRefreshMs(parseInt(value, manager.getArmorHudRefreshMs()));
+                break;
+            case CFG_CRYSTAL_MANUAL_ASSIST:
+                manager.setCrystalManualAssist(parseBoolean(value));
+                break;
+            case CFG_CRYSTAL_MIN_SELF_HP:
+                manager.setCrystalMinSelfHp(parseInt(value, manager.getCrystalMinSelfHp()));
+                break;
+            case CFG_CRYSTAL_MAX_RANGE:
+                manager.setCrystalMaxRange(parseInt(value, manager.getCrystalMaxRange()));
+                break;
+            case CFG_CRYSTAL_PLACEMENT_DELAY_MS:
+                manager.setCrystalPlacementDelayMs(parseInt(value, manager.getCrystalPlacementDelayMs()));
+                break;
+            case CFG_CRYSTAL_KEYBIND:
+                manager.setCrystalKeybind(parseInt(value, manager.getCrystalKeybind()));
+                break;
+            case CFG_HITREG_SENSITIVITY:
+                manager.setHitRegSensitivity(parseInt(value, manager.getHitRegSensitivity()));
+                break;
+            case CFG_HITREG_SMOOTHING:
+                manager.setHitRegSmoothing(parseInt(value, manager.getHitRegSmoothing()));
+                break;
+            case CFG_HITREG_PREDICTION:
+                manager.setHitRegPrediction(parseInt(value, manager.getHitRegPrediction()));
+                break;
+            case CFG_HITREG_HAPTIC:
+                manager.setHitRegHapticEnabled(parseBoolean(value));
+                break;
             default:
                 break;
         }
         if (ModIds.AIM_SETTINGS.equals(mod.getId())) {
             org.chimeramc.client.core.mods.inbuilt.overlay.AimSettingsMod.onConfigChanged(manager);
+        } else if (ModIds.ARMOR_HUD.equals(mod.getId())) {
+            org.chimeramc.client.core.mods.inbuilt.overlay.ArmorHudMod.onConfigChanged(manager);
+        } else if (ModIds.CRYSTAL_OPTIMIZER.equals(mod.getId())) {
+            org.chimeramc.client.core.mods.inbuilt.overlay.CrystalOptimizerMod.onConfigChanged(manager);
+        } else if (ModIds.HIT_REGISTRATION.equals(mod.getId())) {
+            org.chimeramc.client.core.mods.inbuilt.overlay.HitRegistrationMod.onConfigChanged(manager);
         }
     }
 

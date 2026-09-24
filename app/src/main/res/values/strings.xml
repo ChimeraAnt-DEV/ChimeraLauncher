@@ -1327,6 +1327,53 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="aim_crosshair_color">Crosshair Color</string>
     <string name="aim_crosshair_color_desc">Tint of the reticle and burst pulse</string>
 
+    <!-- Armor HUD -->
+    <string name="inbuilt_mod_armor_hud">Armor HUD</string>
+    <string name="inbuilt_mod_armor_hud_desc">Durability and enchantment readout for your armor, and optionally for your current target</string>
+    <string name="mod_config_armor_hud_show_target">Show Target Armor</string>
+    <string name="mod_config_armor_hud_show_target_desc">Also read the armor of the entity you are looking at, where the game exposes it</string>
+    <string name="mod_config_armor_hud_show_enchants">Show Enchantment Icons</string>
+    <string name="mod_config_armor_hud_show_enchants_desc">Letter badge per enchantment on each piece</string>
+    <string name="mod_config_armor_hud_stacked">Stack Rows</string>
+    <string name="mod_config_armor_hud_stacked_desc">Self row above target row; off places them side by side</string>
+    <string name="mod_config_armor_hud_refresh_ms" formatted="false">Refresh Rate (ms)</string>
+    <string name="mod_config_armor_hud_refresh_ms_desc">How often durability is re-read; lower is more responsive</string>
+    <string name="armor_hud_no_data">No game data yet — waiting for the native armor reader</string>
+    <string name="armor_hud_self">You</string>
+    <string name="armor_hud_target">Target</string>
+
+    <!-- Crystal Optimizer -->
+    <string name="inbuilt_mod_crystal_optimizer">Crystal Optimizer</string>
+    <string name="inbuilt_mod_crystal_optimizer_desc">Finds the end-crystal spot that hurts your target most and you least</string>
+    <string name="mod_config_crystal_min_self_hp" formatted="false">Min Self HP (half-hearts)</string>
+    <string name="mod_config_crystal_min_self_hp_desc">Refuses a placement that would leave you below this health</string>
+    <string name="mod_config_crystal_max_range" formatted="false">Max Placement Range (blocks)</string>
+    <string name="mod_config_crystal_max_range_desc">Furthest you may be from the spot for it to be offered</string>
+    <string name="mod_config_crystal_placement_delay_ms" formatted="false">Placement Delay (ms)</string>
+    <string name="mod_config_crystal_placement_delay_ms_desc">Gap between placing and detonating, for timing your own action</string>
+    <string name="mod_config_crystal_manual_assist">Manual Assist Only</string>
+    <string name="mod_config_crystal_manual_assist_desc">Only marks the ideal spot and never places or detonates for you</string>
+    <string name="mod_config_crystal_keybind">Toggle Keybind</string>
+    <string name="mod_config_crystal_keybind_desc">Key that switches the module on and off mid-fight</string>
+    <string name="crystal_optimizer_status_off">Crystal Optimizer: off</string>
+    <string name="crystal_optimizer_status_no_spot">Crystal Optimizer: no safe spot</string>
+    <string name="crystal_optimizer_status_manual" formatted="false">Assist · %.1f blocks · ~%d dmg · place it yourself</string>
+    <string name="crystal_optimizer_status_auto" formatted="false">Auto · %.1f blocks · ~%d dmg</string>
+    <string name="crystal_optimizer_fairness_note">Automating crystal placement is treated as cheating on many servers and can get you banned. Manual Assist only highlights the spot; it never acts for you. Check your server rules before enabling automatic placement.</string>
+
+    <!-- Hit Registration -->
+    <string name="inbuilt_mod_hit_registration">Hit Registration</string>
+    <string name="inbuilt_mod_hit_registration_desc">Shape controller look input so flicks track straight across the game tick</string>
+    <string name="mod_config_hitreg_sensitivity" formatted="false">Look Sensitivity (%)</string>
+    <string name="mod_config_hitreg_sensitivity_desc">Scales look input independently of the in-game option</string>
+    <string name="mod_config_hitreg_smoothing" formatted="false">Swipe Smoothing (%)</string>
+    <string name="mod_config_hitreg_smoothing_desc">Damps jitter on fast swipes; fine aim stays 1:1</string>
+    <string name="mod_config_hitreg_prediction" formatted="false">Sub-frame Prediction (%)</string>
+    <string name="mod_config_hitreg_prediction_desc">Extrapolates a flick across the server tick so the sent aim follows your line</string>
+    <string name="mod_config_hitreg_haptic">Haptic Confirmation</string>
+    <string name="mod_config_hitreg_haptic_desc">Short tick when a burst of look input concludes</string>
+    <string name="hitreg_scope_note">This shapes the aim your device sends. Whether a hit registers is decided by the server, so it cannot make a miss hit — it makes the input you send cleaner and more predictable.</string>
+
     <!-- ABI / bitness -->
     <string name="abi_64_bit">64-bit</string>
     <string name="abi_32_bit">32-bit</string>
