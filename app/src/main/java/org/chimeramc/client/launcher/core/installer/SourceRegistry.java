@@ -13,10 +13,14 @@ import java.util.List;
  *
  * Adding a mirror is therefore two steps — implement {@link BedrockSource} and add it to
  * {@link #all()} — with no change to the UI, the download client or the import pipeline.
+ *
+ * The order matters: {@link #active()} is the first entry, so the first source is the one the
+ * Installations tab uses out of the box.
  */
 public final class SourceRegistry {
 
     private static final List<BedrockSource> SOURCES = List.of(
+            new McpePlanetSource(),
             new McpedlSource()
     );
 

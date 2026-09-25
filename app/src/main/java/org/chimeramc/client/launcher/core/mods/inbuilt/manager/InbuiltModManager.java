@@ -58,6 +58,16 @@ public class InbuiltModManager {
     private static final String KEY_HITREG_SMOOTHING = "hitreg_smoothing";
     private static final String KEY_HITREG_PREDICTION = "hitreg_prediction";
     private static final String KEY_HITREG_HAPTIC = "hitreg_haptic";
+    private static final String KEY_HIT_TIMING_COOLDOWN_MS = "hit_timing_cooldown_ms";
+    private static final String KEY_HIT_TIMING_SHOW_COMBO = "hit_timing_show_combo";
+    private static final String KEY_HIT_TIMING_SHOW_BAR = "hit_timing_show_bar";
+    private static final String KEY_HITBOX_SHOW_PLAYERS = "hitbox_show_players";
+    private static final String KEY_HITBOX_SHOW_MOBS = "hitbox_show_mobs";
+    private static final String KEY_HITBOX_SHOW_ITEMS = "hitbox_show_items";
+    private static final String KEY_HITBOX_SHOW_PROJECTILES = "hitbox_show_projectiles";
+    private static final String KEY_HITBOX_SHOW_LOOK_LINE = "hitbox_show_look_line";
+    private static final String KEY_HITBOX_SHOW_CRIT_LINE = "hitbox_show_crit_line";
+    private static final String KEY_HITBOX_SHOW_COMBO_BOX = "hitbox_show_combo_box";
     private static final int DEFAULT_AIM_SMOOTHING = 40;
     private static final int DEFAULT_AIM_SENSITIVITY = 100;
     private static final int DEFAULT_AIM_CROSSHAIR_COLOR = 0xFF3DDC84;
@@ -526,6 +536,87 @@ public class InbuiltModManager {
 
     public void setHitRegHapticEnabled(boolean enabled) {
         prefs.edit().putBoolean(KEY_HITREG_HAPTIC, enabled).apply();
+    }
+
+    public int getHitTimingCooldownMs() {
+        return prefs.getInt(KEY_HIT_TIMING_COOLDOWN_MS,
+                (int) org.chimeramc.client.core.mods.inbuilt.overlay.HitTimingSolver.DEFAULT_COOLDOWN_MS);
+    }
+
+    public void setHitTimingCooldownMs(int ms) {
+        prefs.edit().putInt(KEY_HIT_TIMING_COOLDOWN_MS, Math.max(50, Math.min(2000, ms))).apply();
+    }
+
+    public boolean isHitTimingShowCombo() {
+        return prefs.getBoolean(KEY_HIT_TIMING_SHOW_COMBO, true);
+    }
+
+    public void setHitTimingShowCombo(boolean show) {
+        prefs.edit().putBoolean(KEY_HIT_TIMING_SHOW_COMBO, show).apply();
+    }
+
+    public boolean isHitTimingShowTimingBar() {
+        return prefs.getBoolean(KEY_HIT_TIMING_SHOW_BAR, true);
+    }
+
+    public void setHitTimingShowTimingBar(boolean show) {
+        prefs.edit().putBoolean(KEY_HIT_TIMING_SHOW_BAR, show).apply();
+    }
+
+    public boolean isHitboxShowPlayers() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_PLAYERS, true);
+    }
+
+    public void setHitboxShowPlayers(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_PLAYERS, show).apply();
+    }
+
+    public boolean isHitboxShowMobs() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_MOBS, true);
+    }
+
+    public void setHitboxShowMobs(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_MOBS, show).apply();
+    }
+
+    public boolean isHitboxShowItems() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_ITEMS, true);
+    }
+
+    public void setHitboxShowItems(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_ITEMS, show).apply();
+    }
+
+    public boolean isHitboxShowProjectiles() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_PROJECTILES, true);
+    }
+
+    public void setHitboxShowProjectiles(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_PROJECTILES, show).apply();
+    }
+
+    public boolean isHitboxShowLookLine() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_LOOK_LINE, true);
+    }
+
+    public void setHitboxShowLookLine(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_LOOK_LINE, show).apply();
+    }
+
+    public boolean isHitboxShowCritLine() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_CRIT_LINE, true);
+    }
+
+    public void setHitboxShowCritLine(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_CRIT_LINE, show).apply();
+    }
+
+    public boolean isHitboxShowComboBox() {
+        return prefs.getBoolean(KEY_HITBOX_SHOW_COMBO_BOX, true);
+    }
+
+    public void setHitboxShowComboBox(boolean show) {
+        prefs.edit().putBoolean(KEY_HITBOX_SHOW_COMBO_BOX, show).apply();
     }
 
 }

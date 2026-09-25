@@ -242,8 +242,8 @@ Notes: `unzip` is not installed — extract with `python3 -c "import zipfile..."
 - `handleMotionEvent` must report every axis lit *or* unlit on each event. Only ever setting the glow left sticks and the d-pad highlighted forever once touched.
 - `drawRegion` offsets must stay inside the parentheses: `cx + (r.x - 0.5f) * 2f * scale`. Written as `cx + r.x - 0.5f * 2f * scale` every control lands at centre-minus-scale and the layout piles into the left half.
 - Shell gradients are built in `buildShaders()` on size/theme change, never per frame.
-## Combat modules: Armor HUD, Crystal Optimizer, Hit Registration
-Three modules in the Mod Menu's PvP tab, all under `core.mods.inbuilt.overlay`. Each is built as
+## Combat modules: Armor HUD, Crystal Optimizer, Hit Registration, Hitboxes, Select Hit
+Five modules in the Mod Menu's PvP tab, all under `core.mods.inbuilt.overlay`. Each is built as
 **decision/logic + a game-data seam**, because this repo cannot read live game state (no
 `libminecraftpe.so`, no entity structures — the shipped signature rules cover only five
 menu/HUD addresses). The seam is the honest boundary; nothing fabricates a reading across it.
@@ -282,10 +282,68 @@ menu/HUD addresses). The seam is the honest boundary; nothing fabricates a readi
     stick only** (the look stick), reusing the caller's buffer so the path still allocates
     nothing. `SystemClock` is not mocked in unit tests, so `TimeSource` is injectable
     (`setTimeSource`); `HitRegistrationModTest` installs a `FakeClock`.
-- The `armor_hud` / `crystal_optimizer` / `hit_registration` ids live in `ModIds`, with
-  `CRYSTAL_OPTIMIZER` and `HIT_REGISTRATION` in `PVP_MODULES` so they land in the PvP tab.
-  `ModIds.requiresGameData(id)` marks the two that need a native feed. All three are registered
-  in `InbuiltModuleProvider` (entries, configs, setters, and an explicit
+- The `armor_hud` / `crystal_optimizer` / `hit_registration` / `hit_timing` / `hitbox` ids live
+  in `ModIds`, with all five in `PVP_MODULES` so they land in the PvP tab.
+  `ModIds.requiresGameData(id)` marks the three that need a native feed (armor, crystal, hitbox).
+  All are registered in `InbuiltModuleProvider` (entries, configs, setters, and an explicit
   `createCombatConfigSchema` category layout) and in `InbuiltOverlayManager`
   (show/hide/tick/visibility/reset-position), and they set `customConfig = true`.
-- Tests: `CrystalPlacementSolverTest`, `ArmorHudModTest`, `HitRegistrationModTest` (no mocks).
+- Tests: `CrystalPlacementSolverTest`, `ArmorHudModTest`, `HitRegistrationModTest`,
+  `HitTimingSolverTest`, `HitboxProjectorTest` (no mocks).
+- **`createCombatConfigSchema` descriptions and scope notes.** `configNode` attaches the
+  `_desc` string for a config key via `configDescriptionRes(key)`, and each combat module appends
+  an `info` node carrying its scope note (`hitreg_scope_note`, `hit_timing_scope_note`,
+  `hitbox_scope_note`, `crystal_optimizer_fairness_note`, `armor_hud_no_data`). Those notes
+  already existed but had **no consumer in code or layout** — a module named after an outcome
+  ("Hit Registration") that stops short of it reads as broken unless the dialog says why.
+  `configDescriptionRes` is an explicit switch, not a name lookup, so a renamed key cannot
+  silently bind to an unrelated string. The note node goes in the default category, so it is the
+  first thing read.
+
+## Hitboxes module (HitboxProjector + HitboxMod + HitboxOverlay)
+Draws entity bounding boxes plus two combat guides, and is the one overlay that is **not**
+draggable — boxes are world-positioned, so the whole screen is the canvas and it is created with
+`FLAG_NOT_TOUCHABLE` so it can never eat a tap or a look gesture. `HitboxMod.EntitySource` is the
+game-data seam; with no provider `readFrame()` returns null and **nothing is drawn**, because an
+invented box is worse than no box — the player would aim at it.
+
+- **`HitboxProjector` is pure** (no Android/game types) and holds all the arithmetic: the camera
+  basis, the box projection, the crit line, the combo box, and the crosshair slab test. The
+  overlay only paints what it returns. `HitboxProjectorTest` is the gate.
+- **Yaw is clockwise from +Z (the Minecraft convention), so `Camera.forward()` negates its X
+  component.** The naive spherical form `(sin yaw, …)` is counter-clockwise and mirrors every
+  projected box horizontally — a mismatch that is invisible until a real feed supplies yaw.
+  The test `turningTheCameraMovesTheBoxOffCentre` caught exactly this. `pitchingUpMoves…` and
+  `aHigherEntityProjectsHigher…` pin the up vector, which nothing else covers.
+- **The look line is a screen-space anchor, not a world ray.** A camera's own forward ray
+  projects to a single point (the centre), so a world ray would have nothing to draw. The line
+  runs from a point below centre up to the crosshair; an entity turns blue when the crosshair
+  actually points at it, which is decided by `crosshairHits` (a slab test) so the highlight
+  cannot disagree with the geometry drawn.
+- **Colours are the contract, kept in one place**: entity boxes white, aimed-at box blue, crit
+  line red (blue when aimed), combo box red (blue when aimed). Guides are players only —
+  `onlyPlayersGetCombatGuides` pins that mobs/items/projectiles get a plain box.
+- Far-to-near sort so a nearer box paints over one behind it. A box behind the camera produces
+  no screen rect and is skipped.
+
+## Select Hit module (HitTimingSolver + HitTimingMod + HitTimingOverlay)
+A small green/red pill centred at the top of the screen: green while a hit will land, red while
+the post-hit window is still open, with the combo count beside it and a slim progress bar. Sized
+(`96x26dp`) so it clears the crosshair area and hotbar, and it is draggable in HUD-editor mode
+only, like the other overlays.
+
+- **`HitTimingSolver` is pure** — the timing rules are unit-testable without a Context or clock.
+  `evaluate(nowMs)` returns `READY` / `HIT` / `WAIT` plus `remainingMs`, `progress` and `combo`.
+- **A click inside the window must not advance the combo or push the window out.**
+  `aDiscardedClickDoesNotAdvanceTheCombo` pins it: counting a discarded click would make the
+  indicator lie about both the streak and when the next hit lands. A backwards clock (uptime
+  wrap) is treated as a fresh engagement rather than producing a negative remaining time.
+- The window is clamped (`50..2000ms`) and exposed as a config slider, because the real cooldown
+  varies by version — the indicator must not be silently wrong on an unlisted build.
+- Attack input is recorded from the paths that actually send an attack: `pojavSendMouseButton`
+  (primary) and the `dispatchKeyEvent` mouse-button path (controller). Both call
+  `InbuiltOverlayManager.notifyAttack()` → `HitTimingMod.onAttack(uptimeMillis())`.
+  `dispatchKeyEvent` records **before** the preloader may consume the press — the player pressed
+  attack either way, and the timing must be the real input timing.
+- Honest scope: it reads your own attack input and never clicks for you; the server still decides
+  whether a hit lands. `hit_timing_scope_note` says so in the dialog.

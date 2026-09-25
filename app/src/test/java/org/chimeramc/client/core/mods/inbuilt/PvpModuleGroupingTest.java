@@ -74,9 +74,29 @@ public class PvpModuleGroupingTest {
         assertTrue(ModIds.isPvpModule(ModIds.AIM_SETTINGS));
         assertTrue(ModIds.isPvpModule(ModIds.CPS_DISPLAY));
         assertTrue(ModIds.isPvpModule(ModIds.SNAPLOOK));
+        assertTrue(ModIds.isPvpModule(ModIds.CRYSTAL_OPTIMIZER));
+        assertTrue(ModIds.isPvpModule(ModIds.HIT_REGISTRATION));
+        assertTrue(ModIds.isPvpModule(ModIds.HIT_TIMING));
+        assertTrue(ModIds.isPvpModule(ModIds.HITBOX));
         assertFalse(ModIds.isPvpModule(ModIds.ZOOM));
         assertFalse(ModIds.isPvpModule(ModIds.MOD_MENU));
         assertFalse(ModIds.isPvpModule(null));
+    }
+
+    /** The new combat modules must also fold into the single PvP run. */
+    @Test
+    public void theCombatModulesJoinTheSinglePvpRun() {
+        List<UnifiedMod> ordered = InbuiltModuleProvider.groupPvpLast(Arrays.asList(
+                mod(ModIds.HIT_TIMING),
+                mod(ModIds.QUICK_DROP),
+                mod(ModIds.HITBOX),
+                mod(ModIds.HIT_REGISTRATION),
+                mod(ModIds.ZOOM)));
+
+        assertEquals(Arrays.asList(
+                ModIds.QUICK_DROP, ModIds.ZOOM,
+                ModIds.HIT_TIMING, ModIds.HITBOX, ModIds.HIT_REGISTRATION),
+                ids(ordered));
     }
 
     @Test

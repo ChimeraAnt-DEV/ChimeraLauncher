@@ -30,7 +30,13 @@ import org.chimeramc.client.core.mods.inbuilt.manager.InbuiltModManager;
  */
 public final class HitRegistrationMod {
     private static final float MICRO_DELTA = 0.12f;
-    private static final long BURST_GAP_MS = 16L;
+    /**
+     * A gap this long ends a burst. It must comfortably exceed one frame at the slowest
+     * sensible refresh rate: at 16 ms a 60 Hz frame (16.7 ms) fell on the "new gesture" side,
+     * so the filter reset almost every frame and the first delta of each frame was discarded.
+     * That is felt as the camera lagging the finger — the opposite of the module's purpose.
+     */
+    private static final long BURST_GAP_MS = 120L;
 
     private static volatile boolean active;
     private static volatile float sensitivity = 1.0f;
@@ -139,13 +145,18 @@ public final class HitRegistrationMod {
 
         if (smoothing > 0f) {
             if (!continuing) {
-                // A fresh swipe: reset so the first delta is not damped against a stale value.
-                EMA[0] = 0f;
-                EMA[1] = 0f;
+                // Seed the filter with this frame rather than zero. Starting at zero would
+                // discard (1 - smoothing) of the very first delta, so every new gesture would
+                // under-travel and the camera would trail the finger. Seeding makes steady
+                // motion pass 1:1 and leaves smoothing to damp only the frame-to-frame change,
+                // which is the jitter it exists to remove.
+                EMA[0] = deltaX;
+                EMA[1] = deltaY;
+            } else {
+                float alpha = 1f - smoothing;
+                EMA[0] = EMA[0] * smoothing + deltaX * alpha;
+                EMA[1] = EMA[1] * smoothing + deltaY * alpha;
             }
-            float alpha = 1f - smoothing;
-            EMA[0] = EMA[0] * smoothing + deltaX * alpha;
-            EMA[1] = EMA[1] * smoothing + deltaY * alpha;
             outX = EMA[0];
             outY = EMA[1];
         }
@@ -206,12 +217,15 @@ public final class HitRegistrationMod {
 
         if (smoothing > 0f) {
             if (!continuing) {
-                EMA[0] = 0f;
-                EMA[1] = 0f;
+                // Seed rather than zero, so the first delta of a gesture passes 1:1; see the
+                // array variant for why a zero seed reads as input delay.
+                EMA[0] = deltaX;
+                EMA[1] = deltaY;
+            } else {
+                float alpha = 1f - smoothing;
+                EMA[0] = EMA[0] * smoothing + deltaX * alpha;
+                EMA[1] = EMA[1] * smoothing + deltaY * alpha;
             }
-            float alpha = 1f - smoothing;
-            EMA[0] = EMA[0] * smoothing + deltaX * alpha;
-            EMA[1] = EMA[1] * smoothing + deltaY * alpha;
             outX = EMA[0];
             outY = EMA[1];
         }
