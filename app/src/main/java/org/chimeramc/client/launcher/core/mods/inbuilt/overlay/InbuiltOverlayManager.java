@@ -41,6 +41,8 @@ public class InbuiltOverlayManager {
     private AimSettingsOverlay aimSettingsOverlay;
     private ArmorHudOverlay armorHudOverlay;
     private CrystalOptimizerOverlay crystalOptimizerOverlay;
+    private HitTimingOverlay hitTimingOverlay;
+    private HitboxOverlay hitboxOverlay;
     private ModMenuButton modMenuButton;
     private HudOverlay hudOverlay;
     private BaseOverlayButton selectedHudEditorOverlay;
@@ -90,6 +92,8 @@ public class InbuiltOverlayManager {
         modActiveStates.put(ModIds.ARMOR_HUD, false);
         modActiveStates.put(ModIds.CRYSTAL_OPTIMIZER, false);
         modActiveStates.put(ModIds.HIT_REGISTRATION, false);
+        modActiveStates.put(ModIds.HIT_TIMING, false);
+        modActiveStates.put(ModIds.HITBOX, false);
 
         modPositionMap.put(ModIds.QUICK_DROP, nextY + SPACING);
         modPositionMap.put(ModIds.CAMERA_PERSPECTIVE, nextY + SPACING * 2);
@@ -130,6 +134,8 @@ public class InbuiltOverlayManager {
         restorePersistedInbuiltModState(manager, ModIds.ARMOR_HUD);
         restorePersistedInbuiltModState(manager, ModIds.CRYSTAL_OPTIMIZER);
         restorePersistedInbuiltModState(manager, ModIds.HIT_REGISTRATION);
+        restorePersistedInbuiltModState(manager, ModIds.HIT_TIMING);
+        restorePersistedInbuiltModState(manager, ModIds.HITBOX);
 
         modMenuButton = new ModMenuButton(activity);
         modMenuButton.show(START_X, nextY);
@@ -284,6 +290,26 @@ public class InbuiltOverlayManager {
             case ModIds.HIT_REGISTRATION:
                 HitRegistrationMod.setEnabled(true, manager);
                 break;
+            case ModIds.HIT_TIMING: {
+                if (hitTimingOverlay == null) {
+                    hitTimingOverlay = new HitTimingOverlay(activity);
+                }
+                // The indicator belongs at the top centre, clear of the crosshair and hotbar.
+                int topX = metrics.widthPixels / 2 - (int) (48 * metrics.density);
+                int topY = (int) (12 * metrics.density);
+                hitTimingOverlay.show(
+                        manager.getOverlayPositionX(ModIds.HIT_TIMING, topX),
+                        manager.getOverlayPositionY(ModIds.HIT_TIMING, topY));
+                HitTimingMod.setEnabled(true, manager);
+                break;
+            }
+            case ModIds.HITBOX:
+                if (hitboxOverlay == null) {
+                    hitboxOverlay = new HitboxOverlay(activity);
+                }
+                hitboxOverlay.show();
+                HitboxMod.setEnabled(true, manager);
+                break;
         }
     }
 
@@ -306,6 +332,22 @@ public class InbuiltOverlayManager {
         }
         if (modId.equals(ModIds.HIT_REGISTRATION)) {
             HitRegistrationMod.setEnabled(false, null);
+            return;
+        }
+        if (modId.equals(ModIds.HIT_TIMING)) {
+            if (hitTimingOverlay != null) {
+                hitTimingOverlay.hide();
+                hitTimingOverlay = null;
+            }
+            HitTimingMod.setEnabled(false, null);
+            return;
+        }
+        if (modId.equals(ModIds.HITBOX)) {
+            if (hitboxOverlay != null) {
+                hitboxOverlay.hide();
+                hitboxOverlay = null;
+            }
+            HitboxMod.setEnabled(false, null);
             return;
         }
         if (modId.equals(ModIds.AIM_SETTINGS)) {
@@ -661,6 +703,26 @@ public class InbuiltOverlayManager {
             gyroOverlay.hide();
             gyroOverlay = null;
         }
+        if (aimSettingsOverlay != null) {
+            aimSettingsOverlay.hide();
+            aimSettingsOverlay = null;
+        }
+        if (armorHudOverlay != null) {
+            armorHudOverlay.hide();
+            armorHudOverlay = null;
+        }
+        if (crystalOptimizerOverlay != null) {
+            crystalOptimizerOverlay.hide();
+            crystalOptimizerOverlay = null;
+        }
+        if (hitTimingOverlay != null) {
+            hitTimingOverlay.hide();
+            hitTimingOverlay = null;
+        }
+        if (hitboxOverlay != null) {
+            hitboxOverlay.hide();
+            hitboxOverlay = null;
+        }
         if (modMenuButton != null) {
             modMenuButton.hide();
             modMenuButton = null;
@@ -734,6 +796,17 @@ public class InbuiltOverlayManager {
         return false;
     }
 
+    /**
+     * Records one attack the player made, for the Select Hit module.
+     *
+     * <p>Called from the paths that actually send an attack to the game — a mouse or controller
+     * primary button, and a touch attack — so the timing is measured against the same input the
+     * game receives rather than against a UI event that may never reach it.
+     */
+    public void notifyAttack() {
+        HitTimingMod.onAttack(android.os.SystemClock.uptimeMillis());
+    }
+
     public void applyConfigurationChanges(String modId) {
         BaseOverlayButton overlay = modOverlayMap.get(modId);
         if (overlay != null) {
@@ -758,6 +831,12 @@ public class InbuiltOverlayManager {
         if (modId.equals(ModIds.ARMOR_HUD) && armorHudOverlay != null) {
             armorHudOverlay.applyConfigurationChanges();
         }
+        if (modId.equals(ModIds.HIT_TIMING) && hitTimingOverlay != null) {
+            hitTimingOverlay.applyConfigurationChanges();
+        }
+        if (modId.equals(ModIds.HITBOX) && hitboxOverlay != null) {
+            hitboxOverlay.applyConfigurationChanges();
+        }
         if (modId.equals(ModIds.MORE_BUTTONS)) {
             refreshMoreButtons();
         }
@@ -779,6 +858,12 @@ public class InbuiltOverlayManager {
         }
         if (armorHudOverlay != null) {
             armorHudOverlay.setHudEditorMode(active);
+        }
+        if (hitTimingOverlay != null) {
+            hitTimingOverlay.setHudEditorMode(active);
+        }
+        if (hitboxOverlay != null) {
+            hitboxOverlay.setHudEditorMode(active);
         }
         if (hudOverlay != null) {
             hudOverlay.setHudEditorMode(active);
@@ -931,6 +1016,12 @@ public class InbuiltOverlayManager {
             manager.setOverlayPosition(ModIds.ARMOR_HUD, centerX, centerY);
             armorHudOverlay.updatePosition(centerX, centerY);
         }
+        if (hitTimingOverlay != null) {
+            int topX = metrics.widthPixels / 2 - (int) (48 * metrics.density);
+            int topY = (int) (12 * metrics.density);
+            manager.setOverlayPosition(ModIds.HIT_TIMING, topX, topY);
+            hitTimingOverlay.updatePosition(topX, topY);
+        }
         if (cpsDisplayOverlay != null) {
             manager.setOverlayPosition(ModIds.CPS_DISPLAY, centerX, centerY);
             cpsDisplayOverlay.updatePosition(centerX, centerY);
@@ -1067,6 +1158,20 @@ public class InbuiltOverlayManager {
                         ? android.view.View.VISIBLE
                         : android.view.View.GONE;
                 crystalOptimizerOverlay.setOverlayVisibility(visibility);
+            }
+
+            if (hitTimingOverlay != null) {
+                int visibility = inbuiltVisible || manager.isOverlayShowEverywhere(ModIds.HIT_TIMING)
+                        ? android.view.View.VISIBLE
+                        : android.view.View.GONE;
+                hitTimingOverlay.setOverlayVisibility(visibility);
+            }
+
+            if (hitboxOverlay != null) {
+                int visibility = inbuiltVisible || manager.isOverlayShowEverywhere(ModIds.HITBOX)
+                        ? android.view.View.VISIBLE
+                        : android.view.View.GONE;
+                hitboxOverlay.setOverlayVisibility(visibility);
             }
         });
     }

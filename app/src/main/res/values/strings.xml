@@ -1374,6 +1374,37 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="mod_config_hitreg_haptic_desc">Short tick when a burst of look input concludes</string>
     <string name="hitreg_scope_note">This shapes the aim your device sends. Whether a hit registers is decided by the server, so it cannot make a miss hit — it makes the input you send cleaner and more predictable.</string>
 
+    <!-- Select Hit -->
+    <string name="mod_config_scope_note_title">What this module does</string>
+    <string name="inbuilt_mod_hit_timing">Select Hit</string>
+    <string name="inbuilt_mod_hit_timing_desc">Shows when your next hit will land so you stop spamming into the cooldown</string>
+    <string name="mod_config_hit_timing_cooldown_ms" formatted="false">Hit Window (ms)</string>
+    <string name="mod_config_hit_timing_cooldown_ms_desc">How long after a hit further hits are discarded; match your version if the indicator feels early or late</string>
+    <string name="mod_config_hit_timing_show_combo">Show Combo Count</string>
+    <string name="mod_config_hit_timing_show_combo_desc">Displays how many hits are in the current streak</string>
+    <string name="mod_config_hit_timing_show_bar">Show Timing Bar</string>
+    <string name="mod_config_hit_timing_show_bar_desc">Progress line along the indicator so you can see the rhythm, not just the state</string>
+    <string name="hit_timing_scope_note">This reads your own attack input and tells you when the next click will count. It never clicks for you, and it cannot make a hit land — the server still decides that.</string>
+
+    <!-- Hitboxes -->
+    <string name="inbuilt_mod_hitbox">Hitboxes</string>
+    <string name="inbuilt_mod_hitbox_desc">Draws entity boxes, the crit line, the best-combo box and your aim direction</string>
+    <string name="mod_config_hitbox_show_players">Show Players</string>
+    <string name="mod_config_hitbox_show_players_desc">Boxes, crit line and combo box for other players</string>
+    <string name="mod_config_hitbox_show_mobs">Show Mobs</string>
+    <string name="mod_config_hitbox_show_mobs_desc">Boxes for mobs and other creatures</string>
+    <string name="mod_config_hitbox_show_items">Show Dropped Items</string>
+    <string name="mod_config_hitbox_show_items_desc">Boxes for items lying on the ground</string>
+    <string name="mod_config_hitbox_show_projectiles">Show Projectiles</string>
+    <string name="mod_config_hitbox_show_projectiles_desc">Boxes for arrows and thrown items in flight</string>
+    <string name="mod_config_hitbox_show_look_line">Show Aim Direction</string>
+    <string name="mod_config_hitbox_show_look_line_desc">Line marking where you are looking</string>
+    <string name="mod_config_hitbox_show_crit_line">Show Critical Hit Line</string>
+    <string name="mod_config_hitbox_show_crit_line_desc">Red line across the head — hit there for a critical; turns blue while you are aimed at it</string>
+    <string name="mod_config_hitbox_show_combo_box">Show Best-Combo Box</string>
+    <string name="mod_config_hitbox_show_combo_box_desc">Red box marking the best place to hit for combos; turns blue while you are aimed at it</string>
+    <string name="hitbox_scope_note">Boxes come from a game-data feed. Until that feed is available nothing is drawn — an invented box would be worse than none, because you would aim at it.</string>
+
     <!-- ABI / bitness -->
     <string name="abi_64_bit">64-bit</string>
     <string name="abi_32_bit">32-bit</string>

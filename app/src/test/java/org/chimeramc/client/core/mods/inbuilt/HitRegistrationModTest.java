@@ -106,27 +106,76 @@ public class HitRegistrationModTest {
         assertEquals(0.1f, out[0], EPS);
     }
 
+    /**
+     * The opening frame of a gesture must pass through unchanged. The filter used to start at
+     * zero, which threw away (1 - smoothing) of that frame and made the camera trail the
+     * finger; seeding it with the frame keeps a new gesture 1:1.
+     */
     @Test
-    public void smoothingReducesTheFirstLargeDelta() {
+    public void smoothingDoesNotAttenuateTheFirstFrameOfAGesture() {
         HitRegistrationMod.setEnabled(true, null);
         installClock();
         cfg(100, 50, 0);
 
         float[] out = HitRegistrationMod.shapeLookDelta(10f, 0f);
-        assertTrue("smoothing must damp the first frame", out[0] < 10f);
-        assertTrue("but must not invert it", out[0] > 0f);
+        assertEquals("a fresh gesture must not be damped", 10f, out[0], EPS);
     }
 
+    /**
+     * A 60 Hz frame is ~16.7 ms apart. The burst window used to be 16 ms, so real frame pacing
+     * fell outside it and the filter was reseeded on nearly every frame — the input-delay bug.
+     * A frame-spaced flick must still be one continuing gesture, which shows as the second,
+     * larger delta being damped rather than passed through untouched.
+     */
+    @Test
+    public void a60HzFrameGapStaysWithinTheBurst() {
+        HitRegistrationMod.setEnabled(true, null);
+        FakeClock clock = installClock();
+        cfg(100, 50, 0);
+
+        HitRegistrationMod.shapeLookDelta(10f, 0f);
+        clock.advance(17L);
+        float[] out = HitRegistrationMod.shapeLookDelta(20f, 0f);
+        assertEquals("frame pacing must not be read as a new gesture", 15f, out[0], EPS);
+    }
+
+    /** A gap longer than any frame is a new gesture, so its first delta passes 1:1. */
+    @Test
+    public void aLongPauseStartsANewGesture() {
+        HitRegistrationMod.setEnabled(true, null);
+        FakeClock clock = installClock();
+        cfg(100, 50, 0);
+
+        HitRegistrationMod.shapeLookDelta(10f, 0f);
+        clock.advance(500L);
+        float[] out = HitRegistrationMod.shapeLookDelta(20f, 0f);
+        assertEquals("a new gesture must not be damped", 20f, out[0], EPS);
+    }
+
+    @Test
+    public void smoothingDampsASuddenChangeInTheFlick() {
+        HitRegistrationMod.setEnabled(true, null);
+        installClock();
+        cfg(100, 50, 0);
+
+        HitRegistrationMod.shapeLookDelta(10f, 0f);
+        float second = HitRegistrationMod.shapeLookDelta(20f, 0f)[0];
+        assertTrue("the change should be damped", second < 20f);
+        assertTrue("but must not lag behind the previous frame", second > 10f);
+    }
+
+    /** Steady input converges to itself: the filter damps change, not the signal. */
     @Test
     public void smoothingConvergesTowardTheInputOverAFlick() {
         HitRegistrationMod.setEnabled(true, null);
         installClock();
         cfg(100, 50, 0);
 
-        float first = HitRegistrationMod.shapeLookDelta(10f, 0f)[0];
-        float second = HitRegistrationMod.shapeLookDelta(10f, 0f)[0];
-        assertTrue("the filter should approach the steady input", second > first);
-        assertTrue(second <= 10f);
+        HitRegistrationMod.shapeLookDelta(10f, 0f);
+        float second = HitRegistrationMod.shapeLookDelta(20f, 0f)[0];
+        float third = HitRegistrationMod.shapeLookDelta(20f, 0f)[0];
+        assertTrue("the filter should approach the steady input", third > second);
+        assertTrue(third <= 20f);
     }
 
     @Test

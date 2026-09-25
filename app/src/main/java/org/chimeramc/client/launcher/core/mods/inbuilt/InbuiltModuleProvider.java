@@ -12,6 +12,7 @@ import org.chimeramc.client.R;
 import org.chimeramc.client.core.mods.inbuilt.manager.InbuiltModManager;
 import org.chimeramc.client.core.mods.inbuilt.model.ModIds;
 import org.chimeramc.client.core.mods.inbuilt.overlay.InbuiltOverlayManager;
+import org.chimeramc.client.core.mods.inbuilt.overlay.HitTimingSolver;
 import org.chimeramc.client.core.mods.inbuilt.overlay.MoreButtonsEditor;
 import org.chimeramc.pojavcontrols.PojavControls;
 
@@ -61,6 +62,16 @@ public final class InbuiltModuleProvider {
     private static final String CFG_HITREG_SMOOTHING = "hitreg_smoothing";
     private static final String CFG_HITREG_PREDICTION = "hitreg_prediction";
     private static final String CFG_HITREG_HAPTIC = "hitreg_haptic";
+    private static final String CFG_HIT_TIMING_COOLDOWN_MS = "hit_timing_cooldown_ms";
+    private static final String CFG_HIT_TIMING_SHOW_COMBO = "hit_timing_show_combo";
+    private static final String CFG_HIT_TIMING_SHOW_BAR = "hit_timing_show_bar";
+    private static final String CFG_HITBOX_SHOW_PLAYERS = "hitbox_show_players";
+    private static final String CFG_HITBOX_SHOW_MOBS = "hitbox_show_mobs";
+    private static final String CFG_HITBOX_SHOW_ITEMS = "hitbox_show_items";
+    private static final String CFG_HITBOX_SHOW_PROJECTILES = "hitbox_show_projectiles";
+    private static final String CFG_HITBOX_SHOW_LOOK_LINE = "hitbox_show_look_line";
+    private static final String CFG_HITBOX_SHOW_CRIT_LINE = "hitbox_show_crit_line";
+    private static final String CFG_HITBOX_SHOW_COMBO_BOX = "hitbox_show_combo_box";
 
     private InbuiltModuleProvider() {
     }
@@ -125,6 +136,12 @@ public final class InbuiltModuleProvider {
         mods.add(create(activity, manager, overlayManager, ModIds.HIT_REGISTRATION,
                 R.string.inbuilt_mod_hit_registration, R.string.inbuilt_mod_hit_registration_desc,
                 groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.HIT_TIMING,
+                R.string.inbuilt_mod_hit_timing, R.string.inbuilt_mod_hit_timing_desc,
+                groupName));
+        mods.add(create(activity, manager, overlayManager, ModIds.HITBOX,
+                R.string.inbuilt_mod_hitbox, R.string.inbuilt_mod_hitbox_desc,
+                groupName));
 
         return groupPvpLast(mods);
     }
@@ -153,7 +170,8 @@ public final class InbuiltModuleProvider {
                 : manager.resolveInbuiltModEnabled(id, false);
         boolean customConfig = ModIds.POJAV_CONTROLS.equals(id) || ModIds.MORE_BUTTONS.equals(id)
                 || ModIds.ARMOR_HUD.equals(id) || ModIds.CRYSTAL_OPTIMIZER.equals(id)
-                || ModIds.HIT_REGISTRATION.equals(id);
+                || ModIds.HIT_REGISTRATION.equals(id) || ModIds.HIT_TIMING.equals(id)
+                || ModIds.HITBOX.equals(id);
         // Combat modules get their own PvP section so the tab is a real destination, not just a
         // filter over the inbuilt list. They remain inbuilt modules, so the Inbuilt filter and
         // the "Inbuilt" grouping still find them.
@@ -182,7 +200,8 @@ public final class InbuiltModuleProvider {
     private static RuntimeConfigSchema createLocalConfigSchema(Context context, UnifiedMod mod) {
         String modId = mod.getId();
         if (ModIds.ARMOR_HUD.equals(modId) || ModIds.CRYSTAL_OPTIMIZER.equals(modId)
-                || ModIds.HIT_REGISTRATION.equals(modId)) {
+                || ModIds.HIT_REGISTRATION.equals(modId) || ModIds.HIT_TIMING.equals(modId)
+                || ModIds.HITBOX.equals(modId)) {
             return createCombatConfigSchema(context, mod);
         }
         boolean hotbar = ModIds.HOTBAR_SLOT.equals(mod.getId());
@@ -194,7 +213,7 @@ public final class InbuiltModuleProvider {
                 categories.put(configCategory(context, "slots", R.string.mod_config_category_slots));
                 categories.put(configCategory(context, "appearance", R.string.mod_config_category_appearance));
                 categories.put(configCategory(context, "behavior", R.string.mod_config_category_behavior));
-                nodes.put(configNode(mod, CFG_HOTBAR_ITEM_ICONS, "slots"));
+                nodes.put(configNode(context, mod, CFG_HOTBAR_ITEM_ICONS, "slots"));
                 JSONArray slots = new JSONArray();
                 for (int slot = 1; slot <= 9; slot++) {
                     String key = hotbarSlotConfigKey(slot, CFG_HOTBAR_SLOT_ENABLED);
@@ -204,28 +223,28 @@ public final class InbuiltModuleProvider {
                     nodes.put(new JSONObject().put("id", section).put("type", "section")
                             .put("category", "appearance").put("collapsible", true)
                             .put("title", context.getString(R.string.mod_config_hotbar_slot_section, slot)));
-                    nodes.put(configNode(mod, hotbarSlotConfigKey(slot, CFG_HOTBAR_SLOT_SIZE), "appearance")
+                    nodes.put(configNode(context, mod, hotbarSlotConfigKey(slot, CFG_HOTBAR_SLOT_SIZE), "appearance")
                             .put("section", section));
-                    nodes.put(configNode(mod, hotbarSlotConfigKey(slot, CFG_HOTBAR_SLOT_OPACITY), "appearance")
+                    nodes.put(configNode(context, mod, hotbarSlotConfigKey(slot, CFG_HOTBAR_SLOT_OPACITY), "appearance")
                             .put("section", section));
                 }
                 nodes.put(new JSONObject().put("id", "visible_slots").put("type", "toggle_group")
                         .put("category", "slots").put("title", context.getString(R.string.mod_config_visible_slots))
                         .put("options", slots));
-                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "behavior"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "behavior"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "behavior"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "behavior"));
             } else {
                 categories.put(configCategory(context, "motion", R.string.mod_config_category_motion));
                 categories.put(configCategory(context, "button", R.string.mod_config_category_button));
-                nodes.put(configNode(mod, CFG_GYRO_SENSITIVITY_X, "motion"));
-                nodes.put(configNode(mod, CFG_GYRO_SENSITIVITY_Y, "motion"));
-                nodes.put(configNode(mod, CFG_GYRO_INVERT_X, "motion"));
-                nodes.put(configNode(mod, CFG_GYRO_INVERT_Y, "motion"));
-                nodes.put(configNode(mod, CFG_GYRO_DEADZONE, "motion"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SIZE, "button"));
-                nodes.put(configNode(mod, CFG_OVERLAY_OPACITY, "button"));
-                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "button"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "button"));
+                nodes.put(configNode(context, mod, CFG_GYRO_SENSITIVITY_X, "motion"));
+                nodes.put(configNode(context, mod, CFG_GYRO_SENSITIVITY_Y, "motion"));
+                nodes.put(configNode(context, mod, CFG_GYRO_INVERT_X, "motion"));
+                nodes.put(configNode(context, mod, CFG_GYRO_INVERT_Y, "motion"));
+                nodes.put(configNode(context, mod, CFG_GYRO_DEADZONE, "motion"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SIZE, "button"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_OPACITY, "button"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "button"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "button"));
             }
             return RuntimeConfigSchema.parse(new JSONObject().put("version", 2)
                     .put("default_category", hotbar ? "slots" : "motion")
@@ -249,37 +268,62 @@ public final class InbuiltModuleProvider {
                 categories.put(configCategory(context, "display", R.string.mod_config_category_appearance));
                 categories.put(configCategory(context, "data", R.string.mod_config_category_behavior));
                 defaultCategory = "display";
-                nodes.put(configNode(mod, CFG_ARMOR_HUD_SHOW_TARGET, "display"));
-                nodes.put(configNode(mod, CFG_ARMOR_HUD_SHOW_ENCHANTS, "display"));
-                nodes.put(configNode(mod, CFG_ARMOR_HUD_STACKED, "display"));
-                nodes.put(configNode(mod, CFG_ARMOR_HUD_REFRESH_MS, "data"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SIZE, "display"));
-                nodes.put(configNode(mod, CFG_OVERLAY_OPACITY, "display"));
-                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "data"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "data"));
+                nodes.put(configNode(context, mod, CFG_ARMOR_HUD_SHOW_TARGET, "display"));
+                nodes.put(configNode(context, mod, CFG_ARMOR_HUD_SHOW_ENCHANTS, "display"));
+                nodes.put(configNode(context, mod, CFG_ARMOR_HUD_STACKED, "display"));
+                nodes.put(configNode(context, mod, CFG_ARMOR_HUD_REFRESH_MS, "data"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SIZE, "display"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_OPACITY, "display"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "data"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "data"));
             } else if (ModIds.CRYSTAL_OPTIMIZER.equals(modId)) {
                 categories.put(configCategory(context, "safety", R.string.mod_config_category_behavior));
                 categories.put(configCategory(context, "tuning", R.string.mod_config_category_motion));
                 defaultCategory = "safety";
-                nodes.put(configNode(mod, CFG_CRYSTAL_MANUAL_ASSIST, "safety"));
-                nodes.put(configNode(mod, CFG_CRYSTAL_MIN_SELF_HP, "safety"));
-                nodes.put(configNode(mod, CFG_CRYSTAL_MAX_RANGE, "tuning"));
-                nodes.put(configNode(mod, CFG_CRYSTAL_PLACEMENT_DELAY_MS, "tuning"));
-                nodes.put(configNode(mod, CFG_CRYSTAL_KEYBIND, "tuning"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SIZE, "tuning"));
-                nodes.put(configNode(mod, CFG_OVERLAY_OPACITY, "tuning"));
-                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "safety"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "safety"));
+                nodes.put(configNode(context, mod, CFG_CRYSTAL_MANUAL_ASSIST, "safety"));
+                nodes.put(configNode(context, mod, CFG_CRYSTAL_MIN_SELF_HP, "safety"));
+                nodes.put(configNode(context, mod, CFG_CRYSTAL_MAX_RANGE, "tuning"));
+                nodes.put(configNode(context, mod, CFG_CRYSTAL_PLACEMENT_DELAY_MS, "tuning"));
+                nodes.put(configNode(context, mod, CFG_CRYSTAL_KEYBIND, "tuning"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SIZE, "tuning"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_OPACITY, "tuning"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "safety"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "safety"));
+            } else if (ModIds.HIT_TIMING.equals(modId)) {
+                categories.put(configCategory(context, "timing", R.string.mod_config_category_motion));
+                categories.put(configCategory(context, "display", R.string.mod_config_category_appearance));
+                defaultCategory = "timing";
+                nodes.put(configNode(context, mod, CFG_HIT_TIMING_COOLDOWN_MS, "timing"));
+                nodes.put(configNode(context, mod, CFG_HIT_TIMING_SHOW_COMBO, "display"));
+                nodes.put(configNode(context, mod, CFG_HIT_TIMING_SHOW_BAR, "display"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "display"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "display"));
+            } else if (ModIds.HITBOX.equals(modId)) {
+                categories.put(configCategory(context, "entities", R.string.mod_config_category_slots));
+                categories.put(configCategory(context, "guides", R.string.mod_config_category_appearance));
+                defaultCategory = "entities";
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_PLAYERS, "entities"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_MOBS, "entities"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_ITEMS, "entities"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_PROJECTILES, "entities"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_LOOK_LINE, "guides"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_CRIT_LINE, "guides"));
+                nodes.put(configNode(context, mod, CFG_HITBOX_SHOW_COMBO_BOX, "guides"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "guides"));
             } else {
                 categories.put(configCategory(context, "aim", R.string.mod_config_category_motion));
                 categories.put(configCategory(context, "feedback", R.string.mod_config_category_button));
                 defaultCategory = "aim";
-                nodes.put(configNode(mod, CFG_HITREG_SENSITIVITY, "aim"));
-                nodes.put(configNode(mod, CFG_HITREG_SMOOTHING, "aim"));
-                nodes.put(configNode(mod, CFG_HITREG_PREDICTION, "aim"));
-                nodes.put(configNode(mod, CFG_HITREG_HAPTIC, "feedback"));
-                nodes.put(configNode(mod, CFG_OVERLAY_LOCK, "feedback"));
-                nodes.put(configNode(mod, CFG_OVERLAY_SHOW_EVERYWHERE, "feedback"));
+                nodes.put(configNode(context, mod, CFG_HITREG_SENSITIVITY, "aim"));
+                nodes.put(configNode(context, mod, CFG_HITREG_SMOOTHING, "aim"));
+                nodes.put(configNode(context, mod, CFG_HITREG_PREDICTION, "aim"));
+                nodes.put(configNode(context, mod, CFG_HITREG_HAPTIC, "feedback"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_LOCK, "feedback"));
+                nodes.put(configNode(context, mod, CFG_OVERLAY_SHOW_EVERYWHERE, "feedback"));
+            }
+            int noteRes = scopeNoteRes(modId);
+            if (noteRes != 0) {
+                nodes.put(scopeNoteNode(context, mod, noteRes, defaultCategory));
             }
             return RuntimeConfigSchema.parse(new JSONObject().put("version", 2)
                     .put("default_category", defaultCategory)
@@ -293,18 +337,110 @@ public final class InbuiltModuleProvider {
         return new JSONObject().put("id", id).put("title", context.getString(titleRes));
     }
 
-    private static JSONObject configNode(UnifiedMod mod, String key, String category) throws JSONException {
+    private static JSONObject configNode(Context context, UnifiedMod mod, String key, String category) throws JSONException {
         UnifiedMod.ConfigEntry config = mod.findConfigEntry(key);
         JSONObject node = new JSONObject().put("id", key).put("key", key)
                 .put("category", category).put("title", config.displayName)
-                .put("type", config.type == UnifiedMod.ConfigType.TOGGLE ? "toggle" : "slider_int")
+                .put("type", schemaTypeFor(config.type))
                 .put("default_value", config.defaultValue)
                 .put("min_value", config.minValue).put("max_value", config.maxValue);
+        int descRes = configDescriptionRes(key);
+        if (descRes != 0) {
+            node.put("description", context.getString(descRes));
+        }
         if (!config.dependsOn.isEmpty()) {
             node.put("enabled_when", new JSONArray().put(new JSONObject()
                     .put("key", config.dependsOn).put("op", "truthy")));
         }
         return node;
+    }
+
+    /**
+     * The `_desc` string for a config key, or 0 when there is none.
+     *
+     * <p>Resolved through an explicit table rather than a name lookup so a renamed key cannot
+     * silently start matching an unrelated string.
+     */
+    static int configDescriptionRes(String key) {
+        switch (key) {
+            case CFG_HITREG_SENSITIVITY: return R.string.mod_config_hitreg_sensitivity_desc;
+            case CFG_HITREG_SMOOTHING: return R.string.mod_config_hitreg_smoothing_desc;
+            case CFG_HITREG_PREDICTION: return R.string.mod_config_hitreg_prediction_desc;
+            case CFG_HITREG_HAPTIC: return R.string.mod_config_hitreg_haptic_desc;
+            case CFG_CRYSTAL_PLACEMENT_DELAY_MS: return R.string.mod_config_crystal_placement_delay_ms_desc;
+            case CFG_CRYSTAL_MANUAL_ASSIST: return R.string.mod_config_crystal_manual_assist_desc;
+            case CFG_CRYSTAL_MIN_SELF_HP: return R.string.mod_config_crystal_min_self_hp_desc;
+            case CFG_CRYSTAL_MAX_RANGE: return R.string.mod_config_crystal_max_range_desc;
+            case CFG_CRYSTAL_KEYBIND: return R.string.mod_config_crystal_keybind_desc;
+            case CFG_HIT_TIMING_COOLDOWN_MS: return R.string.mod_config_hit_timing_cooldown_ms_desc;
+            case CFG_HIT_TIMING_SHOW_COMBO: return R.string.mod_config_hit_timing_show_combo_desc;
+            case CFG_HIT_TIMING_SHOW_BAR: return R.string.mod_config_hit_timing_show_bar_desc;
+            case CFG_HITBOX_SHOW_PLAYERS: return R.string.mod_config_hitbox_show_players_desc;
+            case CFG_HITBOX_SHOW_MOBS: return R.string.mod_config_hitbox_show_mobs_desc;
+            case CFG_HITBOX_SHOW_ITEMS: return R.string.mod_config_hitbox_show_items_desc;
+            case CFG_HITBOX_SHOW_PROJECTILES: return R.string.mod_config_hitbox_show_projectiles_desc;
+            case CFG_HITBOX_SHOW_LOOK_LINE: return R.string.mod_config_hitbox_show_look_line_desc;
+            case CFG_HITBOX_SHOW_CRIT_LINE: return R.string.mod_config_hitbox_show_crit_line_desc;
+            case CFG_HITBOX_SHOW_COMBO_BOX: return R.string.mod_config_hitbox_show_combo_box_desc;
+            default: return 0;
+        }
+    }
+
+    /**
+     * An informational node carrying the module's scope note, or null when it has none.
+     *
+     * <p>These modules are named after an outcome ("Hit Registration") but deliberately stop
+     * short of it — the server decides whether a hit lands, and the box feed may not exist yet.
+     * Saying so in the dialog is what stops the honest limit reading as a broken feature.
+     */
+    private static JSONObject scopeNoteNode(Context context, UnifiedMod mod,
+                                            int noteRes, String category) throws JSONException {
+        return new JSONObject()
+                .put("id", mod.getId() + "_scope_note")
+                .put("type", "info")
+                .put("category", category)
+                .put("title", context.getString(R.string.mod_config_scope_note_title))
+                .put("description", context.getString(noteRes));
+    }
+
+    private static int scopeNoteRes(String modId) {
+        if (ModIds.HIT_REGISTRATION.equals(modId)) return R.string.hitreg_scope_note;
+        if (ModIds.CRYSTAL_OPTIMIZER.equals(modId)) return R.string.crystal_optimizer_fairness_note;
+        if (ModIds.HIT_TIMING.equals(modId)) return R.string.hit_timing_scope_note;
+        if (ModIds.HITBOX.equals(modId)) return R.string.hitbox_scope_note;
+        if (ModIds.ARMOR_HUD.equals(modId)) return R.string.armor_hud_no_data;
+        return 0;
+    }
+
+    /**
+     * Maps a config entry's type to the schema node type the dialog renders.
+     *
+     * This must be the real type, not a toggle/slider default: the dialog builds its control
+     * from the node type alone, so a KEYBIND node declared as a slider would show a 0..100
+     * range and write a small integer over the stored key code, and a RADIO node would lose
+     * its options. Anything the schema cannot express (the legacy colour picker) still falls
+     * back to a slider rather than silently dropping the setting.
+     */
+    static String schemaTypeFor(UnifiedMod.ConfigType type) {
+        switch (type) {
+            case TOGGLE:
+                return "toggle";
+            case SLIDER_INT:
+                return "slider_int";
+            case SLIDER_FLOAT:
+                return "slider_float";
+            case RADIO:
+                return "choice";
+            case KEYBIND:
+                return "keybind";
+            case TEXT:
+                return "text";
+            case BUTTON:
+                return "button";
+            case COLOR:
+            default:
+                return "slider_int";
+        }
     }
 
     private static List<UnifiedMod.ConfigEntry> createConfigs(Context context,
@@ -523,6 +659,58 @@ public final class InbuiltModuleProvider {
                     UnifiedMod.ConfigType.TOGGLE,
                     "true", "", "",
                     String.valueOf(manager.isHitRegHapticEnabled())));
+        } else if (ModIds.HIT_TIMING.equals(modId)) {
+            configs.add(config(CFG_HIT_TIMING_COOLDOWN_MS,
+                    context.getString(R.string.mod_config_hit_timing_cooldown_ms),
+                    UnifiedMod.ConfigType.SLIDER_INT,
+                    String.valueOf(HitTimingSolver.DEFAULT_COOLDOWN_MS), "50", "2000",
+                    String.valueOf(manager.getHitTimingCooldownMs())));
+            configs.add(config(CFG_HIT_TIMING_SHOW_COMBO,
+                    context.getString(R.string.mod_config_hit_timing_show_combo),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitTimingShowCombo())));
+            configs.add(config(CFG_HIT_TIMING_SHOW_BAR,
+                    context.getString(R.string.mod_config_hit_timing_show_bar),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitTimingShowTimingBar())));
+        } else if (ModIds.HITBOX.equals(modId)) {
+            configs.add(config(CFG_HITBOX_SHOW_PLAYERS,
+                    context.getString(R.string.mod_config_hitbox_show_players),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowPlayers())));
+            configs.add(config(CFG_HITBOX_SHOW_MOBS,
+                    context.getString(R.string.mod_config_hitbox_show_mobs),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowMobs())));
+            configs.add(config(CFG_HITBOX_SHOW_ITEMS,
+                    context.getString(R.string.mod_config_hitbox_show_items),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowItems())));
+            configs.add(config(CFG_HITBOX_SHOW_PROJECTILES,
+                    context.getString(R.string.mod_config_hitbox_show_projectiles),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowProjectiles())));
+            configs.add(config(CFG_HITBOX_SHOW_LOOK_LINE,
+                    context.getString(R.string.mod_config_hitbox_show_look_line),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowLookLine())));
+            configs.add(config(CFG_HITBOX_SHOW_CRIT_LINE,
+                    context.getString(R.string.mod_config_hitbox_show_crit_line),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowCritLine())));
+            configs.add(config(CFG_HITBOX_SHOW_COMBO_BOX,
+                    context.getString(R.string.mod_config_hitbox_show_combo_box),
+                    UnifiedMod.ConfigType.TOGGLE,
+                    "true", "", "",
+                    String.valueOf(manager.isHitboxShowComboBox())));
         }
         return configs;
     }
@@ -667,6 +855,36 @@ public final class InbuiltModuleProvider {
             case CFG_HITREG_HAPTIC:
                 manager.setHitRegHapticEnabled(parseBoolean(value));
                 break;
+            case CFG_HIT_TIMING_COOLDOWN_MS:
+                manager.setHitTimingCooldownMs(parseInt(value, manager.getHitTimingCooldownMs()));
+                break;
+            case CFG_HIT_TIMING_SHOW_COMBO:
+                manager.setHitTimingShowCombo(parseBoolean(value));
+                break;
+            case CFG_HIT_TIMING_SHOW_BAR:
+                manager.setHitTimingShowTimingBar(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_PLAYERS:
+                manager.setHitboxShowPlayers(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_MOBS:
+                manager.setHitboxShowMobs(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_ITEMS:
+                manager.setHitboxShowItems(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_PROJECTILES:
+                manager.setHitboxShowProjectiles(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_LOOK_LINE:
+                manager.setHitboxShowLookLine(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_CRIT_LINE:
+                manager.setHitboxShowCritLine(parseBoolean(value));
+                break;
+            case CFG_HITBOX_SHOW_COMBO_BOX:
+                manager.setHitboxShowComboBox(parseBoolean(value));
+                break;
             default:
                 break;
         }
@@ -678,6 +896,10 @@ public final class InbuiltModuleProvider {
             org.chimeramc.client.core.mods.inbuilt.overlay.CrystalOptimizerMod.onConfigChanged(manager);
         } else if (ModIds.HIT_REGISTRATION.equals(mod.getId())) {
             org.chimeramc.client.core.mods.inbuilt.overlay.HitRegistrationMod.onConfigChanged(manager);
+        } else if (ModIds.HIT_TIMING.equals(mod.getId())) {
+            org.chimeramc.client.core.mods.inbuilt.overlay.HitTimingMod.onConfigChanged(manager);
+        } else if (ModIds.HITBOX.equals(mod.getId())) {
+            org.chimeramc.client.core.mods.inbuilt.overlay.HitboxMod.onConfigChanged(manager);
         }
     }
 

@@ -342,13 +342,11 @@ public class McpedlSourceTest {
         assertEquals("https://mcpedl.org/minecraft-pe-1-21-132-apk/", versions.get(0).pageUrl);
     }
 
-    /** The registry is what the UI reads, so it must resolve to the MCPEDL source. */
+    /** MCPEDL stays registered as a mirror, even though MCPE-Planet is the active source. */
     @Test
-    public void registryExposesTheMcpedlSourceAsActive() {
-        assertEquals("mcpedl", SourceRegistry.active().id());
+    public void registryStillExposesTheMcpedlSource() {
         assertEquals("mcpedl", SourceRegistry.byId("mcpedl").id());
-        assertEquals("mcpedl", SourceRegistry.byId("no-such-source").id());
-        assertTrue(SourceRegistry.all().size() >= 1);
+        assertTrue(SourceRegistry.all().stream().anyMatch(s -> "mcpedl".equals(s.id())));
     }
 
     private static String field(DownloadForm form, String name) {

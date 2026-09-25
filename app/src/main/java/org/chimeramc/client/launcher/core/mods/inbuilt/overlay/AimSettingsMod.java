@@ -35,6 +35,14 @@ public final class AimSettingsMod {
     public static final int STYLE_CROSS = 1;
     public static final int STYLE_CIRCLE = 2;
 
+    /**
+     * A gap longer than this starts a new gesture. It has to exceed one frame at 60 Hz
+     * (16.7 ms): at 16 ms the check classified almost every frame as a new gesture, so the
+     * filter was reset constantly and each frame's opening delta was discarded — felt as the
+     * camera lagging the finger.
+     */
+    private static final long BURST_GAP_MS = 120L;
+
     private static volatile boolean active;
     private static volatile float smoothingFactor = 0.4f;
     private static volatile float sensitivity = 1.0f;
@@ -124,19 +132,21 @@ public final class AimSettingsMod {
             return new float[]{deltaX, deltaY};
         }
         long now = SystemClock.uptimeMillis();
-        boolean burst = now - lastInputAt < 16L;
+        boolean burst = now - lastInputAt < BURST_GAP_MS;
         lastInputAt = now;
 
         float strength = smoothingFactor;
-        if (!burst) {
-            // A fresh swipe (gap between frames) — reset the filter so the first
-            // delta isn't dampened against a stale value.
-            EMA[0] = 0f;
-            EMA[1] = 0f;
-        }
         float magnitude = (float) Math.sqrt(deltaX * deltaX + deltaY * deltaY);
         if (magnitude < 0.12f) {
             // Micro-adjustments stay 1:1 — smoothing must never hurt fine aiming.
+            return new float[]{deltaX, deltaY};
+        }
+        if (!burst) {
+            // A fresh gesture: seed the filter with this frame instead of zero, so the first
+            // delta is not attenuated. Zeroing would discard (1 - strength) of every new
+            // swipe's opening frame, which reads as the camera trailing the finger.
+            EMA[0] = deltaX;
+            EMA[1] = deltaY;
             return new float[]{deltaX, deltaY};
         }
         float alpha = 1f - strength;

@@ -385,6 +385,11 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
             PreloaderInput.onMouse(mouseButton, event.action == KeyEvent.ACTION_DOWN)) {
             return true
         }
+        // Recorded regardless of whether the preloader consumed the press: the player pressed
+        // attack either way, and Select Hit needs the real input timing.
+        if (mouseButton == MotionEvent.BUTTON_PRIMARY && event.action == KeyEvent.ACTION_DOWN) {
+            overlayManager?.notifyAttack()
+        }
 
         val unicodeChar = event.unicodeChar
         val remappedKey = ControllerInputProcessor.processKeyEvent(event.keyCode)
@@ -491,6 +496,9 @@ class MinecraftActivity : MainActivity(), PojavControlsHost {
     override fun pojavSendMouseButton(androidButton: Int, down: Boolean) {
         if (down && org.chimeramc.client.core.mods.inbuilt.overlay.AimSettingsMod.isActive()) {
             overlayManager?.let { it.flashAimFeedback() }
+        }
+        if (down && androidButton == MotionEvent.BUTTON_PRIMARY) {
+            overlayManager?.notifyAttack()
         }
         PojavControlsMod.nativeSendMouseButton(androidButton, down)
     }
