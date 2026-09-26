@@ -235,6 +235,35 @@ public class AntiStickDriftTest {
         assertTrue(gate.allow(0.2f, 0.15f, 1016L));
     }
 
+    /**
+     * A pad that only reports on change would otherwise hold a steady deflection forever:
+     * the stick clears the threshold, no second event arrives, and the crossing never reaches
+     * {@link StickDriftGate#ENTRY_EVENTS}. That is real input delay, so the gate must release
+     * on elapsed time.
+     */
+    @Test
+    public void aHeldStickIsReleasedAfterTheSustainWindow() {
+        StickDriftGate gate = new StickDriftGate();
+        assertFalse(gate.allow(0.2f, 0.15f, 1000L));
+        // A second sample far enough apart is a held push, not a one-frame spike.
+        assertTrue(gate.allow(0.2f, 0.15f, 1000L + (long) StickDriftGate.SUSTAIN_MS + 1L));
+    }
+
+    @Test
+    public void aPairOfSamplesWithinAMillisecondIsStillTreatAsOneFrameNoise() {
+        StickDriftGate gate = new StickDriftGate();
+        // Two samples microseconds apart are one physical frame, so the second must not be
+        // released by the sustain window.
+        assertFalse(gate.allow(0.2f, 0.15f, 1000L));
+        assertFalse(gate.allow(0.2f, 0.15f, 1000L));
+    }
+
+    @Test
+    public void sustainWindowIsAControllerFrameNotAPerceptiblePause() {
+        assertTrue("the sustain window must stay below a perceptible delay",
+                StickDriftGate.SUSTAIN_MS <= 50f);
+    }
+
     @Test
     public void resetForgetsAPartialRun() {
         StickDriftGate gate = new StickDriftGate();

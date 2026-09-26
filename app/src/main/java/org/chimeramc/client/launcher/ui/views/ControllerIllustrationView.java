@@ -40,7 +40,6 @@ public class ControllerIllustrationView extends View {
     private final Paint shellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint shellDarkPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint shadowPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-    private final Paint sheenPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint outlinePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint seamPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint wellPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -52,6 +51,8 @@ public class ControllerIllustrationView extends View {
     private final Paint textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint symbolPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private final Paint detailPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint edgePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+    private final Paint rimPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
 
     private final RectF scratch = new RectF();
     private final Path shellPath = new Path();
@@ -97,27 +98,28 @@ public class ControllerIllustrationView extends View {
 
     private void applyThemeColors() {
         if (dark) {
-            bodyLight = 0xFF3C424E;
-            bodyDark = 0xFF191D24;
-            wellColor = 0xFF0E1116;
-            outlinePaint.setColor(Color.rgb(92, 100, 114));
-            seamPaint.setColor(0x55FFFFFF);
-            buttonPaint.setColor(Color.rgb(62, 68, 78));
-            buttonDarkPaint.setColor(Color.rgb(38, 43, 51));
-            capPaint.setColor(Color.rgb(74, 81, 93));
-            detailPaint.setColor(Color.rgb(28, 32, 39));
-            textPaint.setColor(Color.rgb(206, 214, 224));
+            // Near-black shell so the pad reads as a modern controller rather than grey putty.
+            bodyLight = 0xFF454B56;
+            bodyDark = 0xFF171A20;
+            wellColor = 0xFF0A0C10;
+            outlinePaint.setColor(0xFF6E7683);
+            seamPaint.setColor(0x33FFFFFF);
+            buttonPaint.setColor(Color.rgb(52, 58, 67));
+            buttonDarkPaint.setColor(Color.rgb(30, 34, 41));
+            capPaint.setColor(Color.rgb(66, 73, 84));
+            detailPaint.setColor(Color.rgb(20, 23, 28));
+            textPaint.setColor(Color.rgb(222, 228, 236));
         } else {
-            bodyLight = 0xFFFBFCFD;
-            bodyDark = 0xFFC9CFD8;
-            wellColor = 0xFFAEB5BE;
-            outlinePaint.setColor(Color.rgb(148, 155, 165));
-            seamPaint.setColor(0x66FFFFFF);
-            buttonPaint.setColor(Color.rgb(214, 219, 225));
-            buttonDarkPaint.setColor(Color.rgb(178, 184, 192));
-            capPaint.setColor(Color.rgb(232, 235, 239));
-            detailPaint.setColor(Color.rgb(160, 167, 176));
-            textPaint.setColor(Color.rgb(56, 60, 68));
+            bodyLight = 0xFFFFFFFF;
+            bodyDark = 0xFFD3D9E0;
+            wellColor = 0xFF9BA3AD;
+            outlinePaint.setColor(Color.rgb(126, 133, 143));
+            seamPaint.setColor(0x4DFFFFFF);
+            buttonPaint.setColor(Color.rgb(226, 230, 235));
+            buttonDarkPaint.setColor(Color.rgb(186, 192, 200));
+            capPaint.setColor(Color.rgb(244, 246, 248));
+            detailPaint.setColor(Color.rgb(150, 157, 166));
+            textPaint.setColor(Color.rgb(44, 48, 56));
         }
     }
 
@@ -217,6 +219,24 @@ public class ControllerIllustrationView extends View {
     }
 
     /**
+     * A thin dark falloff hugging the silhouette.
+     *
+     * This is what gives the shell a solid edge — the eye reads a body outline from the
+     * contrast at the rim. It replaces a large translucent oval "sheen" that washed across
+     * the top of the shell; at this scale that read as a smeared highlight rather than a
+     * surface, which is the "spilled water" look the illustration had.
+     */
+    private void drawEdgeFalloff(Canvas canvas) {
+        float stroke = scale * 0.030f;
+        edgePaint.setShader(null);
+        edgePaint.setStyle(Paint.Style.STROKE);
+        edgePaint.setStrokeWidth(stroke);
+        edgePaint.setColor(dark ? 0x66000000 : 0x30000000);
+        canvas.drawPath(shellPath, edgePaint);
+        edgePaint.setStyle(Paint.Style.FILL);
+    }
+
+    /**
      * Xbox silhouette: a wide arched shell whose shoulders drop into two splayed grips,
      * pinched at a waist between them.
      */
@@ -242,13 +262,21 @@ public class ControllerIllustrationView extends View {
 
         canvas.drawPath(p, shellPaint);
 
-        // Top-face sheen and grip seams, clipped so neither leaks past the silhouette.
+        // Crisp top-face highlight: a defined band high on the shell with a hard-ish edge,
+        // then a dark falloff at the rim. Both are clipped to the silhouette.
         canvas.save();
         canvas.clipPath(p);
-        sheenPaint.setColor(dark ? 0x1EFFFFFF : 0x7AFFFFFF);
-        scratch.set(cx - w * 1.30f, top - shellH * 0.02f, cx + w * 1.30f, top + shellH * 0.26f);
-        canvas.drawOval(scratch, sheenPaint);
-        seamPaint.setStrokeWidth(2f);
+        rimPaint.setShader(null);
+        rimPaint.setColor(dark ? 0x14FFFFFF : 0x66FFFFFF);
+        scratch.set(cx - w * 1.30f, top - shellH * 0.02f, cx + w * 1.30f, top + shellH * 0.22f);
+        canvas.drawRoundRect(scratch, shellH * 0.14f, shellH * 0.14f, rimPaint);
+        canvas.restore();
+
+        drawEdgeFalloff(canvas);
+
+        canvas.save();
+        canvas.clipPath(p);
+        seamPaint.setStrokeWidth(1.6f);
         for (int side = -1; side <= 1; side += 2) {
             Path seam = new Path();
             float sx = cx + side * w * 0.30f;
@@ -308,10 +336,13 @@ public class ControllerIllustrationView extends View {
             canvas.restoreToCount(save);
         }
 
-        sheenPaint.setColor(dark ? 0x1EFFFFFF : 0x7AFFFFFF);
-        scratch.set(cx - w * 1.25f, top - shellH * 0.02f, cx + w * 1.25f, top + shellH * 0.22f);
-        canvas.drawOval(scratch, sheenPaint);
+        rimPaint.setShader(null);
+        rimPaint.setColor(dark ? 0x14FFFFFF : 0x60FFFFFF);
+        scratch.set(cx - w * 1.25f, top - shellH * 0.02f, cx + w * 1.25f, top + shellH * 0.20f);
+        canvas.drawRoundRect(scratch, shellH * 0.13f, shellH * 0.13f, rimPaint);
         canvas.restore();
+
+        drawEdgeFalloff(canvas);
 
         // Light bar. DualShock 4 carries a single bar above the touchpad; the DualSense
         // splits it into two strips flanking the pad.

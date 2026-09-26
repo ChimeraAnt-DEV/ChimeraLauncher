@@ -41,8 +41,25 @@ final class StickDriftGate {
     /** Multiplier that puts the bypass above the threshold even on a heavily drifting stick. */
     static final float IMPULSE_FACTOR = 1.5f;
 
+    /**
+     * Longest a sustained deflection may be held back, in milliseconds.
+     *
+     * Counting events alone is not safe. Many pads only deliver a motion event when an axis
+     * <em>changes</em>, so a stick pushed to a steady position that clears the threshold can sit
+     * on a single crossing with no second event ever arriving — the streak never reaches
+     * {@link #ENTRY_EVENTS}, and the deflection is held back for as long as the player holds it.
+     * That is exactly the input delay this gate must never cause.
+     *
+     * So a crossing is also released once it has been sustained for this long since the first
+     * sample. The window is on the order of a controller frame, which still rejects a one-frame
+     * noise spike (its samples land microseconds apart) while guaranteeing a held stick always
+     * comes through.
+     */
+    static final float SUSTAIN_MS = 40f;
+
     private int streak;
     private long lastEventTime = Long.MIN_VALUE;
+    private long streakStartTime = Long.MIN_VALUE;
     private boolean lastAllowed;
 
     /**
@@ -69,9 +86,16 @@ final class StickDriftGate {
         if (eventTime == lastEventTime) {
             return lastAllowed;
         }
+        if (lastEventTime == Long.MIN_VALUE || eventTime < lastEventTime) {
+            streakStartTime = eventTime;
+        }
         lastEventTime = eventTime;
         streak++;
-        lastAllowed = streak >= ENTRY_EVENTS;
+        // A held stick that only reports on change would otherwise never reach ENTRY_EVENTS.
+        // Releasing on elapsed time guarantees the deflection comes through.
+        long sustained = eventTime - streakStartTime;
+        lastAllowed = streak >= ENTRY_EVENTS
+                || (streakStartTime != Long.MIN_VALUE && sustained >= SUSTAIN_MS);
         return lastAllowed;
     }
 
@@ -84,6 +108,7 @@ final class StickDriftGate {
     void reset() {
         streak = 0;
         lastEventTime = Long.MIN_VALUE;
+        streakStartTime = Long.MIN_VALUE;
         lastAllowed = false;
     }
 }

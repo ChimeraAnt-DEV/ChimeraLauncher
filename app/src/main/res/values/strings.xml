@@ -664,7 +664,7 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="playtime_label">%1$s played</string>
     <string name="recent_playtime_label">%1$s played on this instance</string>
     <string name="gxcore_title">gxcore native bootstrap</string>
-    <string name="gxcore_desc">Disable to skip the closed-source gxcore verification stack, avoiding a silent process exit right after "Loading native library: libgxcore.so" on devices where verification cannot complete</string>
+    <string name="gxcore_desc">Off by default. Enable to run the closed-source gxcore verification stack. Leave off to skip it, which avoids a silent process exit right after "Loading native library: libgxcore.so" on devices where verification cannot complete</string>
     <string name="logcat_live">Logcat: <b>live</b></string>
     <string name="logcat_paused">Logcat: paused</string>
     <!-- Logcat Overlay i18n -->
@@ -787,6 +787,13 @@ Migration must complete before Chimera Client can continue.</string>
     <string name="mod_menu_button_opacity">Mod Menu Button Opacity</string>
     <string name="mod_menu_compact">Compact Mod Menu</string>
     <string name="mod_menu_compact_desc">Use a smaller menu with a dense module list and compact filters</string>
+    <string name="mod_menu_cosmetics">Cosmetics</string>
+    <string name="cosmetics_capes">Capes</string>
+    <string name="cosmetics_accessories">Accessories</string>
+    <string name="cosmetics_none">None</string>
+    <string name="cosmetics_equipped">Equipped %1$s</string>
+    <string name="cosmetics_scope_note">ChimeraClient cosmetics render in this preview and are saved for this device. Bedrock does not expose a general custom-cape slot to third-party clients, so other players will not see these.</string>
+    <string name="cosmetics_preview_description">Preview of your character wearing the selected cape and accessory</string>
     <string name="mod_menu_version">v1.0</string>
     <string name="mod_menu_enabled">Mod Menu enabled</string>
     <string name="mod_menu_disabled">Mod Menu disabled</string>

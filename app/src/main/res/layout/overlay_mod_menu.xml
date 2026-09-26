@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    In-game Mod Menu.
+
+    Navigation is a top bar, not a side rail. The app is landscape-only, so a side rail gets
+    the screen's short edge and can only fit a couple of entries; a top bar has the full width
+    and keeps every destination reachable while the module list below keeps the tall edge.
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
@@ -22,143 +29,148 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="horizontal">
+            android:orientation="vertical">
 
+            <!-- Top navigation bar. The brand mark is the launcher icon itself, so the menu
+                 carries the same identity as the app on the home screen.
+
+                 The entries sit in a HorizontalScrollView: in compact mode the window is only
+                 ~320dp wide, and four labelled entries marked wrap_content would push the close
+                 button past the card edge, where the CardView clips it. Scrolling keeps every
+                 destination and the close button reachable at any width. -->
             <LinearLayout
-                android:id="@+id/mod_menu_sidebar"
-                android:layout_width="150dp"
-                android:layout_height="match_parent"
+                android:id="@+id/mod_menu_topbar"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
                 android:background="#151719"
-                android:orientation="vertical"
-                android:paddingTop="14dp"
-                android:paddingBottom="14dp">
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="12dp"
+                android:paddingEnd="8dp">
 
                 <ImageView
                     android:id="@+id/mod_menu_logo"
-                    android:layout_width="38dp"
-                    android:layout_height="38dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginBottom="14dp"
+                    android:layout_width="26dp"
+                    android:layout_height="26dp"
+                    android:layout_marginEnd="6dp"
                     android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_mod_menu_header" />
+                    android:src="@mipmap/ic_launcher" />
 
-                <TextView
-                    android:id="@+id/nav_modules"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="44dp"
-                    android:background="?attr/selectableItemBackground"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:drawableStart="@drawable/ic_modules"
-                    android:drawablePadding="8dp"
-                    android:drawableTint="@color/primary"
-                    android:ellipsize="end"
-                    android:singleLine="true"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="12dp"
-                    android:text="@string/mod_menu_modules"
-                    android:textColor="@color/primary"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                <HorizontalScrollView
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/nav_modules"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:background="?attr/selectableItemBackground"
+                            android:defaultFocusHighlightEnabled="false"
+                            android:drawableStart="@drawable/ic_modules"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="@color/primary"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:singleLine="true"
+                            android:text="@string/mod_menu_modules"
+                            android:textColor="@color/primary"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/nav_cosmetics"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:alpha="0.82"
+                            android:background="?attr/selectableItemBackground"
+                            android:defaultFocusHighlightEnabled="false"
+                            android:drawableStart="@drawable/ic_tshirt"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="#A8B0B8"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:singleLine="true"
+                            android:text="@string/mod_menu_cosmetics"
+                            android:textColor="#A8B0B8"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/nav_hud_editor"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:alpha="0.82"
+                            android:background="?attr/selectableItemBackground"
+                            android:defaultFocusHighlightEnabled="false"
+                            android:drawableStart="@drawable/ic_edit"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="#A8B0B8"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:singleLine="true"
+                            android:text="@string/mod_menu_hud_editor"
+                            android:textColor="#A8B0B8"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/nav_settings"
+                            android:layout_width="wrap_content"
+                            android:layout_height="match_parent"
+                            android:alpha="0.82"
+                            android:background="?attr/selectableItemBackground"
+                            android:defaultFocusHighlightEnabled="false"
+                            android:drawableStart="@drawable/ic_settings"
+                            android:drawablePadding="6dp"
+                            android:drawableTint="#A8B0B8"
+                            android:ellipsize="end"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="10dp"
+                            android:singleLine="true"
+                            android:text="@string/settings"
+                            android:textColor="#A8B0B8"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
+                </HorizontalScrollView>
 
                 <ImageButton
-                    android:id="@+id/nav_modules_compact"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="2dp"
-                    android:background="@drawable/bg_mod_menu_nav_compact_selected"
-                    android:contentDescription="@string/mod_menu_modules"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:padding="12dp"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_modules"
-                    android:tint="@color/primary"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/nav_hud_editor"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="44dp"
-                    android:alpha="0.6"
-                    android:background="?attr/selectableItemBackground"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:drawableStart="@drawable/ic_edit"
-                    android:drawablePadding="8dp"
-                    android:drawableTint="#A8B0B8"
-                    android:ellipsize="end"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="12dp"
-                    android:singleLine="true"
-                    android:text="@string/mod_menu_hud_editor"
-                    android:textColor="#A8B0B8"
-                    android:textSize="13sp" />
-
-                <ImageButton
-                    android:id="@+id/nav_hud_editor_compact"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="6dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/mod_menu_hud_editor"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:padding="12dp"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_edit"
-                    android:tint="#A8B0B8"
-                    android:visibility="gone" />
-
-                <TextView
-                    android:id="@+id/nav_settings"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="44dp"
-                    android:alpha="0.6"
-                    android:background="?attr/selectableItemBackground"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:drawableStart="@drawable/ic_settings"
-                    android:drawablePadding="8dp"
-                    android:drawableTint="#A8B0B8"
-                    android:ellipsize="end"
-                    android:gravity="center_vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="12dp"
-                    android:singleLine="true"
-                    android:text="@string/settings"
-                    android:textColor="#A8B0B8"
-                    android:textSize="13sp" />
-
-                <ImageButton
-                    android:id="@+id/nav_settings_compact"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="6dp"
-                    android:background="?attr/selectableItemBackgroundBorderless"
-                    android:contentDescription="@string/settings"
-                    android:defaultFocusHighlightEnabled="false"
-                    android:padding="12dp"
-                    android:scaleType="center"
-                    android:src="@drawable/ic_settings"
-                    android:tint="#A8B0B8"
-                    android:visibility="gone" />
+                    android:id="@+id/btn_close_menu"
+                    android:layout_width="32dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="6dp"
+                    android:background="@drawable/bg_close_button"
+                    android:contentDescription="@string/cancel"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_close"
+                    android:tint="#FFFFFF" />
 
             </LinearLayout>
 
             <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
                 android:layout_weight="1"
                 android:orientation="vertical">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="50dp"
+                    android:minHeight="46dp"
                     android:background="#1C1F22"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
@@ -203,6 +215,7 @@
                             android:layout_width="22dp"
                             android:layout_height="22dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/cancel"
                             android:padding="3dp"
                             android:src="@drawable/ic_close"
                             android:tint="#A8B0B8"
@@ -225,6 +238,7 @@
                             android:layout_width="32dp"
                             android:layout_height="32dp"
                             android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/cancel"
                             android:padding="6dp"
                             android:src="@drawable/ic_arrow_back"
                             android:tint="#FFFFFF" />
@@ -239,21 +253,12 @@
                             android:textStyle="bold" />
                     </LinearLayout>
 
-                    <ImageButton
-                        android:id="@+id/btn_close_menu"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
-                        android:background="@drawable/bg_close_button"
-                        android:padding="8dp"
-                        android:src="@drawable/ic_close"
-                        android:tint="#FFFFFF" />
-
                 </LinearLayout>
 
                 <HorizontalScrollView
                     android:id="@+id/filter_bar"
                     android:layout_width="match_parent"
-                    android:layout_height="44dp"
+                    android:layout_height="42dp"
                     android:background="#1C1F22"
                     android:overScrollMode="never"
                     android:scrollbars="none">
@@ -379,7 +384,7 @@
                     android:id="@+id/compact_filter_bar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="44dp"
+                    android:minHeight="42dp"
                     android:background="#1C1F22"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
@@ -469,6 +474,15 @@
                     </LinearLayout>
 
                 </FrameLayout>
+
+                <!-- Cosmetics: character preview plus capes and accessories. The preview is
+                     built in code so the animated cape is a real View, not a static drawable. -->
+                <FrameLayout
+                    android:id="@+id/cosmetics_container"
+                    android:layout_width="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_weight="1"
+                    android:visibility="gone" />
 
                 <ScrollView
                     android:id="@+id/settings_container"
@@ -734,8 +748,8 @@
                                 <ImageView
                                     android:layout_width="24dp"
                                     android:layout_height="24dp"
-                                    android:src="@drawable/ic_mod_menu_fab"
-                                    android:tint="#888888" />
+                                    android:contentDescription="@string/app_name"
+                                    android:src="@mipmap/ic_launcher" />
 
                                 <TextView
                                     android:layout_width="0dp"
