@@ -249,6 +249,81 @@ public final class ControllerInputProcessor {
 
         // Read through PointerCoords rather than MotionEvent.getAxisValue(axis, pointerIndex),
         // which only exists from API 29; this project supports API 28.
+        //
+        // The scratch arrays are cached rather than allocated: this runs on every controller
+        // motion event, so a per-event allocation is a per-event cost on the input-to-photon
+        // path. MotionEvent.obtain copies their contents, so reuse after the call is safe. Only
+        // touched from the UI thread, hence plain fields.
+        if (pointerCount > MAX_POOLED_POINTERS) {
+            return transformWithAllocation(event, response, antiDrift, leftPair, rightPair, pointerCount);
+        }
+        if (rewrittenScratch == null) {
+            rewrittenScratch = new float[MAX_POOLED_POINTERS][TRANSFORM_AXES.length];
+            pooledCoords = new MotionEvent.PointerCoords[MAX_POOLED_POINTERS];
+            pooledProperties = new MotionEvent.PointerProperties[MAX_POOLED_POINTERS];
+            pooledReadCoords = new MotionEvent.PointerCoords();
+            for (int i = 0; i < MAX_POOLED_POINTERS; i++) {
+                pooledCoords[i] = new MotionEvent.PointerCoords();
+                pooledProperties[i] = new MotionEvent.PointerProperties();
+            }
+        }
+
+        boolean changed = false;
+        for (int p = 0; p < pointerCount; p++) {
+            event.getPointerCoords(p, pooledReadCoords);
+            for (int a = 0; a < TRANSFORM_AXES.length; a++) {
+                int axis = TRANSFORM_AXES[a];
+                float original = pooledReadCoords.getAxisValue(axis);
+                float updated = rewrittenAxis(response, antiDrift, leftPair, rightPair, axis, original);
+                rewrittenScratch[p][a] = updated;
+                if (updated != original) {
+                    changed = true;
+                }
+            }
+        }
+        if (!changed) return event;
+
+        for (int p = 0; p < pointerCount; p++) {
+            event.getPointerProperties(p, pooledProperties[p]);
+            event.getPointerCoords(p, pooledCoords[p]);
+            for (int a = 0; a < TRANSFORM_AXES.length; a++) {
+                pooledCoords[p].setAxisValue(TRANSFORM_AXES[a], rewrittenScratch[p][a]);
+            }
+        }
+
+        return MotionEvent.obtain(
+                event.getDownTime(),
+                event.getEventTime(),
+                event.getAction(),
+                pointerCount,
+                pooledProperties,
+                pooledCoords,
+                event.getMetaState(),
+                event.getButtonState(),
+                event.getXPrecision(),
+                event.getYPrecision(),
+                event.getDeviceId(),
+                event.getEdgeFlags(),
+                event.getSource(),
+                event.getFlags());
+    }
+
+    /** Resolves one axis through the profile, honouring the anti-drift pair result. */
+    private static float rewrittenAxis(ControllerResponse response, boolean antiDrift,
+                                       float[] leftPair, float[] rightPair, int axis, float original) {
+        if (antiDrift && leftPair != null) {
+            if (axis == MotionEvent.AXIS_X) return leftPair[0];
+            if (axis == MotionEvent.AXIS_Y) return leftPair[1];
+            if (axis == MotionEvent.AXIS_Z) return rightPair[0];
+            if (axis == MotionEvent.AXIS_RZ) return rightPair[1];
+        }
+        return response.adjustAxisOrTrigger(axis, original);
+    }
+
+    /** Rare path for pads reporting more pointers than the pool holds; allocates as before. */
+    private static MotionEvent transformWithAllocation(
+            MotionEvent event, ControllerResponse response, boolean antiDrift,
+            float[] leftPair, float[] rightPair, int pointerCount) {
         boolean changed = false;
         float[][] rewritten = new float[pointerCount][TRANSFORM_AXES.length];
         MotionEvent.PointerCoords scratch = new MotionEvent.PointerCoords();
@@ -257,22 +332,7 @@ public final class ControllerInputProcessor {
             for (int a = 0; a < TRANSFORM_AXES.length; a++) {
                 int axis = TRANSFORM_AXES[a];
                 float original = scratch.getAxisValue(axis);
-                float updated;
-                if (antiDrift && leftPair != null) {
-                    if (axis == MotionEvent.AXIS_X) {
-                        updated = leftPair[0];
-                    } else if (axis == MotionEvent.AXIS_Y) {
-                        updated = leftPair[1];
-                    } else if (axis == MotionEvent.AXIS_Z) {
-                        updated = rightPair[0];
-                    } else if (axis == MotionEvent.AXIS_RZ) {
-                        updated = rightPair[1];
-                    } else {
-                        updated = response.adjustAxisOrTrigger(axis, original);
-                    }
-                } else {
-                    updated = response.adjustAxisOrTrigger(axis, original);
-                }
+                float updated = rewrittenAxis(response, antiDrift, leftPair, rightPair, axis, original);
                 rewritten[p][a] = updated;
                 if (updated != original) {
                     changed = true;
@@ -309,6 +369,13 @@ public final class ControllerInputProcessor {
                 event.getSource(),
                 event.getFlags());
     }
+
+    /** Max simultaneous pointers the scratch pool covers; gamepads report one. */
+    private static final int MAX_POOLED_POINTERS = 8;
+    private static float[][] rewrittenScratch;
+    private static MotionEvent.PointerCoords[] pooledCoords;
+    private static MotionEvent.PointerProperties[] pooledProperties;
+    private static MotionEvent.PointerCoords pooledReadCoords;
 
     /** Axes the profile rewrites on the way to the game. */
     private static final int[] TRANSFORM_AXES = {

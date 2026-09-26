@@ -11,7 +11,7 @@ public class FeatureSettings {
     private boolean lowInputDelayEnabled = false;
     private Boolean crashUploadEnabled = true;
     private boolean foregroundServiceEnabled = false;
-    private Boolean gxcoreEnabled = true;
+    private Boolean gxcoreEnabled = false;
     private boolean reduceNetworkLatencyEnabled = false;
 
     public enum StorageType {
@@ -77,7 +77,7 @@ public class FeatureSettings {
     public boolean isForegroundServiceEnabled() { return foregroundServiceEnabled; }
     public void setForegroundServiceEnabled(boolean enabled) { this.foregroundServiceEnabled = enabled; autoSave(); }
 
-    public boolean isGxCoreEnabled() { return gxcoreEnabled == null || gxcoreEnabled; }
+    public boolean isGxCoreEnabled() { return gxcoreEnabled != null && gxcoreEnabled; }
     public void setGxCoreEnabled(boolean enabled) { this.gxcoreEnabled = enabled; autoSave(); }
 
     public boolean isReduceNetworkLatencyEnabled() { return reduceNetworkLatencyEnabled; }

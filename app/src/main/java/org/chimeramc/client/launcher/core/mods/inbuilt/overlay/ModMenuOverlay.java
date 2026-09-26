@@ -58,7 +58,7 @@ public class ModMenuOverlay {
     private WindowManager.LayoutParams wmParams;
     private final Handler handler = new Handler(Looper.getMainLooper());
     private boolean isShowing = false;
-    
+
     private RecyclerView modsRecycler;
     private final android.os.Handler searchHandler = new android.os.Handler(android.os.Looper.getMainLooper());
     private final Runnable searchRunnable = this::applyFilters;
@@ -67,19 +67,20 @@ public class ModMenuOverlay {
     private boolean hasStaggeredOnce = false;
     private EditText searchInput;
     private ImageButton clearSearchBtn;
-    private TextView navModules, navSettings, navHudEditor;
-    private ImageButton compactNavModules, compactNavSettings, compactNavHudEditor;
+    private TextView navModules, navSettings, navHudEditor, navCosmetics;
     private TextView filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal, filterPvp;
     private TextView moduleCountText, emptyStateText;
     private TextView compactFilterSelector, compactModuleCount;
     private View settingsContainer;
     private View modulesContainer;
+    private FrameLayout cosmeticsContainer;
     private View emptyState;
     private View menuContainer;
-    private View modMenuSidebar;
+    private View modMenuTopBar;
     private View modMenuLogo;
     private View filterBar;
     private View compactFilterBar;
+    private CosmeticsPanel cosmeticsPanel;
     private Switch notificationsSwitch;
     private Switch pauseMenuOnlySwitch;
     private Switch compactModeSwitch;
@@ -92,15 +93,15 @@ public class ModMenuOverlay {
     private boolean updatingHudButtonSize = false;
     private boolean compactMode = false;
     private GridLayoutManager modsLayoutManager;
-    
+
     private List<UnifiedMod> allMods = new ArrayList<>();
     private List<UnifiedMod> filteredMods = new ArrayList<>();
     private final Set<String> favoriteKeys = new HashSet<>();
     private ModuleFilter activeFilter = ModuleFilter.ALL;
-    
+
     private ModMenuCallback callback;
     private ModNotificationManager notificationManager;
-    
+
     private void crossfade(View view) {
         view.setAlpha(0f);
         view.setTranslationX(30f);
@@ -116,14 +117,14 @@ public class ModMenuOverlay {
         menuContainer.setAlpha(0f);
         menuContainer.setScaleX(0.85f);
         menuContainer.setScaleY(0.85f);
-        
+
         menuContainer.post(() -> {
             menuContainer.setPivotX(menuContainer.getWidth() / 2f);
             menuContainer.setPivotY(menuContainer.getHeight() / 2f);
-            
+
             int opacity = InbuiltModManager.getInstance(activity).getModMenuOpacity();
             float targetAlpha = opacity / 100f;
-            
+
             menuContainer.animate()
                 .alpha(targetAlpha)
                 .scaleX(1f)
@@ -134,11 +135,11 @@ public class ModMenuOverlay {
                 .start();
         });
     }
-    
+
     private void animateMenuExit(final View menuContainer, Runnable onEnd) {
         menuContainer.setPivotX(menuContainer.getWidth() / 2f);
         menuContainer.setPivotY(menuContainer.getHeight() / 2f);
-        
+
         menuContainer.animate()
             .alpha(0f)
             .scaleX(0.85f)
@@ -159,23 +160,23 @@ public class ModMenuOverlay {
     private int getAccentColor() {
         return theme != null ? theme.accent() : ModMenuTheme.DEFAULT_ACCENT;
     }
-    
+
     public interface ModMenuCallback {
         void onModToggled(String modId, boolean enabled);
         void onButtonOpacityChanged(int opacity);
     }
-    
+
     public ModMenuOverlay(Activity activity) {
         this.activity = activity;
         this.theme = new ModMenuTheme(activity);
         this.windowManager = (WindowManager) activity.getSystemService(Activity.WINDOW_SERVICE);
         this.notificationManager = new ModNotificationManager(activity);
     }
-    
+
     public void setCallback(ModMenuCallback callback) {
         this.callback = callback;
     }
-    
+
     public void show() {
         if (isShowing) {
             refreshMods();
@@ -183,13 +184,13 @@ public class ModMenuOverlay {
         }
         showInternal();
     }
-    
+
     private void showInternal() {
         if (isShowing || activity.isFinishing() || activity.isDestroyed()) return;
-        
+
         try {
             overlayView = LayoutInflater.from(activity).inflate(R.layout.overlay_mod_menu, null);
-            
+
             int uiOptions = View.SYSTEM_UI_FLAG_LAYOUT_STABLE
                     | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
                     | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
@@ -197,7 +198,7 @@ public class ModMenuOverlay {
                     | View.SYSTEM_UI_FLAG_FULLSCREEN
                     | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY;
             overlayView.setSystemUiVisibility(uiOptions);
-            
+
             overlayView.setOnSystemUiVisibilityChangeListener(visibility -> {
                 if ((visibility & View.SYSTEM_UI_FLAG_FULLSCREEN) == 0) {
                     if (overlayView != null) {
@@ -205,10 +206,10 @@ public class ModMenuOverlay {
                     }
                 }
             });
-            
+
             setupViews();
             loadMods();
-            
+
             wmParams = new WindowManager.LayoutParams(
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.MATCH_PARENT,
@@ -223,13 +224,13 @@ public class ModMenuOverlay {
             }
             wmParams.gravity = Gravity.CENTER;
             wmParams.token = activity.getWindow().getDecorView().getWindowToken();
-            
+
             windowManager.addView(overlayView, wmParams);
             isShowing = true;
-            
+
             overlayView.setAlpha(0f);
             overlayView.animate().alpha(1f).setDuration(220).start();
-            
+
             View menuContainer = overlayView.findViewById(R.id.mod_menu_container);
             if (menuContainer != null) {
                 animateMenuEnter(menuContainer);
@@ -238,16 +239,16 @@ public class ModMenuOverlay {
             showFallback();
         }
     }
-    
+
     private void showFallback() {
         if (isShowing) return;
         ViewGroup rootView = activity.findViewById(android.R.id.content);
         if (rootView == null) return;
-        
+
         overlayView = LayoutInflater.from(activity).inflate(R.layout.overlay_mod_menu, null);
         setupViews();
         loadMods();
-        
+
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,
             FrameLayout.LayoutParams.MATCH_PARENT
@@ -255,19 +256,19 @@ public class ModMenuOverlay {
         rootView.addView(overlayView, params);
         isShowing = true;
         wmParams = null;
-        
+
         overlayView.setAlpha(0f);
         overlayView.animate().alpha(1f).setDuration(220).start();
-        
+
         View menuContainer = overlayView.findViewById(R.id.mod_menu_container);
         if (menuContainer != null) {
             animateMenuEnter(menuContainer);
         }
     }
-    
+
     private void setupViews() {
         menuContainer = overlayView.findViewById(R.id.mod_menu_container);
-        modMenuSidebar = overlayView.findViewById(R.id.mod_menu_sidebar);
+        modMenuTopBar = overlayView.findViewById(R.id.mod_menu_topbar);
         modMenuLogo = overlayView.findViewById(R.id.mod_menu_logo);
         filterBar = overlayView.findViewById(R.id.filter_bar);
         compactFilterBar = overlayView.findViewById(R.id.compact_filter_bar);
@@ -280,9 +281,7 @@ public class ModMenuOverlay {
         navModules = overlayView.findViewById(R.id.nav_modules);
         navSettings = overlayView.findViewById(R.id.nav_settings);
         navHudEditor = overlayView.findViewById(R.id.nav_hud_editor);
-        compactNavModules = overlayView.findViewById(R.id.nav_modules_compact);
-        compactNavSettings = overlayView.findViewById(R.id.nav_settings_compact);
-        compactNavHudEditor = overlayView.findViewById(R.id.nav_hud_editor_compact);
+        navCosmetics = overlayView.findViewById(R.id.nav_cosmetics);
         filterAll = overlayView.findViewById(R.id.filter_all);
         filterFavorites = overlayView.findViewById(R.id.filter_favorites);
         filterEnabled = overlayView.findViewById(R.id.filter_enabled);
@@ -292,6 +291,7 @@ public class ModMenuOverlay {
         moduleCountText = overlayView.findViewById(R.id.module_count_text);
         settingsContainer = overlayView.findViewById(R.id.settings_container);
         modulesContainer = overlayView.findViewById(R.id.modules_container);
+        cosmeticsContainer = overlayView.findViewById(R.id.cosmetics_container);
         emptyState = overlayView.findViewById(R.id.empty_state);
         emptyStateText = overlayView.findViewById(R.id.empty_state_text);
         notificationsSwitch = overlayView.findViewById(R.id.switch_notifications);
@@ -331,25 +331,21 @@ public class ModMenuOverlay {
         if (navHudEditor != null) {
             navHudEditor.setOnClickListener(v -> enterHudEditorMode(modMenuContainer, hudEditorTools));
         }
-        if (compactNavHudEditor != null) {
-            compactNavHudEditor.setOnClickListener(v -> enterHudEditorMode(modMenuContainer, hudEditorTools));
-        }
 
         // Touch feedback on the stable chrome (nav + filter chips + close). Recycler rows get
         // their own feedback in the adapter, since they are recycled and rebound.
-        for (View v : new View[]{navModules, navSettings, navHudEditor,
-                compactNavModules, compactNavSettings, compactNavHudEditor,
+        for (View v : new View[]{navModules, navSettings, navHudEditor, navCosmetics,
                 filterAll, filterFavorites, filterEnabled, filterInbuilt, filterExternal, filterPvp,
                 closeBtn, clearSearchBtn}) {
             if (v != null) DynamicAnim.applyPressScale(v);
         }
-        
+
         if (btnHudSave != null) {
             btnHudSave.setOnClickListener(v -> {
                 exitHudEditorMode(modMenuContainer, hudEditorTools);
             });
         }
-        
+
         View btnHudReset = overlayView.findViewById(R.id.btn_hud_reset);
         if (btnHudReset != null) {
             btnHudReset.setOnClickListener(v -> {
@@ -362,7 +358,7 @@ public class ModMenuOverlay {
                 exitHudEditorMode(modMenuContainer, hudEditorTools);
             });
         }
-        
+
         // Close on background tap
         overlayView.setOnClickListener(v -> {
             // Only hide if not in HUD editor mode
@@ -374,9 +370,9 @@ public class ModMenuOverlay {
         if (hudEditorTools != null) {
             hudEditorTools.setOnClickListener(v -> {}); // Consume clicks
         }
-        
+
         closeBtn.setOnClickListener(v -> hide());
-        
+
         // Search functionality
         searchInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -390,24 +386,23 @@ public class ModMenuOverlay {
             @Override
             public void afterTextChanged(Editable s) {}
         });
-        
+
         clearSearchBtn.setOnClickListener(v -> {
             searchInput.setText("");
             clearSearchBtn.setVisibility(View.GONE);
         });
         setupFilterButtons();
         setupCompactFilter();
-        
+
         View btnBackToModules = overlayView.findViewById(R.id.btn_back_to_modules);
         if (btnBackToModules != null) {
             btnBackToModules.setOnClickListener(v -> showModulesSection());
         }
-        
+
         // Navigation
         navModules.setOnClickListener(v -> showModulesSection());
         navSettings.setOnClickListener(v -> showSettingsSection());
-        if (compactNavModules != null) compactNavModules.setOnClickListener(v -> showModulesSection());
-        if (compactNavSettings != null) compactNavSettings.setOnClickListener(v -> showSettingsSection());
+        if (navCosmetics != null) navCosmetics.setOnClickListener(v -> showCosmeticsSection());
 
         // Settings
         InbuiltModManager modManager = InbuiltModManager.getInstance(activity);
@@ -473,9 +468,9 @@ public class ModMenuOverlay {
             @Override
             public void onStopTrackingTouch(android.widget.SeekBar seekBar) {}
         });
-        
+
         applyMenuOpacity();
-        
+
         adapter = new ModMenuAdapter(new ModMenuTheme(activity));
         adapter.setCompactMode(compactMode);
         modsLayoutManager = new GridLayoutManager(activity, compactMode ? 1 : 4);
@@ -524,21 +519,20 @@ public class ModMenuOverlay {
         });
         modsRecycler.setAdapter(adapter);
         applyCompactModeLayout(compactMode);
-        
+
         showModulesSection();
     }
-    
+
     private void showModulesSection() {
-        updateNavigationItem(navModules, compactNavModules, true);
-        updateNavigationItem(navSettings, compactNavSettings, false);
-        updateNavigationItem(navHudEditor, compactNavHudEditor, false);
-        
+        updateNavigationItems(true, false, false, false);
+
         if (modulesContainer.getVisibility() != View.VISIBLE) {
             modulesContainer.setVisibility(View.VISIBLE);
             crossfade(modulesContainer);
         }
         settingsContainer.setVisibility(View.GONE);
-        
+        hideCosmetics();
+
         if (overlayView != null) {
             View modConfigContainer = overlayView.findViewById(R.id.mod_config_container);
             View searchContainer = overlayView.findViewById(R.id.search_container);
@@ -549,18 +543,17 @@ public class ModMenuOverlay {
             updateFilterBarVisibility();
         }
     }
-    
+
     private void showSettingsSection() {
-        updateNavigationItem(navSettings, compactNavSettings, true);
-        updateNavigationItem(navModules, compactNavModules, false);
-        updateNavigationItem(navHudEditor, compactNavHudEditor, false);
-        
+        updateNavigationItems(false, false, false, true);
+
         modulesContainer.setVisibility(View.GONE);
+        hideCosmetics();
         if (settingsContainer.getVisibility() != View.VISIBLE) {
             settingsContainer.setVisibility(View.VISIBLE);
             crossfade(settingsContainer);
         }
-        
+
         if (overlayView != null) {
             View modConfigContainer = overlayView.findViewById(R.id.mod_config_container);
             View searchContainer = overlayView.findViewById(R.id.search_container);
@@ -572,26 +565,62 @@ public class ModMenuOverlay {
             if (compactFilterBar != null) compactFilterBar.setVisibility(View.GONE);
         }
     }
-    
+
+    /**
+     * Cosmetics: the player's Minecraft character plus capes and accessories.
+     *
+     * The panel is created lazily and owns the animated cape preview, so this method only
+     * decides which section is on screen.
+     */
+    private void showCosmeticsSection() {
+        updateNavigationItems(false, true, false, false);
+
+        modulesContainer.setVisibility(View.GONE);
+        settingsContainer.setVisibility(View.GONE);
+        if (cosmeticsContainer != null) {
+            if (cosmeticsPanel == null) {
+                cosmeticsPanel = new CosmeticsPanel(activity, compactMode);
+                cosmeticsContainer.addView(cosmeticsPanel.getView(),
+                        new FrameLayout.LayoutParams(
+                                ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT));
+            }
+            cosmeticsContainer.setVisibility(View.VISIBLE);
+            crossfade(cosmeticsContainer);
+        }
+
+        if (overlayView != null) {
+            View modConfigContainer = overlayView.findViewById(R.id.mod_config_container);
+            View searchContainer = overlayView.findViewById(R.id.search_container);
+            View configHeader = overlayView.findViewById(R.id.config_header);
+            if (modConfigContainer != null) modConfigContainer.setVisibility(View.GONE);
+            if (searchContainer != null) searchContainer.setVisibility(View.VISIBLE);
+            if (configHeader != null) configHeader.setVisibility(View.GONE);
+            if (filterBar != null) filterBar.setVisibility(View.GONE);
+            if (compactFilterBar != null) compactFilterBar.setVisibility(View.GONE);
+        }
+    }
+
+    private void hideCosmetics() {
+        if (cosmeticsContainer != null) cosmeticsContainer.setVisibility(View.GONE);
+    }
     private void showConfigSection(UnifiedMod mod) {
         if (mod.openCustomConfig()) {
             hide();
             return;
         }
-        updateNavigationItem(navModules, compactNavModules, false);
-        updateNavigationItem(navSettings, compactNavSettings, false);
-        updateNavigationItem(navHudEditor, compactNavHudEditor, false);
-        
+        updateNavigationItems(false, false, false, false);
+
         modulesContainer.setVisibility(View.GONE);
         settingsContainer.setVisibility(View.GONE);
-        
+
         if (overlayView != null) {
             View modConfigContainer = overlayView.findViewById(R.id.mod_config_container);
             View searchContainer = overlayView.findViewById(R.id.search_container);
             View configHeader = overlayView.findViewById(R.id.config_header);
             ViewGroup modConfigContent = overlayView.findViewById(R.id.mod_config_content);
             TextView configTitle = overlayView.findViewById(R.id.config_title);
-            
+
             if (modConfigContainer != null) {
                 modConfigContainer.setVisibility(View.VISIBLE);
                 crossfade(modConfigContainer);
@@ -601,7 +630,7 @@ public class ModMenuOverlay {
             if (filterBar != null) filterBar.setVisibility(View.GONE);
             if (compactFilterBar != null) compactFilterBar.setVisibility(View.GONE);
             if (configTitle != null) configTitle.setText(mod.getName());
-            
+
             if (modConfigContent != null) {
                 ModConfigView.render(activity, modConfigContent, mod, compactMode, () -> {
                     InbuiltOverlayManager overlayManager = InbuiltOverlayManager.getInstance();
@@ -682,9 +711,7 @@ public class ModMenuOverlay {
     }
 
     private void enterHudEditorMode(View modMenuContainer, View hudEditorTools) {
-        updateNavigationItem(navModules, compactNavModules, false);
-        updateNavigationItem(navSettings, compactNavSettings, false);
-        updateNavigationItem(navHudEditor, compactNavHudEditor, true);
+        updateNavigationItems(false, false, true, false);
 
         if (modMenuContainer != null) {
             modMenuContainer.setVisibility(View.GONE);
@@ -872,53 +899,19 @@ public class ModMenuOverlay {
             menuContainer.setLayoutParams(params);
         }
 
-        if (modMenuSidebar != null) {
-            ViewGroup.LayoutParams params = modMenuSidebar.getLayoutParams();
-            params.width = dp(compact ? 62 : 150);
-            modMenuSidebar.setLayoutParams(params);
-            if (modMenuSidebar instanceof android.widget.LinearLayout) {
-                ((android.widget.LinearLayout) modMenuSidebar).setGravity(compact ? Gravity.TOP | Gravity.CENTER_HORIZONTAL : Gravity.NO_GRAVITY);
-            }
-            modMenuSidebar.setPadding(0, dp(14), 0, dp(14));
-        }
-        if (modMenuLogo != null) modMenuLogo.setVisibility(compact ? View.GONE : View.VISIBLE);
-
-        setNavigationMode(navModules, compactNavModules, R.string.mod_menu_modules, compact);
-        setNavigationMode(navHudEditor, compactNavHudEditor, R.string.mod_menu_hud_editor, compact);
-        setNavigationMode(navSettings, compactNavSettings, R.string.settings, compact);
-
-        updateNavigationItem(navModules, compactNavModules, modulesContainer != null && modulesContainer.getVisibility() == View.VISIBLE);
-        updateNavigationItem(navSettings, compactNavSettings, settingsContainer != null && settingsContainer.getVisibility() == View.VISIBLE);
-        updateNavigationItem(navHudEditor, compactNavHudEditor, false);
+        // The top bar keeps every destination reachable in both modes. Compact mode only
+        // narrows the window; it must never hide the navigation, which is what the old
+        // sidebar/compact-icon swap did once the compact icons were removed.
+        boolean modulesSelected = modulesContainer != null && modulesContainer.getVisibility() == View.VISIBLE;
+        boolean settingsSelected = settingsContainer != null && settingsContainer.getVisibility() == View.VISIBLE;
+        boolean cosmeticsSelected = cosmeticsContainer != null && cosmeticsContainer.getVisibility() == View.VISIBLE;
+        updateNavigationItems(modulesSelected, cosmeticsSelected, false, settingsSelected);
 
         if (modsRecycler != null) {
             int padding = dp(compact ? 4 : 14);
             modsRecycler.setPadding(padding, padding, padding, padding);
         }
         menuContainer.requestLayout();
-    }
-
-    private void setNavigationMode(TextView fullView, ImageButton compactView, int textRes, boolean compact) {
-        if (fullView != null) {
-            fullView.setVisibility(compact ? View.GONE : View.VISIBLE);
-            if (!compact) {
-                fullView.setText(textRes);
-                fullView.setGravity(Gravity.CENTER_VERTICAL);
-                fullView.setIncludeFontPadding(true);
-                fullView.setPadding(dp(16), 0, dp(12), 0);
-                fullView.setCompoundDrawablePadding(dp(8));
-                ViewGroup.LayoutParams rawParams = fullView.getLayoutParams();
-                if (rawParams instanceof android.widget.LinearLayout.LayoutParams) {
-                    android.widget.LinearLayout.LayoutParams params = (android.widget.LinearLayout.LayoutParams) rawParams;
-                    params.width = ViewGroup.LayoutParams.MATCH_PARENT;
-                    params.height = dp(44);
-                    params.gravity = Gravity.NO_GRAVITY;
-                    params.setMargins(0, 0, 0, 0);
-                    fullView.setLayoutParams(params);
-                }
-            }
-        }
-        if (compactView != null) compactView.setVisibility(compact ? View.VISIBLE : View.GONE);
     }
 
     private void updateFilterBarVisibility() {
@@ -1075,31 +1068,29 @@ public class ModMenuOverlay {
         }
     }
 
-    private void updateNavigationItem(TextView fullView, ImageButton compactView, boolean selected) {
+    /**
+     * Re-tints one top-bar entry for the selected/unselected state.
+     *
+     * Each entry is a single {@code TextView} carrying its icon as a compound drawable, so
+     * tinting the compound drawable is what colours the icon — there is no separate
+     * {@code ImageButton} to keep in step.
+     */
+    private void updateNavigationItem(TextView view, boolean selected) {
+        if (view == null) return;
         int color = selected ? getAccentColor() : 0xFFA8B0B8;
-        if (fullView != null) {
-            fullView.setTextColor(color);
-            fullView.setAlpha(selected ? 1f : 0.82f);
-            fullView.setCompoundDrawableTintList(ColorStateList.valueOf(color));
-            TypedValue typedValue = new TypedValue();
-            if (activity.getTheme().resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)) {
-                fullView.setBackgroundResource(typedValue.resourceId);
-            }
-        }
-        if (compactView != null) {
-            compactView.setAlpha(selected ? 1f : 0.88f);
-            compactView.setImageTintList(ColorStateList.valueOf(color));
-            if (selected) {
-                compactView.setBackgroundResource(R.drawable.bg_mod_menu_nav_compact_selected);
-            } else {
-                TypedValue typedValue = new TypedValue();
-                if (activity.getTheme().resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, typedValue, true)) {
-                    compactView.setBackgroundResource(typedValue.resourceId);
-                } else {
-                    compactView.setBackground(null);
-                }
-            }
-        }
+        view.setTextColor(color);
+        view.setAlpha(selected ? 1f : 0.82f);
+        view.setCompoundDrawableTintList(ColorStateList.valueOf(color));
+        view.setTypeface(view.getTypeface(), selected
+                ? android.graphics.Typeface.BOLD : android.graphics.Typeface.NORMAL);
+    }
+
+    private void updateNavigationItems(boolean modules, boolean cosmetics, boolean hudEditor,
+                                       boolean settings) {
+        updateNavigationItem(navModules, modules);
+        updateNavigationItem(navCosmetics, cosmetics);
+        updateNavigationItem(navHudEditor, hudEditor);
+        updateNavigationItem(navSettings, settings);
     }
 
     private void updateModuleCount() {
@@ -1126,11 +1117,11 @@ public class ModMenuOverlay {
 
         applyFilters();
     }
-    
+
     private void filterMods(String query) {
         applyFilters();
     }
-    
+
     private void updateEmptyState() {
         if (emptyState != null) {
             emptyState.setVisibility(filteredMods.isEmpty() ? View.VISIBLE : View.GONE);
@@ -1148,7 +1139,7 @@ public class ModMenuOverlay {
             }
         }
     }
-    
+
     public void refreshMods() {
         loadMods();
     }
@@ -1162,7 +1153,7 @@ public class ModMenuOverlay {
             }
         }
     }
-    
+
     public void hide() {
         if (!isShowing || overlayView == null) return;
 
@@ -1171,7 +1162,7 @@ public class ModMenuOverlay {
             overlayManager.setHudEditorMode(false);
             overlayManager.setHudEditorSelectionListener(null);
         }
-        
+
         Runnable performHide = () -> {
             handler.post(() -> {
                 try {
@@ -1189,7 +1180,7 @@ public class ModMenuOverlay {
                 hasStaggeredOnce = false;
             });
         };
-        
+
         View menuContainer = overlayView.findViewById(R.id.mod_menu_container);
         if (menuContainer != null) {
             animateMenuExit(menuContainer, performHide);
@@ -1198,7 +1189,7 @@ public class ModMenuOverlay {
         }
         overlayView.animate().alpha(0f).setDuration(180).start();
     }
-    
+
     public boolean isShowing() {
         return isShowing;
     }

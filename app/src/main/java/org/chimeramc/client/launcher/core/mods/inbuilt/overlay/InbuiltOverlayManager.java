@@ -53,6 +53,14 @@ public class InbuiltOverlayManager {
     private static final int SPACING = 70;
     private static final int START_X = 50;
     private long lastVisibilityStateHash = Long.MIN_VALUE;
+    /**
+     * Latches the first time the preloader reports the game HUD screen is up.
+     *
+     * Until that happens the native hook may simply not be installed (its signature rules did
+     * not resolve), and an unproven "false" must not be read as "no game". See
+     * {@link OverlayVisibility} for why that distinction keeps a mod's UI from disappearing.
+     */
+    private boolean gameWorldSeen = false;
 
     public InbuiltOverlayManager(Activity activity) {
         this.activity = activity;
@@ -1063,7 +1071,17 @@ public class InbuiltOverlayManager {
         boolean isPauseOpen = org.chimeramc.client.preloader.PreloaderInput.isPauseMenuOpen();
         boolean isHudScreenOpen = org.chimeramc.client.preloader.PreloaderInput.isHudScreenOpen();
         boolean isShowingMenu = org.chimeramc.client.preloader.PreloaderInput.isShowingMenu();
-        boolean showGameOverlays = isHudScreenOpen && !isShowingMenu && !isPauseOpen;
+        if (isHudScreenOpen) {
+            gameWorldSeen = true;
+        }
+        // A resumed game session is the fallback signal when the preloader's HUD hook never
+        // installs; without it the native "false" hid every HUD overlay once the Mod Menu
+        // closed. See OverlayVisibility for the full reasoning.
+        boolean sessionActive = org.chimeramc.client.core.minecraft.MinecraftActivityState.isRunning()
+                || org.chimeramc.client.core.minecraft.MinecraftActivityState.isResumed()
+                || org.chimeramc.client.settings.LowLatencyNetworkManager.isGameSessionActive();
+        boolean showGameOverlays = OverlayVisibility.showGameOverlays(
+                isHudScreenOpen, isPauseOpen, isShowingMenu, hudEditorMode, gameWorldSeen, sessionActive);
         boolean inbuiltVisible = hudEditorMode || showGameOverlays;
         boolean hotbarVisible = inbuiltVisible || manager.isOverlayShowEverywhere(ModIds.HOTBAR_SLOT);
 
@@ -1082,6 +1100,11 @@ public class InbuiltOverlayManager {
         stateHash = 31L * stateHash + (isHudScreenOpen ? 1L : 0L);
         stateHash = 31L * stateHash + (isShowingMenu ? 1L : 0L);
         stateHash = 31L * stateHash + (hudEditorMode ? 1L : 0L);
+        // The fallback signals must be part of the hash too: a session starting or the HUD
+        // hook finally reporting "open" changes what should be visible even when every native
+        // flag is unchanged, and a stale hash would leave the overlays hidden.
+        stateHash = 31L * stateHash + (gameWorldSeen ? 1L : 0L);
+        stateHash = 31L * stateHash + (sessionActive ? 1L : 0L);
         stateHash = 31L * stateHash + overlays.size();
         for (BaseOverlayButton overlay : overlays) {
             stateHash = 31L * stateHash + System.identityHashCode(overlay);

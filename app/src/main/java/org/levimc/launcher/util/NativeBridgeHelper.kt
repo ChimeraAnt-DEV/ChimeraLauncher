@@ -128,7 +128,7 @@ object NativeBridgeHelper {
         return try {
             org.chimeramc.client.settings.FeatureSettings.getInstance().isGxCoreEnabled()
         } catch (t: Throwable) {
-            true
+            false
         }
     }
 

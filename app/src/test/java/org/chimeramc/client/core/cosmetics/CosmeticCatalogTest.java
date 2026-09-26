@@ -1,0 +1,73 @@
+package org.chimeramc.client.core.cosmetics;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+
+import org.junit.Test;
+
+/**
+ * Pins the cosmetics selection rules and the first cape's animated brand contract, so a
+ * future edit cannot quietly make the flagship cape static.
+ */
+public class CosmeticCatalogTest {
+
+    @Test
+    public void theFirstCapeIsTheAnimatedBrandedOne() {
+        CosmeticCatalog.Cape first = CosmeticCatalog.capes().get(0);
+        assertTrue("the flagship cape must be animated", first.animated);
+        assertTrue("the flagship cape must carry the brand mark", first.branded);
+        assertTrue("the default cape is the flagship one",
+                CosmeticCatalog.defaultCape().id.equals(first.id));
+    }
+
+    @Test
+    public void everyCapeHasADistinctIdAndAName() {
+        int count = 0;
+        for (CosmeticCatalog.Cape c : CosmeticCatalog.capes()) {
+            assertNotNull(c.id);
+            assertFalse(c.id.isEmpty());
+            assertNotNull(c.name);
+            assertFalse(c.name.isEmpty());
+            count++;
+        }
+        assertTrue("there should be more than one cape to choose from", count > 1);
+    }
+
+    @Test
+    public void equippingNoneOrAnUnknownIdWearsNothing() {
+        assertNull(CosmeticCatalog.equippedCape(CosmeticCatalog.NONE));
+        assertNull(CosmeticCatalog.equippedCape(null));
+        assertNull(CosmeticCatalog.equippedCape("does-not-exist"));
+        assertNull(CosmeticCatalog.equippedAccessory("does-not-exist"));
+    }
+
+    @Test
+    public void aKnownCapeIdResolves() {
+        CosmeticCatalog.Cape cape = CosmeticCatalog.equippedCape("void_black");
+        assertNotNull(cape);
+        assertEquals("void_black", cape.id);
+    }
+
+    @Test
+    public void togglingTheEquippedCapeTakesItOff() {
+        assertEquals(CosmeticCatalog.NONE, CosmeticCatalog.toggleCape("chimera", "chimera"));
+        assertEquals("magenta_flux", CosmeticCatalog.toggleCape("chimera", "magenta_flux"));
+        assertEquals(CosmeticCatalog.NONE, CosmeticCatalog.toggleCape("chimera", null));
+    }
+
+    @Test
+    public void togglingAccessoriesMirrorsCapeBehaviour() {
+        assertEquals(CosmeticCatalog.NONE, CosmeticCatalog.toggleAccessory("halo", "halo"));
+        assertEquals("halo", CosmeticCatalog.toggleAccessory("wings", "halo"));
+        assertEquals(CosmeticCatalog.NONE, CosmeticCatalog.toggleAccessory("halo", CosmeticCatalog.NONE));
+    }
+
+    @Test
+    public void accessoriesIncludeANoneChoice() {
+        assertNotNull(CosmeticCatalog.accessory(CosmeticCatalog.NONE));
+        assertEquals(CosmeticCatalog.NONE, CosmeticCatalog.accessories().get(0).id);
+    }
+}
